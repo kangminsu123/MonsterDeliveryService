@@ -1,212 +1,194 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public enum ItemKind { None, Axe, StunGun }
+public enum WeaponKind { None, Axe, Hammer, Sword, Rifle, Sniper }
 
 public sealed class MonsterDeliveryPrototype : MonoBehaviour
 {
-    const int DeliveryCount = 3;
-    CharacterController player;
-    Camera cam;
-    readonly GameObject[] parcels = new GameObject[DeliveryCount], mailboxes = new GameObject[DeliveryCount], markers = new GameObject[DeliveryCount], monsters = new GameObject[3];
-    readonly Renderer[] monsterRenderers = new Renderer[3];
-    readonly int[] monsterHealth = new int[3];
-    readonly float[] monsterStunnedUntil = new float[3];
-    Rigidbody parcelBody;
-    GameObject currentParcel, stunGun, axe, heldWeaponVisual;
-    readonly ItemKind[] inventory = new ItemKind[4];
-    int activeDelivery, impacts;
-    int selectedSlot;
-    bool ordered, holdingParcel, finished;
-    float startedAt, finishedElapsed, lookPitch, vertical, nextActionAt, axeSwingUntil;
-    Vector3 knockback;
-    [Min(1f)] public float timeLimitSeconds = 300f;
-    string feedback = "Enter를 눌러 택배차에서 오늘의 배송을 시작하세요.";
+    const int HouseCount = 10, BotCount = 3, SlotCount = 3;
+    readonly Color[] colors = { new(.2f, .75f, 1f), new(1f, .25f, .25f), new(.95f, .75f, .1f), new(.65f, .3f, 1f) };
+    readonly GameObject[] mailboxes = new GameObject[HouseCount], houses = new GameObject[HouseCount], bots = new GameObject[BotCount], pickups = new GameObject[9];
+    readonly Renderer[] mailboxRenderers = new Renderer[HouseCount], botRenderers = new Renderer[BotCount];
+    readonly int[] owner = new int[HouseCount], botHealth = new int[BotCount], botTarget = new int[BotCount];
+    readonly float[] botRespawnAt = new float[BotCount], botCaptureStarted = new float[BotCount], botAttackAt = new float[BotCount], pickupRespawnAt = new float[9];
+    readonly WeaponKind[] inventory = new WeaponKind[SlotCount];
+    CharacterController player; Camera cam; GameObject heldWeapon;
+    int selectedSlot, playerHealth = 100, captureTarget = -1;
+    bool started, finished, playerAlive = true;
+    float startedAt, lookPitch, vertical, captureStarted, playerRespawnAt, nextAttackAt, respawnShieldUntil, stamina = 100;
+    string feedback = "Enter를 눌러 우편함 난투를 시작하세요.";
+    [Min(30)] public float roundSeconds = 180;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Install() { if (FindAnyObjectByType<MonsterDeliveryPrototype>() == null) new GameObject("MonsterDeliveryPrototype").AddComponent<MonsterDeliveryPrototype>(); }
+    static void Install() { if (FindAnyObjectByType<MonsterDeliveryPrototype>() == null) new GameObject("MailboxBrawlPrototype").AddComponent<MonsterDeliveryPrototype>(); }
 
-    void Start()
-    {
-        RenderSettings.ambientLight = new Color(.06f, .035f, .1f);
-        CreateWorld(); Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
-    }
-
+    void Start() { RenderSettings.ambientLight = new Color(.08f, .06f, .12f); CreateWorld(); Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
     void CreateWorld()
     {
-        Ground("Town Ground", new Vector3(0, -.5f, 35), new Vector3(150, 1, 180), new Color(.035f, .035f, .065f));
-        Ground("Main Street", new Vector3(0, .02f, 36), new Vector3(12, .05f, 155), new Color(.09f, .1f, .13f));
-        for (var z = -32; z < 112; z += 16) { Ground("Road Stripe", new Vector3(0, .06f, z), new Vector3(.35f, .03f, 6), new Color(.95f, .75f, .18f)); Ground("Sidewalk L", new Vector3(-11, .12f, z + 7), new Vector3(4, .18f, 15), new Color(.38f, .38f, .43f)); Ground("Sidewalk R", new Vector3(11, .12f, z + 7), new Vector3(4, .18f, 15), new Color(.38f, .38f, .43f)); }
-        player = Create("Delivery Rider", PrimitiveType.Capsule, new Vector3(0, 1, -42), Vector3.one, new Color(1f, .32f, .06f)).AddComponent<CharacterController>(); player.height = 2; player.radius = .45f;
+        Ground("Suburb Lawn", new Vector3(0, -.5f, 0), new Vector3(220, 1, 180), new Color(.09f, .2f, .1f));
+        CreateRoads();
+        player = Create("Player", PrimitiveType.Capsule, SpawnPosition(0), Vector3.one, colors[0]).AddComponent<CharacterController>(); player.height = 2; player.radius = .45f;
         cam = Camera.main ?? new GameObject("Main Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
-        CreateTruck();
-        CreateHouse(0, new Vector3(-23, 2.5f, 12), "12 Maple Street", new Color(.48f, .18f, .12f));
-        CreateHouse(1, new Vector3(23, 2.5f, 48), "38 Oak Avenue", new Color(.16f, .32f, .5f));
-        CreateHouse(2, new Vector3(-23, 2.5f, 88), "77 Pine Road", new Color(.25f, .45f, .2f));
-        CreateMonster(0, new Vector3(4, 1, 16)); CreateMonster(1, new Vector3(-5, 1, 53)); CreateMonster(2, new Vector3(5, 1, 88));
-        stunGun = Create("One Shot Stun Gun", PrimitiveType.Cube, new Vector3(-3, .9f, -37), new Vector3(.35f, .25f, .9f), Color.cyan);
-        axe = Create("Delivery Axe", PrimitiveType.Cube, new Vector3(3, .9f, -37), new Vector3(.18f, .9f, .18f), new Color(.7f, .7f, .74f));
-        var light = FindAnyObjectByType<Light>(); if (light != null) { light.color = new Color(.5f, .45f, 1f); light.intensity = 1.3f; }
+        for (var i = 0; i < 4; i++) CreateTruck(i);
+        for (var i = 0; i < HouseCount; i++) CreateHouse(i);
+        for (var i = 0; i < BotCount; i++) CreateBot(i);
+        CreatePickups();
+        var light = FindAnyObjectByType<Light>(); if (light != null) { light.intensity = 1.4f; light.color = new Color(.65f, .55f, 1); }
     }
-    void CreateTruck()
+    Vector3 TruckPosition(int id) => new[] { new Vector3(-96, 0, 0), new Vector3(0, 0, 76), new Vector3(96, 0, 0), new Vector3(0, 0, -76) }[id];
+    Vector3 SpawnPosition(int id) => TruckPosition(id) - TruckPosition(id).normalized * 8f + Vector3.up;
+    void CreateTruck(int id) { var p = TruckPosition(id); var truck = Create("Delivery Van " + id, PrimitiveType.Cube, p + Vector3.up * 1.5f, new Vector3(7, 3, 8), colors[id]); truck.transform.LookAt(Vector3.zero); }
+    void CreateHouse(int i)
     {
-        Ground("Delivery Truck Body", new Vector3(0, 1.4f, -31), new Vector3(7, 2.8f, 12), new Color(.82f, .3f, .05f)); Ground("Truck Cargo Bay", new Vector3(0, 3.3f, -33), new Vector3(6.5f, 2, 7), new Color(.15f, .1f, .12f));
-        for (var i = 0; i < DeliveryCount; i++) { parcels[i] = Create("Parcel " + (i + 1), PrimitiveType.Cube, ParcelPosition(i), Vector3.one, new Color(.95f, .7f, .23f)); parcels[i].AddComponent<Rigidbody>().isKinematic = true; parcels[i].AddComponent<ParcelImpact>().owner = this; }
+        var p = new[] { new Vector3(-76, 3, 55), new Vector3(-42, 3, 55), new Vector3(42, 3, 55), new Vector3(76, 3, 55), new Vector3(-76, 3, -55), new Vector3(-42, 3, -55), new Vector3(42, 3, -55), new Vector3(76, 3, -55), new Vector3(-55, 3, 78), new Vector3(55, 3, -78) }[i]; var x = p.x; var side = p.z > 0 ? 1 : -1;
+        var wall = new[] { new Color(.72f, .55f, .4f), new Color(.55f, .65f, .74f), new Color(.78f, .72f, .58f), new Color(.63f, .48f, .42f), new Color(.66f, .7f, .55f) }[i % 5];
+        houses[i] = Create("House " + (i + 1), PrimitiveType.Cube, p, new Vector3(18, 6, 14), wall);
+        var roof = Create("Roof " + (i + 1), PrimitiveType.Cube, p + Vector3.up * 3.6f, new Vector3(19.5f, 1.3f, 15.5f), new Color(.2f, .12f, .1f));
+        var front = new Vector3(x, 1.7f, side * 40.85f); Create("Door " + (i + 1), PrimitiveType.Cube, front, new Vector3(2.2f, 3.4f, .25f), new Color(.18f, .1f, .06f));
+        Create("Window L " + (i + 1), PrimitiveType.Cube, front + new Vector3(-5, .8f, 0), new Vector3(3.2f, 2.2f, .2f), new Color(.2f, .65f, .85f));
+        Create("Window R " + (i + 1), PrimitiveType.Cube, front + new Vector3(5, .8f, 0), new Vector3(3.2f, 2.2f, .2f), new Color(.2f, .65f, .85f));
+        var mb = new Vector3(x, 1, side * 15);
+        mailboxes[i] = Create("Mailbox " + (i + 1), PrimitiveType.Cube, mb, new Vector3(1.4f, 1.6f, 1.4f), Color.gray); mailboxRenderers[i] = mailboxes[i].GetComponent<Renderer>();
+        var tag = new GameObject("Tag Zone " + i); tag.transform.position = mb; var c = tag.AddComponent<SphereCollider>(); c.radius = 2.3f; c.isTrigger = true;
     }
-    void CreateHouse(int index, Vector3 position, string address, Color color)
+    void CreateBot(int i) { bots[i] = Create("Rival " + (i + 1), PrimitiveType.Capsule, SpawnPosition(i + 1), Vector3.one, colors[i + 1]); botRenderers[i] = bots[i].GetComponent<Renderer>(); }
+    void CreatePickups()
     {
-        Create(address, PrimitiveType.Cube, position, new Vector3(10, 5, 9), color); Create(address + " Roof", PrimitiveType.Cube, position + Vector3.up * 3.1f, new Vector3(11, 1.2f, 10), new Color(.12f, .04f, .05f));
-        var mailboxPosition = position + new Vector3(position.x < 0 ? 7f : -7f, -1.25f, -2f);
-        mailboxes[index] = Create(address + " Mailbox", PrimitiveType.Cube, mailboxPosition, new Vector3(1.5f, 1.5f, 1.5f), new Color(.03f, .9f, .85f));
-        var trigger = mailboxes[index].AddComponent<BoxCollider>(); trigger.isTrigger = true; trigger.size = new Vector3(3, 2.5f, 3); var delivery = mailboxes[index].AddComponent<MailboxTrigger>(); delivery.owner = this; delivery.index = index;
-        markers[index] = Create(address + " Marker", PrimitiveType.Cylinder, mailboxPosition + Vector3.up * 7, new Vector3(.55f, .08f, .55f), Color.yellow); markers[index].GetComponent<Collider>().enabled = false;
+        var kinds = new[] { WeaponKind.Hammer, WeaponKind.Sword, WeaponKind.Rifle, WeaponKind.Sniper, WeaponKind.Rifle, WeaponKind.Hammer, WeaponKind.Sword, WeaponKind.Rifle, WeaponKind.Sniper };
+        for (var i = 0; i < pickups.Length; i++) { var a = i * Mathf.PI * 2 / pickups.Length; var p = new Vector3(Mathf.Sin(a) * 34, 1.2f, Mathf.Cos(a) * 28); pickups[i] = Create("Pickup " + kinds[i], PrimitiveType.Capsule, p, new Vector3(.6f, .6f, .6f), WeaponColor(kinds[i])); pickups[i].AddComponent<PickupKind>().kind = kinds[i]; }
     }
-    void CreateMonster(int index, Vector3 position) { monsters[index] = Create("Street Monster " + index, PrimitiveType.Capsule, position, new Vector3(1.25f, 1.7f, 1.25f), new Color(.1f, .01f, .1f)); monsterRenderers[index] = monsters[index].GetComponent<Renderer>(); monsterHealth[index] = 3; }
-    GameObject Create(string name, PrimitiveType type, Vector3 position, Vector3 scale, Color color) { var go = GameObject.CreatePrimitive(type); go.name = name; go.transform.SetPositionAndRotation(position, Quaternion.identity); go.transform.localScale = scale; go.GetComponent<Renderer>().material.color = color; return go; }
+    void CreateRoads()
+    {
+        Ground("Main Street", Vector3.zero, new Vector3(220, .08f, 22), new Color(.12f, .12f, .13f));
+        Ground("Cross Street", Vector3.zero, new Vector3(22, .08f, 180), new Color(.12f, .12f, .13f));
+        Ground("North Sidewalk", new Vector3(0, .06f, 14), new Vector3(220, .12f, 5), new Color(.48f, .47f, .43f));
+        Ground("South Sidewalk", new Vector3(0, .06f, -14), new Vector3(220, .12f, 5), new Color(.48f, .47f, .43f));
+        Ground("West Cross Sidewalk", new Vector3(-14, .06f, 0), new Vector3(5, .12f, 180), new Color(.48f, .47f, .43f));
+        Ground("East Cross Sidewalk", new Vector3(14, .06f, 0), new Vector3(5, .12f, 180), new Color(.48f, .47f, .43f));
+        for (var x = -100; x <= 100; x += 14) Ground("Lane Mark", new Vector3(x, .11f, 0), new Vector3(6, .03f, .35f), new Color(.95f, .72f, .18f));
+        for (var z = -80; z <= 80; z += 14) Ground("Cross Lane Mark", new Vector3(0, .11f, z), new Vector3(.35f, .03f, 6), new Color(.95f, .72f, .18f));
+        for (var x = -90; x <= 90; x += 18) { CreateStreetLight(new Vector3(x, 0, 18)); CreateStreetLight(new Vector3(x, 0, -18)); }
+        for (var x = -90; x <= 90; x += 18) { CreateTree(new Vector3(x + 7, 0, 29)); CreateTree(new Vector3(x - 7, 0, -29)); }
+    }
+    void CreateStreetLight(Vector3 p) { var pole = Create("Street Light", PrimitiveType.Cylinder, p + Vector3.up * 4, new Vector3(.2f, 4, .2f), new Color(.12f, .12f, .14f)); var lamp = Create("Street Lamp", PrimitiveType.Sphere, p + Vector3.up * 8, Vector3.one * .65f, new Color(1f, .72f, .28f)); var light = lamp.AddComponent<Light>(); light.range = 15; light.intensity = 2.2f; light.color = new Color(1f, .7f, .3f); }
+    void CreateTree(Vector3 p) { Create("Tree Trunk", PrimitiveType.Cylinder, p + Vector3.up * 2, new Vector3(.55f, 2, .55f), new Color(.25f, .13f, .06f)); Create("Tree Crown", PrimitiveType.Sphere, p + Vector3.up * 5, Vector3.one * 3.4f, new Color(.08f, .34f, .12f)); }
+    GameObject Create(string name, PrimitiveType type, Vector3 position, Vector3 scale, Color color) { var go = GameObject.CreatePrimitive(type); go.name = name; go.transform.position = position; go.transform.localScale = scale; go.GetComponent<Renderer>().material.color = color; return go; }
     void Ground(string name, Vector3 position, Vector3 scale, Color color) => Create(name, PrimitiveType.Cube, position, scale, color);
-    Vector3 ParcelPosition(int index) => new Vector3(-2.2f + index * 2.2f, 1.2f, -38.6f);
+    Color WeaponColor(WeaponKind kind) => kind switch { WeaponKind.Rifle => new Color(.2f, .9f, 1), WeaponKind.Sniper => new Color(1, .2f, .8f), WeaponKind.Hammer => new Color(1, .55f, .12f), WeaponKind.Sword => new Color(.8f, .8f, .9f), _ => Color.white };
 
     void Update()
     {
         UpdateCamera(); var kb = Keyboard.current;
-        if (finished) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) StartOrder(); return; }
-        if (!ordered) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) StartOrder(); return; }
-        MovePlayer(); if (Time.time - startedAt > timeLimitSeconds) Finish(false, "근무 시간이 끝났습니다.");
-        SelectInventorySlot(kb);
-        UpdateHeldWeaponVisual();
-        if (kb != null && kb.eKey.wasPressedThisFrame) Interact(); if (kb != null && kb.fKey.wasPressedThisFrame && holdingParcel) DropParcel(false); if (kb != null && kb.gKey.wasPressedThisFrame && holdingParcel) DropParcel(true);
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) UseCurrentItem();
-        if (holdingParcel) { var direction = Vector3.ProjectOnPlane(player.transform.forward, Vector3.up).normalized; currentParcel.transform.position = player.transform.position + Vector3.up * .8f + direction * 1.2f; currentParcel.transform.rotation = Quaternion.LookRotation(direction); }
-        UpdateMonsters();
+        if (!started) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) Begin(); return; }
+        if (finished) { if (kb != null && kb.enterKey.wasPressedThisFrame) Begin(); return; }
+        if (Time.time - startedAt >= roundSeconds) { Finish(); return; }
+        UpdatePlayer(kb); UpdateBots(); UpdatePickups(); UpdateCapture(kb); UpdateHeldWeapon();
     }
-    void MovePlayer()
+    void UpdatePlayer(Keyboard kb)
     {
-        var kb = Keyboard.current; if (kb == null) return; var move = Vector3.zero; if (kb.wKey.isPressed) move.z++; if (kb.sKey.isPressed) move.z--; if (kb.aKey.isPressed) move.x--; if (kb.dKey.isPressed) move.x++;
-        player.Move(player.transform.TransformDirection(move.normalized) * 6f * Time.deltaTime); player.Move(knockback * Time.deltaTime); knockback = Vector3.MoveTowards(knockback, Vector3.zero, 12f * Time.deltaTime);
-        var grounded = player.isGrounded;
-        if (grounded && vertical < 0) vertical = -2f;
-        if (grounded && kb.spaceKey.wasPressedThisFrame) vertical = 5.5f;
-        vertical += -22f * Time.deltaTime;
-        player.Move(Vector3.up * vertical * Time.deltaTime);
+        if (!playerAlive) { if (Time.time >= playerRespawnAt) RespawnPlayer(); return; }
+        var move = Vector3.zero; if (kb != null) { if (kb.wKey.isPressed) move.z++; if (kb.sKey.isPressed) move.z--; if (kb.aKey.isPressed) move.x--; if (kb.dKey.isPressed) move.x++; }
+        var sprinting = move.sqrMagnitude > 0 && kb != null && kb.leftShiftKey.isPressed && stamina > 0; stamina = Mathf.Clamp(stamina + (sprinting ? -28 : 20) * Time.deltaTime, 0, 100);
+        player.Move(player.transform.TransformDirection(move.normalized) * (sprinting ? 10.5f : 6.5f) * Time.deltaTime);
+        var grounded = player.isGrounded; if (grounded && vertical < 0) vertical = -2; if (grounded && kb != null && kb.spaceKey.isPressed) vertical = 7.5f; vertical += -20 * Time.deltaTime; player.Move(Vector3.up * vertical * Time.deltaTime);
+        KeepPlayerOutOfEnemySpawn();
+        SelectSlot(kb); if (kb != null && kb.gKey.wasPressedThisFrame) DropSelectedWeapon(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) UseWeapon();
     }
     void UpdateCamera()
     {
-        var mouse = Mouse.current; if (ordered && !finished && mouse != null) { var delta = mouse.delta.ReadValue(); player.transform.Rotate(0, delta.x * .12f, 0); lookPitch = Mathf.Clamp(lookPitch - delta.y * .12f, -80f, 80f); }
-        cam.transform.position = player.transform.position + Vector3.up * 1.6f; cam.transform.rotation = Quaternion.Euler(lookPitch, player.transform.eulerAngles.y, 0);
-        var aiming = SelectedItem == ItemKind.StunGun && mouse != null && mouse.rightButton.isPressed;
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, aiming ? 42f : 60f, Time.deltaTime * 12f);
+        var mouse = Mouse.current; if (started && playerAlive && mouse != null) { var d = mouse.delta.ReadValue(); player.transform.Rotate(0, d.x * .12f, 0); lookPitch = Mathf.Clamp(lookPitch - d.y * .12f, -80, 80); }
+        if (player == null) return; cam.transform.position = player.transform.position + Vector3.up * 1.6f; cam.transform.rotation = Quaternion.Euler(lookPitch, player.transform.eulerAngles.y, 0);
+        var aim = (Selected == WeaponKind.Rifle || Selected == WeaponKind.Sniper) && mouse != null && mouse.rightButton.isPressed; cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, aim ? 42 : 60, Time.deltaTime * 12);
     }
-    void UpdateHeldWeaponVisual()
+    void UpdateBots()
     {
-        if (holdingParcel) { if (heldWeaponVisual != null) Destroy(heldWeaponVisual); return; }
-        var item = SelectedItem;
-        if (item == ItemKind.None) { if (heldWeaponVisual != null) Destroy(heldWeaponVisual); return; }
-        var expectedName = item == ItemKind.Axe ? "Held Axe" : "Held Stun Gun";
-        if (heldWeaponVisual == null || heldWeaponVisual.name != expectedName)
+        for (var i = 0; i < BotCount; i++)
         {
-            if (heldWeaponVisual != null) Destroy(heldWeaponVisual);
-            heldWeaponVisual = Create(expectedName, item == ItemKind.Axe ? PrimitiveType.Cube : PrimitiveType.Capsule, Vector3.zero, Vector3.one, item == ItemKind.Axe ? new Color(.7f, .7f, .74f) : Color.cyan);
-            heldWeaponVisual.GetComponent<Collider>().enabled = false;
-            heldWeaponVisual.transform.SetParent(cam.transform, false);
-        }
-        var swing = item == ItemKind.Axe ? Mathf.Sin(Mathf.Clamp01((axeSwingUntil - Time.time) / .22f) * Mathf.PI) : 0f;
-        heldWeaponVisual.transform.localPosition = item == ItemKind.Axe ? new Vector3(.52f - swing * .18f, -.55f + swing * .08f, .8f + swing * .12f) : new Vector3(.42f, -.4f, .75f);
-        heldWeaponVisual.transform.localRotation = item == ItemKind.Axe ? Quaternion.Euler(25 + swing * 105f, 0, -28 + swing * 35f) : Quaternion.Euler(90, 0, 0);
-        heldWeaponVisual.transform.localScale = item == ItemKind.Axe ? new Vector3(.14f, .85f, .14f) : new Vector3(.18f, .45f, .18f);
-    }
-    void UpdateMonsters()
-    {
-        for (var i = 0; i < monsters.Length; i++)
-        {
-            var monster = monsters[i]; if (!monster.activeSelf) continue;
-            if (Time.time < monsterStunnedUntil[i]) { monsterRenderers[i].material.color = Color.cyan; continue; }
-            monsterRenderers[i].material.color = new Color(.1f, .01f, .1f); var seesPlayer = Vector3.Distance(monster.transform.position, player.transform.position) < (holdingParcel ? 30f : 12f); var patrol = new Vector3(i % 2 == 0 ? 5 : -5, 1, 15 + i * 35 + Mathf.Sin(Time.time + i) * 12f); var target = seesPlayer ? player.transform.position : patrol;
-            monster.transform.position = Vector3.MoveTowards(monster.transform.position, target, (seesPlayer ? 4.5f : 1.5f) * Time.deltaTime); var flat = target - monster.transform.position; flat.y = 0; if (flat.sqrMagnitude > .01f) monster.transform.rotation = Quaternion.LookRotation(flat);
-            if (seesPlayer && Vector3.Distance(monster.transform.position, player.transform.position) < 1.6f && Time.time >= nextActionAt) { nextActionAt = Time.time + 1.1f; var push = player.transform.position - monster.transform.position; push.y = 0; knockback = push.normalized * 12f; vertical = 5f; if (holdingParcel) DropParcel(true); feedback = "괴물이 들이받았습니다!"; }
+            if (!bots[i].activeSelf) { if (Time.time >= botRespawnAt[i]) RespawnBot(i); continue; }
+            KeepBotOutOfEnemySpawn(i);
+            if (botTarget[i] < 0 || owner[botTarget[i]] == i + 1) botTarget[i] = FindBotTarget(i);
+            var target = mailboxes[botTarget[i]].transform.position; bots[i].transform.position = Vector3.MoveTowards(bots[i].transform.position, target, 3.5f * Time.deltaTime);
+            var flat = target - bots[i].transform.position; flat.y = 0; if (flat.sqrMagnitude > .1f) bots[i].transform.rotation = Quaternion.LookRotation(flat);
+            if (Vector3.Distance(bots[i].transform.position, target) < 2.2f) { if (botCaptureStarted[i] == 0) botCaptureStarted[i] = Time.time; if (Time.time - botCaptureStarted[i] >= 3) { Capture(botTarget[i], i + 1); botCaptureStarted[i] = 0; botTarget[i] = -1; } } else botCaptureStarted[i] = 0;
+            if (playerAlive && Time.time >= respawnShieldUntil && Vector3.Distance(bots[i].transform.position, player.transform.position) < 2.4f && Time.time >= botAttackAt[i]) { botAttackAt[i] = Time.time + .8f; playerHealth -= 18; if (playerHealth <= 0) KillPlayer(); }
         }
     }
-    void Interact()
+    void KeepPlayerOutOfEnemySpawn() { for (var id = 1; id <= BotCount; id++) { var away = player.transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { player.Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); feedback = "상대 택배차 안전구역에는 들어갈 수 없습니다."; return; } } }
+    void KeepBotOutOfEnemySpawn(int bot) { for (var id = 0; id <= BotCount; id++) if (id != bot + 1) { var away = bots[bot].transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { bots[bot].transform.position += (away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f); return; } } }
+    int FindBotTarget(int bot) { for (var n = 0; n < HouseCount; n++) { var i = (bot + n + Random.Range(0, HouseCount)) % HouseCount; if (owner[i] != bot + 1) return i; } return 0; }
+    void UpdatePickups() { for (var i = 0; i < pickups.Length; i++) { if (!pickups[i].activeSelf && Time.time >= pickupRespawnAt[i]) pickups[i].SetActive(true); if (pickups[i].activeSelf) pickups[i].transform.position += Vector3.up * Mathf.Sin(Time.time * 3 + i) * .003f; } }
+    void TryPickup()
     {
-        if (holdingParcel) { feedback = "택배를 든 상태에서는 아이템을 집을 수 없습니다."; return; }
-        if (!HasItem(ItemKind.Axe) && Near(axe)) { AddItem(ItemKind.Axe); axe.SetActive(false); feedback = "도끼를 슬롯에 넣었습니다. 숫자키로 장착하고 좌클릭하세요."; return; }
-        if (!HasItem(ItemKind.StunGun) && stunGun.activeSelf && Near(stunGun)) { AddItem(ItemKind.StunGun); stunGun.SetActive(false); feedback = "단발 기절총을 슬롯에 넣었습니다. 숫자키로 장착하세요."; return; }
-        if (activeDelivery < DeliveryCount && (currentParcel == null || Near(currentParcel)) && Near(currentParcel ?? parcels[activeDelivery])) { currentParcel ??= parcels[activeDelivery]; holdingParcel = true; parcelBody = currentParcel.GetComponent<Rigidbody>(); parcelBody.isKinematic = true; feedback = mailboxes[activeDelivery].name + "로 배송하세요. 노란 마커가 표시됩니다."; }
+        for (var i = 0; i < pickups.Length; i++) if (pickups[i].activeSelf && Vector3.Distance(player.transform.position, pickups[i].transform.position) < 2.5f) { if (!HasEmptySlot()) { feedback = "아이템 칸이 가득 찼습니다. G로 현재 무기를 버리세요."; return; } AddWeapon(pickups[i].GetComponent<PickupKind>().kind); pickups[i].SetActive(false); pickupRespawnAt[i] = Time.time + 12; return; }
     }
-    bool Near(GameObject go) => go != null && go.activeSelf && Vector3.Distance(player.transform.position, go.transform.position) < 2.7f;
-    void DropParcel(bool throwIt) { if (!holdingParcel) return; holdingParcel = false; parcelBody.isKinematic = false; parcelBody.linearVelocity = player.transform.forward * (throwIt ? 10f : 0) + Vector3.up * (throwIt ? 2f : 0); feedback = throwIt ? "택배를 던졌습니다." : "택배를 내려놓았습니다."; }
-    void UseCurrentItem()
+    void UpdateCapture(Keyboard kb)
     {
-        if (holdingParcel) { feedback = "택배를 들고 있으면 무기를 쓸 수 없습니다."; return; }
-        if (SelectedItem == ItemKind.StunGun) { FireStunGun(); return; }
-        if (SelectedItem == ItemKind.Axe) SwingAxe(); else feedback = "아이템 슬롯에서 무기를 선택하세요.";
+        if (!playerAlive || kb == null || !kb.eKey.isPressed) { captureTarget = -1; captureStarted = 0; return; }
+        var target = NearestMailbox(player.transform.position); if (target < 0 || owner[target] == 0 || Vector3.Distance(player.transform.position, mailboxes[target].transform.position) > 2.4f) { captureTarget = -1; captureStarted = 0; return; }
+        if (captureTarget != target) { captureTarget = target; captureStarted = Time.time; }
+        if (Time.time - captureStarted >= 3) { Capture(target, 0); captureTarget = -1; captureStarted = 0; }
     }
-    void FireStunGun()
+    int NearestMailbox(Vector3 position) { var best = -1; var distance = 99f; for (var i = 0; i < HouseCount; i++) { var d = Vector3.Distance(position, mailboxes[i].transform.position); if (d < distance) { distance = d; best = i; } } return best; }
+    void Capture(int house, int playerId) { owner[house] = playerId; mailboxRenderers[house].material.color = colors[playerId]; feedback = (playerId == 0 ? "우편함 점령!" : "Rival " + playerId + "이 우편함을 탈환했습니다."); }
+
+    WeaponKind Selected => inventory[selectedSlot];
+    void SelectSlot(Keyboard kb) { if (kb == null) return; if (kb.digit1Key.wasPressedThisFrame) selectedSlot = 0; if (kb.digit2Key.wasPressedThisFrame) selectedSlot = 1; if (kb.digit3Key.wasPressedThisFrame) selectedSlot = 2; }
+    bool HasEmptySlot() { for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None) return true; return false; }
+    void AddWeapon(WeaponKind weapon) { for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None) { inventory[i] = weapon; weaponAmmo[i] = Ammo(weapon); selectedSlot = i; feedback = weapon + " 획득!"; return; } }
+    void DropSelectedWeapon() { if (Selected == WeaponKind.None) { feedback = "버릴 무기가 없습니다."; return; } feedback = Selected + "을 버렸습니다."; inventory[selectedSlot] = WeaponKind.None; weaponAmmo[selectedSlot] = 0; }
+    int Ammo(WeaponKind weapon) => weapon == WeaponKind.Rifle ? 30 : weapon == WeaponKind.Sniper ? 5 : 0;
+    void UseWeapon()
     {
-        inventory[selectedSlot] = ItemKind.None;
-        var bolt = Create("Stun Bolt", PrimitiveType.Sphere, cam.transform.position + cam.transform.forward * 1.1f, Vector3.one * .1f, Color.cyan);
-        var body = bolt.AddComponent<Rigidbody>(); body.useGravity = false; body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; body.linearVelocity = cam.transform.forward * 120f;
-        bolt.AddComponent<StunBolt>().owner = this;
-        feedback = "단발 기절총 발사!";
+        if (!playerAlive || Selected == WeaponKind.None || Time.time < nextAttackAt) return;
+        respawnShieldUntil = 0;
+        var gun = Selected == WeaponKind.Rifle || Selected == WeaponKind.Sniper; nextAttackAt = Time.time + (Selected == WeaponKind.Sword ? .28f : gun ? (Selected == WeaponKind.Rifle ? .12f : .7f) : .5f);
+        if (gun) { Fire(); return; }
+        var range = Selected == WeaponKind.Hammer ? 3.2f : Selected == WeaponKind.Sword ? 2.6f : 2.9f; var target = NearestBot(range); if (target < 0) return;
+        DamageBot(target, Selected == WeaponKind.Hammer ? 40 : Selected == WeaponKind.Sword ? 20 : 28); if (Selected == WeaponKind.Hammer) InterruptBot(target);
     }
-    void SwingAxe()
+    void Fire()
     {
-        if (Time.time < nextActionAt) return; nextActionAt = Time.time + .45f; axeSwingUntil = Time.time + .22f; var best = -1; var bestDistance = 3.2f;
-        for (var i = 0; i < monsters.Length; i++) { if (!monsters[i].activeSelf) continue; var distance = Vector3.Distance(player.transform.position, monsters[i].transform.position); if (distance < bestDistance && Vector3.Dot(player.transform.forward, (monsters[i].transform.position - player.transform.position).normalized) > .1f) { best = i; bestDistance = distance; } }
-        if (best < 0) { feedback = "도끼가 허공을 갈랐습니다."; return; } monsterHealth[best]--; feedback = "도끼 명중! 괴물 체력 " + monsterHealth[best] + "/3"; if (monsterHealth[best] <= 0) { monsters[best].SetActive(false); feedback = "괴물을 처치했습니다."; }
+        var kind = Selected; var bolt = Create("Bullet", PrimitiveType.Sphere, cam.transform.position + cam.transform.forward, Vector3.one * .1f, WeaponColor(kind)); var body = bolt.AddComponent<Rigidbody>(); body.useGravity = false; body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; body.linearVelocity = cam.transform.forward * (kind == WeaponKind.Sniper ? 180 : 120); var shot = bolt.AddComponent<BrawlShot>(); shot.owner = this; shot.damage = kind == WeaponKind.Sniper ? 80 : 16;
+        // ponytail: one magazine per pickup; add reload only when a reload loop proves useful.
+        weaponAmmo[selectedSlot]--; if (weaponAmmo[selectedSlot] <= 0) inventory[selectedSlot] = WeaponKind.None;
     }
-    int MonsterIndex(GameObject go) { for (var i = 0; i < monsters.Length; i++) if (go == monsters[i]) return i; return -1; }
-    public void StunMonster(GameObject hit)
+    readonly int[] weaponAmmo = new int[SlotCount];
+    void DamageBot(int index, int damage) { botHealth[index] -= damage; if (botHealth[index] <= 0) KillBot(index); }
+    int NearestBot(float range) { var best = -1; for (var i = 0; i < BotCount; i++) if (bots[i].activeSelf && Vector3.Distance(player.transform.position, bots[i].transform.position) < range && Vector3.Dot(player.transform.forward, (bots[i].transform.position - player.transform.position).normalized) > 0) best = i; return best; }
+    void KillBot(int i) { bots[i].SetActive(false); botRespawnAt[i] = Time.time + 3; botCaptureStarted[i] = 0; feedback = "상대를 처치했습니다."; }
+    void InterruptBot(int i) { botCaptureStarted[i] = 0; }
+    public void HitBot(GameObject hit, int damage) { for (var i = 0; i < BotCount; i++) if (hit == bots[i]) { DamageBot(i, damage); return; } }
+    void RespawnBot(int i) { bots[i].SetActive(true); bots[i].transform.position = SpawnPosition(i + 1); botHealth[i] = 100; botTarget[i] = -1; }
+    void KillPlayer() { playerAlive = false; player.enabled = false; respawnShieldUntil = 0; playerRespawnAt = Time.time + 3; captureTarget = -1; captureStarted = 0; feedback = "쓰러졌습니다. 택배차에서 리스폰합니다."; }
+    void RespawnPlayer() { playerAlive = true; playerHealth = 100; player.enabled = true; player.transform.position = SpawnPosition(0); respawnShieldUntil = Time.time + 5; feedback = "택배차 앞 도로에서 리스폰했습니다. 5초 보호 상태입니다."; }
+    void UpdateHeldWeapon()
     {
-        var index = MonsterIndex(hit);
-        feedback = index >= 0 ? "명중! 괴물이 5초간 기절했습니다." : "기절총이 빗나갔습니다.";
-        if (index >= 0) monsterStunnedUntil[index] = Time.time + 5f;
+        if (Selected == WeaponKind.None || !playerAlive) { if (heldWeapon != null) Destroy(heldWeapon); return; }
+        if (heldWeapon == null || heldWeapon.name != "Held " + Selected) { if (heldWeapon != null) Destroy(heldWeapon); heldWeapon = Create("Held " + Selected, Selected == WeaponKind.Rifle || Selected == WeaponKind.Sniper ? PrimitiveType.Capsule : PrimitiveType.Cube, Vector3.zero, Vector3.one, WeaponColor(Selected)); heldWeapon.GetComponent<Collider>().enabled = false; heldWeapon.transform.SetParent(cam.transform, false); }
+        heldWeapon.transform.localPosition = new Vector3(.48f, -.45f, .75f); heldWeapon.transform.localRotation = Quaternion.Euler(Selected == WeaponKind.Rifle || Selected == WeaponKind.Sniper ? 90 : 20, 0, -25); heldWeapon.transform.localScale = Selected == WeaponKind.Rifle || Selected == WeaponKind.Sniper ? new Vector3(.17f, .5f, .17f) : new Vector3(.18f, .75f, .18f);
     }
-    ItemKind SelectedItem => inventory[selectedSlot];
-    bool HasItem(ItemKind item) { for (var i = 0; i < inventory.Length; i++) if (inventory[i] == item) return true; return false; }
-    void AddItem(ItemKind item)
+    void Begin()
     {
-        for (var i = 0; i < inventory.Length; i++)
-            if (inventory[i] == ItemKind.None) { inventory[i] = item; selectedSlot = i; return; }
-        feedback = "아이템 슬롯이 가득 찼습니다.";
+        started = true; finished = false; playerAlive = true; playerHealth = 100; stamina = 100; startedAt = Time.time; selectedSlot = 0; captureTarget = -1; captureStarted = 0; feedback = "우체통 앞에서 E를 3초간 누르세요."; for (var i = 0; i < HouseCount; i++) { owner[i] = -1; mailboxRenderers[i].material.color = Color.gray; } for (var i = 0; i < SlotCount; i++) { inventory[i] = WeaponKind.None; weaponAmmo[i] = 0; } inventory[0] = WeaponKind.Axe;
+        RespawnPlayer(); for (var i = 0; i < BotCount; i++) RespawnBot(i); for (var i = 0; i < pickups.Length; i++) pickups[i].SetActive(true); Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
     }
-    void SelectInventorySlot(Keyboard kb)
-    {
-        if (kb == null || holdingParcel) return;
-        for (var i = 0; i < 4; i++)
-            if ((i == 0 && kb.digit1Key.wasPressedThisFrame) || (i == 1 && kb.digit2Key.wasPressedThisFrame) || (i == 2 && kb.digit3Key.wasPressedThisFrame) || (i == 3 && kb.digit4Key.wasPressedThisFrame)) selectedSlot = i;
-    }
-    public void ParcelHit(GameObject parcel) { if (!ordered || finished || parcel != currentParcel || holdingParcel) return; impacts++; var renderer = parcel.GetComponent<Renderer>(); renderer.material.color = impacts < 2 ? new Color(.95f, .7f, .23f) : impacts < 10 ? new Color(1f, .25f, .05f) : Color.gray; if (impacts >= 10) Finish(false, "택배가 파손됐습니다."); }
-    public void TryDeliver(GameObject other, int index) { if (finished || other != currentParcel || holdingParcel || index != activeDelivery) return; currentParcel.SetActive(false); currentParcel = null; activeDelivery++; impacts = 0; if (activeDelivery == DeliveryCount) Finish(true, "마을의 모든 택배를 배송했습니다!"); else feedback = "배송 완료! 택배차로 돌아가 다음 택배를 집으세요."; }
-    void StartOrder()
-    {
-        ordered = true; finished = holdingParcel = false; activeDelivery = impacts = selectedSlot = 0; currentParcel = null; startedAt = Time.time; finishedElapsed = lookPitch = vertical = nextActionAt = 0; knockback = Vector3.zero;
-        for (var i = 0; i < inventory.Length; i++) inventory[i] = ItemKind.None;
-        for (var i = 0; i < DeliveryCount; i++) { parcels[i].SetActive(true); parcels[i].GetComponent<Rigidbody>().isKinematic = true; parcels[i].transform.SetPositionAndRotation(ParcelPosition(i), Quaternion.identity); markers[i].SetActive(false); }
-        stunGun.SetActive(true); stunGun.transform.position = new Vector3(-3, .9f, -37); axe.SetActive(true); axe.transform.position = new Vector3(3, .9f, -37); for (var i = 0; i < monsters.Length; i++) { monsters[i].SetActive(true); monsterHealth[i] = 3; monsterStunnedUntil[i] = 0; }
-        feedback = "택배차에서 도끼·단발 기절총·첫 택배를 준비하세요."; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
-    }
-    void Finish(bool success, string reason) { finishedElapsed = Time.time - startedAt; finished = true; feedback = (success ? "배송 성공 — " : "배송 실패 — ") + reason; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
-    void WorldLabel(GameObject target, string text, GUIStyle style) { if (!target.activeSelf) return; var screen = cam.WorldToScreenPoint(target.transform.position + Vector3.up * 1.5f); if (screen.z > 0) GUI.Label(new Rect(screen.x - 150, Screen.height - screen.y, 300, 28), text, style); }
+    void Finish() { finished = true; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
+    int Score(int id) { var total = 0; for (var i = 0; i < HouseCount; i++) if (owner[i] == id) total++; return total; }
+    int Rank(int id) { var rank = 1; for (var other = 0; other <= BotCount; other++) if (Score(other) > Score(id)) rank++; return rank; }
+    string ResultBoard() { var board = ""; for (var rank = 1; rank <= BotCount + 1; rank++) for (var id = 0; id <= BotCount; id++) if (Rank(id) == rank) board += rank + "위  " + (id == 0 ? "나" : "Rival " + id) + "  ·  " + Score(id) + "개 점령\n"; return board; }
     void OnGUI()
     {
-        var label = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 19, fontStyle = FontStyle.Bold, wordWrap = true, normal = { textColor = new Color(.91f, .96f, 1f) } }; var heading = new GUIStyle(label) { fontSize = 26, normal = { textColor = new Color(1f, .9f, .62f) } };
-        if (!ordered) { GUI.Box(new Rect(Screen.width / 2 - 310, Screen.height / 2 - 150, 620, 300), "MONSTER DELIVERY SERVICE\n\n미국 교외 주택가의 모든 택배를 배송하세요.\n택배를 들면 배송지 마커가 나타나며, 괴물이 멀리서도 당신을 발견합니다.\n\n기절총: 단발, 처치 불가 · 도끼: 근접 처치\n\nEnter 또는 Space로 근무 시작"); return; }
-        if (finished) { GUI.Box(new Rect(Screen.width / 2 - 280, Screen.height / 2 - 130, 560, 260), feedback + "\n\n배송: " + activeDelivery + "/" + DeliveryCount + "\n경과 시간: " + finishedElapsed.ToString("0.0") + "초\n\nEnter 또는 Space로 다시 시작"); return; }
-        for (var i = 0; i < DeliveryCount; i++) markers[i].SetActive(i == activeDelivery && holdingParcel);
-        GUI.Box(new Rect(15, 15, 600, 140), "교외 마을 배송\n완료: " + activeDelivery + "/" + DeliveryCount + "  ·  택배: " + (holdingParcel ? "운반 중" : currentParcel == null ? "택배차에 있음" : "바닥에 있음") + "\n장착 무기: " + (SelectedItem == ItemKind.None ? "없음" : SelectedItem == ItemKind.Axe ? "도끼" : "단발 기절총") + "\n" + feedback);
-        GUI.Box(new Rect(Screen.width / 2 - 330, 18, 660, 42), "현재 목표: " + (holdingParcel ? "노란 마커가 표시한 우편함에 F로 택배를 내려놓으세요." : "택배차의 도끼·단발 기절총 또는 다음 택배 가까이에서 E를 누르세요. Space: 점프 · 우클릭: 조준"));
-        if (SelectedItem != ItemKind.None) GUI.Label(new Rect(Screen.width / 2 - 14, Screen.height / 2 - 21, 28, 42), "+", heading);
-        for (var i = 0; i < inventory.Length; i++) GUI.Box(new Rect(Screen.width / 2 - 210 + i * 105, Screen.height - 78, 95, 56), (i == selectedSlot ? "[" : "") + (i + 1) + ": " + (inventory[i] == ItemKind.None ? "비어 있음" : inventory[i] == ItemKind.Axe ? "도끼" : "기절총") + (i == selectedSlot ? "]" : ""));
-        for (var i = 0; i < monsters.Length; i++) if (monsters[i].activeSelf) WorldLabel(monsters[i], "HP " + monsterHealth[i] + "/3" + (Time.time < monsterStunnedUntil[i] ? " · 기절" : ""), heading);
-        if (activeDelivery < DeliveryCount && currentParcel == null) WorldLabel(parcels[activeDelivery], "▼ 다음 택배 [E] ▼", heading); if (!HasItem(ItemKind.Axe)) WorldLabel(axe, "▼ 도끼 [E] ▼", heading); if (!HasItem(ItemKind.StunGun) && stunGun.activeSelf) WorldLabel(stunGun, "▼ 단발 기절총 [E] ▼", heading); if (holdingParcel && activeDelivery < DeliveryCount) { WorldLabel(mailboxes[activeDelivery], "▼ 배송지: F로 내려놓기 ▼", heading); WorldLabel(markers[activeDelivery], "▼ 배송지 ▼", heading); }
+        var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 18, fontStyle = FontStyle.Bold, normal = { textColor = Color.white } };
+        if (!started) { GUI.Box(new Rect(Screen.width / 2 - 300, Screen.height / 2 - 130, 600, 260), "MAILBOX BRAWL\n\n우체통 앞에서 E를 3초간 유지해 점령하세요.\n상대의 우체통도 같은 방식으로 탈환할 수 있습니다.\n근접 무기로 시작하고, 공중 아이템에서 한정 탄창 총을 획득하세요.\n\nEnter 또는 Space로 시작"); return; }
+        if (finished) { GUI.Box(new Rect(Screen.width / 2 - 260, Screen.height / 2 - 180, 520, 360), "경기 종료\n\n내 순위: " + Rank(0) + "위  ·  점령: " + Score(0) + " / " + HouseCount + "\n\n[ 최종 순위 ]\n" + ResultBoard() + "\nEnter로 다시 시작"); return; }
+        GUI.Box(new Rect(15, 15, 620, 110), "점령 " + Score(0) + "/" + HouseCount + "  ·  체력 " + playerHealth + "  ·  스태미나 " + stamina.ToString("0") + (Time.time < respawnShieldUntil ? "  ·  보호 " + (respawnShieldUntil - Time.time).ToString("0.0") + "초" : "") + "  ·  남은 시간 " + Mathf.Max(0, roundSeconds - (Time.time - startedAt)).ToString("0") + "초\n" + feedback + "\nShift: 달리기 · Space 길게: 연속 점프 · G: 현재 무기 버리기");
+        if (captureTarget >= 0) GUI.Box(new Rect(Screen.width / 2 - 130, Screen.height / 2 + 40, 260, 30), "점령 중 " + Mathf.Clamp01((Time.time - captureStarted) / 3).ToString("P0"));
+        for (var i = 0; i < SlotCount; i++) GUI.Box(new Rect(Screen.width / 2 - 157 + i * 105, Screen.height - 75, 95, 52), (i == selectedSlot ? "[" : "") + (i + 1) + ": " + inventory[i] + (i == selectedSlot ? "]" : ""));
+        if (Selected != WeaponKind.None) GUI.Label(new Rect(Screen.width / 2 - 12, Screen.height / 2 - 20, 24, 40), "+", style);
+        for (var i = 0; i < HouseCount; i++) Label(mailboxes[i], owner[i] < 0 ? "빈 우체통" : "점령: P" + (owner[i] + 1), style);
     }
+    void Label(GameObject go, string text, GUIStyle style) { var p = cam.WorldToScreenPoint(go.transform.position + Vector3.up * 2); if (p.z > 0) GUI.Label(new Rect(p.x - 100, Screen.height - p.y, 200, 24), text, style); }
 }
 
-public sealed class ParcelImpact : MonoBehaviour { public MonsterDeliveryPrototype owner; float lastHit; void OnCollisionEnter(Collision collision) { if (Time.time - lastHit > .45f) { lastHit = Time.time; owner.ParcelHit(gameObject); } } }
-public sealed class MailboxTrigger : MonoBehaviour { public MonsterDeliveryPrototype owner; public int index; void OnTriggerEnter(Collider other) => owner.TryDeliver(other.gameObject, index); }
-public sealed class StunBolt : MonoBehaviour
-{
-    public MonsterDeliveryPrototype owner;
-    void Start() => Destroy(gameObject, 2f);
-    void OnCollisionEnter(Collision collision) { owner.StunMonster(collision.gameObject); Destroy(gameObject); }
-}
+public sealed class PickupKind : MonoBehaviour { public WeaponKind kind; }
+public sealed class BrawlShot : MonoBehaviour { public MonsterDeliveryPrototype owner; public int damage; void Start() => Destroy(gameObject, 2); void OnCollisionEnter(Collision c) { owner.HitBot(c.gameObject, damage); Destroy(gameObject); } }
