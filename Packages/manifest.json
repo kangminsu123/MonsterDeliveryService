@@ -8,6 +8,8 @@
     "com.unity.inputsystem": "1.20.0",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.pipeline": "0.7.0-exp.1",
+    "com.unity.probuilder": "file:com.unity.probuilder",
+    "com.unity.settings-manager": "file:com.unity.settings-manager",
     "com.unity.test-framework": "1.7.0",
     "com.unity.timeline": "1.8.13",
     "com.unity.ugui": "2.5.0",
