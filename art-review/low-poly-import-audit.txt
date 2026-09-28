@@ -1,0 +1,17 @@
+Broadleaf | size (3.240, 4.875, 2.916) | triangles 106
+Pine | size (2.772, 5.469, 2.843) | triangles 122
+Poplar | size (2.052, 5.500, 2.052) | triangles 106
+Fork_Tree | size (3.186, 4.781, 2.160) | triangles 218
+Umbrella | size (3.456, 3.631, 2.808) | triangles 106
+Tall_Boulder | size (2.800, 2.900, 2.500) | triangles 80
+Flat_Boulder | size (2.900, 1.500, 2.300) | triangles 80
+Rock_Spire | size (1.935, 3.400, 1.786) | triangles 80
+Round_Boulder | size (2.000, 1.900, 1.900) | triangles 80
+Rock_Cluster | size (2.995, 2.900, 2.300) | triangles 240
+Barrier | size (3.220, 2.070, 1.173) | triangles 328
+Stop_Barrier | size (3.220, 3.065, 1.173) | triangles 1544
+Red_Car | size (2.470, 2.050, 4.050) | triangles 1958
+School_Bus | size (2.570, 2.875, 5.150) | triangles 2054
+Blue_Pickup | size (2.570, 2.150, 4.750) | triangles 1942
+White_Van | size (2.620, 2.620, 4.850) | triangles 1998
+AC_Condenser | size (2.596, 2.560, 2.438) | triangles 3128

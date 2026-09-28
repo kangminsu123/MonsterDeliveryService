@@ -1,0 +1,17 @@
+Plot_01_House_01_Courtyard_L scale 1.959 -> 1.763 bounds (11.90, 6.51, 11.63) entrance preserved
+Plot_02_House_02_Split_Shed scale 2.250 -> 2.025 bounds (13.66, 9.94, 11.63) entrance preserved
+Plot_03_House_03_Corner_Tower scale 2.253 -> 2.028 bounds (13.98, 11.23, 11.63) entrance preserved
+Plot_04_House_04_Recessed_Veranda scale 2.529 -> 2.276 bounds (15.37, 8.42, 14.95) entrance preserved
+Plot_05_House_05_Saltbox_Bay scale 2.358 -> 2.122 bounds (15.37, 10.31, 12.27) entrance preserved
+Plot_06_House_06_Wraparound_Hip scale 2.308 -> 2.077 bounds (15.15, 11.54, 13.83) entrance preserved
+Plot_07_House_07_Staggered_Gables scale 2.425 -> 2.183 bounds (15.37, 11.30, 13.54) entrance preserved
+Plot_08_House_08_Vestibule_LeanTo scale 1.995 -> 1.796 bounds (15.37, 9.29, 12.44) entrance preserved
+Plot_09_House_09_Long_Farmhouse scale 1.930 -> 1.737 bounds (14.71, 7.73, 11.35) entrance preserved
+Plot_10_House_10_Loft_Cottage scale 2.321 -> 2.089 bounds (14.71, 13.78, 12.17) entrance preserved
+AC_Condenser_Plot01_0 flat roof height 6.045 gap 0.000
+AC_Condenser_Plot01_1 flat roof height 6.045 gap 0.000
+AC_Condenser_Plot03_0 flat roof height 6.989 gap 0.000
+AC_Condenser_Plot03_1 flat roof height 10.740 gap 0.000
+AC_Condenser_Plot04_0 flat roof height 7.877 gap 0.000
+AC_Condenser_Plot04_1 flat roof height 7.877 gap 0.000
+Central park: 24-sided planting ring, three slab paths, concrete mesh collider; bounds Center: (1.42, -0.17, 20.47), Extents: (11.39, 0.10, 11.86)

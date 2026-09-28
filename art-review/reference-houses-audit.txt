@@ -1,0 +1,10 @@
+Plot_01_House_01_Courtyard_L | position=(-43.049, -0.250, 55.174) | uniform scale=1.959 | bounds=(13.226, 7.230, 12.927) | triangles=1608 | ground=-0.250
+Plot_02_House_02_Split_Shed | position=(3.537, -0.250, 54.509) | uniform scale=2.250 | bounds=(15.177, 11.042, 12.927) | triangles=1588 | ground=-0.250
+Plot_03_House_03_Corner_Tower | position=(40.814, -0.250, 54.519) | uniform scale=2.253 | bounds=(15.532, 12.482, 12.927) | triangles=1880 | ground=-0.250
+Plot_04_House_04_Recessed_Veranda | position=(-40.854, -0.250, 23.872) | uniform scale=2.529 | bounds=(17.073, 9.359, 16.612) | triangles=1616 | ground=-0.250
+Plot_05_House_05_Saltbox_Bay | position=(42.170, -0.250, 22.699) | uniform scale=2.358 | bounds=(17.073, 11.459, 13.628) | triangles=2184 | ground=-0.250
+Plot_06_House_06_Wraparound_Hip | position=(-40.544, -0.250, -11.250) | uniform scale=2.308 | bounds=(16.834, 12.821, 15.366) | triangles=1992 | ground=-0.250
+Plot_07_House_07_Staggered_Gables | position=(1.220, -0.250, -11.614) | uniform scale=2.425 | bounds=(17.073, 12.550, 15.048) | triangles=1740 | ground=-0.250
+Plot_08_House_08_Vestibule_LeanTo | position=(43.194, -0.250, -11.269) | uniform scale=1.995 | bounds=(17.073, 10.325, 13.826) | triangles=1964 | ground=-0.250
+Plot_09_House_09_Long_Farmhouse | position=(-40.854, -0.250, -45.836) | uniform scale=1.930 | bounds=(16.341, 8.591, 12.606) | triangles=1816 | ground=-0.250
+Plot_10_House_10_Loft_Cottage | position=(41.585, -0.250, -46.398) | uniform scale=2.321 | bounds=(16.341, 15.309, 13.521) | triangles=1996 | ground=-0.250

@@ -1,0 +1,27 @@
+Scene Assets/Scenes/SampleScene.unity pipeline BuiltIn
+Layer_00_GrassBase Center: (-0.52, -0.25, 1.82), Extents: (84.42, 0.00, 80.63)
+Layer_01_Sidewalks Center: (4.14, -0.16, 7.20), Extents: (73.18, 0.09, 65.91)
+Layer_02_Roads Center: (4.15, -0.23, 7.93), Extents: (71.71, 0.00, 65.18)
+Layer_03_IslandTerrain Center: (-0.02, -7.72, -0.04), Extents: (401.98, 7.47, 401.93)
+Layer_04_Houses Center: (0.23, 7.40, 2.66), Extents: (49.89, 7.65, 57.04)
+Layer_05_Yards Center: (-0.67, 1.90, 2.13), Extents: (56.31, 2.15, 58.44)
+Plot_01_House_01_Courtyard_L bounds Center: (-43.05, 3.37, 53.23), Extents: (6.61, 3.62, 6.46) position (-43.05, -0.25, 55.17) scale (1.96, 1.96, 1.96)
+Upward horizontal surface areas: 6.98m=10.88m2, 6.74m=130.68m2, 6.72m=0.32m2, 6.57m=18.74m2, 5.95m=14.11m2, 5.82m=0.08m2, 5.80m=0.21m2, 5.35m=0.80m2
+Plot_02_House_02_Split_Shed bounds Center: (3.54, 5.27, 53.23), Extents: (7.59, 5.52, 6.46) position (3.54, -0.25, 54.51) scale (2.25, 2.25, 2.25)
+Upward horizontal surface areas: 9.76m=12.32m2, 9.45m=0.11m2, 9.40m=1.09m2, 9.39m=0.11m2, 9.34m=1.19m2, 9.31m=0.23m2, 9.26m=0.25m2, 8.79m=0.62m2
+Plot_03_House_03_Corner_Tower bounds Center: (40.98, 5.99, 53.23), Extents: (7.77, 6.24, 6.46) position (40.81, -0.25, 54.52) scale (2.25, 2.25, 2.25)
+Upward horizontal surface areas: 12.23m=6.43m2, 11.96m=41.17m2, 11.83m=8.70m2, 11.33m=0.11m2, 11.28m=0.55m2, 11.25m=0.11m2, 11.20m=0.73m2, 11.12m=0.12m2
+Plot_04_House_04_Recessed_Veranda bounds Center: (-40.85, 4.43, 21.40), Extents: (8.54, 4.68, 8.31) position (-40.85, -0.25, 23.87) scale (2.53, 2.53, 2.53)
+Upward horizontal surface areas: 9.11m=17.91m2, 8.78m=212.59m2, 8.74m=0.54m2, 8.55m=30.06m2, 7.76m=41.42m2, 7.59m=0.27m2, 7.57m=0.71m2, 6.98m=1.33m2
+Plot_05_House_05_Saltbox_Bay bounds Center: (41.59, 5.48, 21.40), Extents: (8.54, 5.73, 6.81) position (42.17, -0.25, 22.70) scale (2.36, 2.36, 2.36)
+Upward horizontal surface areas: 8.24m=4.67m2, 8.13m=0.47m2, 8.12m=4.67m2, 7.96m=19.75m2, 7.29m=13.43m2, 7.21m=21.79m2, 7.15m=2.74m2, 7.06m=0.23m2
+Plot_06_House_06_Wraparound_Hip bounds Center: (-40.85, 6.16, -13.35), Extents: (8.42, 6.41, 7.68) position (-40.54, -0.25, -11.25) scale (2.31, 2.31, 2.31)
+Upward horizontal surface areas: 12.57m=2.77m2, 12.33m=1.69m2, 7.96m=0.45m2, 7.89m=13.95m2, 7.78m=18.92m2, 7.05m=69.40m2, 6.90m=0.56m2, 6.88m=1.47m2
+Plot_07_House_07_Staggered_Gables bounds Center: (1.22, 6.03, -13.35), Extents: (8.54, 6.28, 7.52) position (1.22, -0.25, -11.61) scale (2.43, 2.43, 2.43)
+Upward horizontal surface areas: 8.57m=11.76m2, 8.50m=2.26m2, 8.47m=2.26m2, 8.37m=0.50m2, 8.19m=30.97m2, 7.37m=2.90m2, 7.09m=0.62m2, 7.05m=0.19m2
+Plot_08_House_08_Vestibule_LeanTo bounds Center: (41.59, 4.91, -13.35), Extents: (8.54, 5.16, 6.91) position (43.19, -0.25, -11.27) scale (2.00, 2.00, 2.00)
+Upward horizontal surface areas: 6.96m=6.69m2, 6.84m=0.34m2, 6.69m=14.14m2, 5.80m=1.04m2, 5.77m=1.04m2, 5.56m=4.58m2, 5.46m=0.83m2, 5.37m=0.13m2
+Plot_09_House_09_Long_Farmhouse bounds Center: (-40.85, 4.05, -47.62), Extents: (8.17, 4.30, 6.30) position (-40.85, -0.25, -49.41) scale (1.93, 1.93, 1.93)
+Upward horizontal surface areas: 6.61m=0.36m2, 6.59m=6.26m2, 6.47m=15.22m2, 5.73m=0.36m2, 5.72m=0.95m2, 5.61m=6.22m2, 5.27m=0.89m2, 5.18m=0.14m2
+Plot_10_House_10_Loft_Cottage bounds Center: (41.59, 7.40, -47.62), Extents: (8.17, 7.65, 6.76) position (41.59, -0.25, -48.85) scale (2.32, 2.32, 2.32)
+Upward horizontal surface areas: 15.06m=2.80m2, 14.81m=1.71m2, 10.89m=5.41m2, 10.85m=5.41m2, 10.52m=19.41m2, 10.13m=0.36m2, 10.07m=2.40m2, 9.99m=0.46m2

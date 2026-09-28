@@ -1,0 +1,10 @@
+House_01_Courtyard_L: 1608 triangles, bounds=(6.75, 3.69, 6.60), ground=0, 1 baked material, 3 connected texture maps
+House_02_Split_Shed: 1588 triangles, bounds=(6.75, 4.91, 5.75), ground=0, 1 baked material, 3 connected texture maps
+House_03_Corner_Tower: 1880 triangles, bounds=(6.89, 5.54, 5.74), ground=0, 1 baked material, 3 connected texture maps
+House_04_Recessed_Veranda: 1616 triangles, bounds=(6.75, 3.70, 6.57), ground=0, 1 baked material, 3 connected texture maps
+House_05_Saltbox_Bay: 2184 triangles, bounds=(7.24, 4.86, 5.78), ground=0, 1 baked material, 3 connected texture maps
+House_06_Wraparound_Hip: 1992 triangles, bounds=(7.29, 5.56, 6.66), ground=0, 1 baked material, 3 connected texture maps
+House_07_Staggered_Gables: 1740 triangles, bounds=(7.04, 5.18, 6.21), ground=0, 1 baked material, 3 connected texture maps
+House_08_Vestibule_LeanTo: 1964 triangles, bounds=(8.56, 5.18, 6.93), ground=0, 1 baked material, 3 connected texture maps
+House_09_Long_Farmhouse: 1816 triangles, bounds=(8.47, 4.45, 6.53), ground=0, 1 baked material, 3 connected texture maps
+House_10_Loft_Cottage: 1996 triangles, bounds=(7.04, 6.60, 5.83), ground=0, 1 baked material, 3 connected texture maps

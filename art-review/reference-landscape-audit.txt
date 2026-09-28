@@ -1,0 +1,16 @@
+Park: clipped-corner limestone plaza, staggered rectangular slabs, four straight entrances, planting opening, three benches, 44 plants/rocks.
+Garden_01: 20 trees and low shrubs
+Garden_02: 20 trees and low shrubs
+Garden_03: 21 trees and low shrubs
+Garden_04: 22 trees and low shrubs
+Garden_05: 19 trees and low shrubs
+Garden_06: 20 trees and low shrubs
+Garden_07: 17 trees and low shrubs
+Garden_08: 21 trees and low shrubs
+Garden_09: 21 trees and low shrubs
+Garden_10: 20 trees and low shrubs
+South woodland: 51 layered plants
+Coastal groves: 281 plants; rock masses: 90
+Verified 575 plants on land and off asphalt; park entrance colliders; all materials; existing rooftop AC support.
+Ten house transforms and six rooftop AC transforms unchanged.
+Final Verify menu passed: all four entrance corridors clear of benches; all coast rocks contact land or cliff; scene validator 0 issues; Console 0 errors.

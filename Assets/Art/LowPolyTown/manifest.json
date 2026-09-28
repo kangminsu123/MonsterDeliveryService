@@ -1,0 +1,808 @@
+{
+  "assets": [
+    {
+      "name": "Broadleaf",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Broadleaf.fbx",
+      "sizeBlender": [
+        3.2400002479553223,
+        2.9160001277923584,
+        4.875
+      ],
+      "materials": [
+        "MAT_Foliage_0",
+        "MAT_Foliage_1",
+        "MAT_Foliage_2",
+        "MAT_Foliage_3",
+        "MAT_Foliage_4",
+        "MAT_Foliage_5",
+        "MAT_Foliage_6",
+        "MAT_Bark_0",
+        "MAT_Bark_1",
+        "MAT_Bark_2",
+        "MAT_Bark_3",
+        "MAT_Bark_4"
+      ]
+    },
+    {
+      "name": "Pine",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Pine.fbx",
+      "sizeBlender": [
+        2.771612763404846,
+        2.8428900241851807,
+        5.46875
+      ],
+      "materials": [
+        "MAT_Pine_0",
+        "MAT_Pine_1",
+        "MAT_Pine_2",
+        "MAT_Pine_3",
+        "MAT_Pine_4",
+        "MAT_Bark_0",
+        "MAT_Bark_1",
+        "MAT_Bark_2",
+        "MAT_Bark_3",
+        "MAT_Bark_4"
+      ]
+    },
+    {
+      "name": "Poplar",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Poplar.fbx",
+      "sizeBlender": [
+        2.052000045776367,
+        2.052000045776367,
+        5.5
+      ],
+      "materials": [
+        "MAT_Foliage_0",
+        "MAT_Foliage_1",
+        "MAT_Foliage_2",
+        "MAT_Foliage_3",
+        "MAT_Foliage_4",
+        "MAT_Foliage_5",
+        "MAT_Foliage_6",
+        "MAT_Bark_0",
+        "MAT_Bark_1",
+        "MAT_Bark_2",
+        "MAT_Bark_3",
+        "MAT_Bark_4"
+      ]
+    },
+    {
+      "name": "Fork_Tree",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Fork_Tree.fbx",
+      "sizeBlender": [
+        3.1860004663467407,
+        2.1600000858306885,
+        4.78125
+      ],
+      "materials": [
+        "MAT_Bark_0",
+        "MAT_Bark_1",
+        "MAT_Bark_2",
+        "MAT_Bark_3",
+        "MAT_Bark_4",
+        "MAT_Foliage_0",
+        "MAT_Foliage_1",
+        "MAT_Foliage_2",
+        "MAT_Foliage_3",
+        "MAT_Foliage_4",
+        "MAT_Foliage_5",
+        "MAT_Foliage_6"
+      ]
+    },
+    {
+      "name": "Umbrella",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Umbrella.fbx",
+      "sizeBlender": [
+        3.4560000896453857,
+        2.808000087738037,
+        3.6312499046325684
+      ],
+      "materials": [
+        "MAT_Foliage_0",
+        "MAT_Foliage_1",
+        "MAT_Foliage_2",
+        "MAT_Foliage_3",
+        "MAT_Foliage_4",
+        "MAT_Foliage_5",
+        "MAT_Foliage_6",
+        "MAT_Bark_0",
+        "MAT_Bark_1",
+        "MAT_Bark_2",
+        "MAT_Bark_3",
+        "MAT_Bark_4"
+      ]
+    },
+    {
+      "name": "Tall_Boulder",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Tall_Boulder.fbx",
+      "sizeBlender": [
+        2.799999952316284,
+        2.5,
+        2.9000000953674316
+      ],
+      "materials": [
+        "MAT_Stone_0",
+        "MAT_Stone_1",
+        "MAT_Stone_2",
+        "MAT_Stone_3",
+        "MAT_Stone_4",
+        "MAT_Stone_5",
+        "MAT_Stone_6"
+      ]
+    },
+    {
+      "name": "Flat_Boulder",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Flat_Boulder.fbx",
+      "sizeBlender": [
+        2.9000000953674316,
+        2.299999952316284,
+        1.5
+      ],
+      "materials": [
+        "MAT_Stone_0",
+        "MAT_Stone_1",
+        "MAT_Stone_2",
+        "MAT_Stone_3",
+        "MAT_Stone_4",
+        "MAT_Stone_5",
+        "MAT_Stone_6"
+      ]
+    },
+    {
+      "name": "Rock_Spire",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Rock_Spire.fbx",
+      "sizeBlender": [
+        1.9349229335784912,
+        1.7855200171470642,
+        3.4000000953674316
+      ],
+      "materials": [
+        "MAT_Stone_0",
+        "MAT_Stone_1",
+        "MAT_Stone_2",
+        "MAT_Stone_3",
+        "MAT_Stone_4",
+        "MAT_Stone_5",
+        "MAT_Stone_6"
+      ]
+    },
+    {
+      "name": "Round_Boulder",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Round_Boulder.fbx",
+      "sizeBlender": [
+        2.0,
+        1.899999976158142,
+        1.899999976158142
+      ],
+      "materials": [
+        "MAT_Stone_0",
+        "MAT_Stone_1",
+        "MAT_Stone_2",
+        "MAT_Stone_3",
+        "MAT_Stone_4",
+        "MAT_Stone_5",
+        "MAT_Stone_6"
+      ]
+    },
+    {
+      "name": "Rock_Cluster",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Rock_Cluster.fbx",
+      "sizeBlender": [
+        2.99500048160553,
+        2.3000000715255737,
+        2.9000000953674316
+      ],
+      "materials": [
+        "MAT_Stone_0",
+        "MAT_Stone_1",
+        "MAT_Stone_2",
+        "MAT_Stone_3",
+        "MAT_Stone_4",
+        "MAT_Stone_5",
+        "MAT_Stone_6"
+      ]
+    },
+    {
+      "name": "Barrier",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Barrier.fbx",
+      "sizeBlender": [
+        3.220000982284546,
+        1.1730008125305176,
+        2.0700001642107964
+      ],
+      "materials": [
+        "MAT_Safety_Orange",
+        "MAT_Off_White",
+        "MAT_Metal_Silver",
+        "MAT_Charcoal"
+      ]
+    },
+    {
+      "name": "Stop_Barrier",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Stop_Barrier.fbx",
+      "sizeBlender": [
+        3.2200002670288086,
+        1.173000693321228,
+        3.0648522302508354
+      ],
+      "materials": [
+        "MAT_Safety_Orange",
+        "MAT_Off_White",
+        "MAT_Metal_Silver",
+        "MAT_Charcoal",
+        "MAT_Stop_Red"
+      ]
+    },
+    {
+      "name": "Red_Car",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Red_Car.fbx",
+      "sizeBlender": [
+        2.4700000286102295,
+        4.049999713897705,
+        2.049999952316284
+      ],
+      "materials": [
+        "MAT_Car_Red",
+        "MAT_Vehicle_Trim",
+        "MAT_Panel_Seam",
+        "MAT_Wheel_Hub",
+        "MAT_Headlamp",
+        "MAT_Tail_Lamp",
+        "MAT_Bluegray_Glass",
+        "MAT_Tire_Rubber",
+        "MAT_Glass_Reflection"
+      ]
+    },
+    {
+      "name": "School_Bus",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\School_Bus.fbx",
+      "sizeBlender": [
+        2.570000171661377,
+        5.149999618530273,
+        2.875
+      ],
+      "materials": [
+        "MAT_Bus_Yellow",
+        "MAT_Vehicle_Trim",
+        "MAT_Headlamp",
+        "MAT_Wheel_Hub",
+        "MAT_Amber_Lamp",
+        "MAT_Tail_Lamp",
+        "MAT_Bluegray_Glass",
+        "MAT_Tire_Rubber",
+        "MAT_Glass_Reflection"
+      ]
+    },
+    {
+      "name": "Blue_Pickup",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\Blue_Pickup.fbx",
+      "sizeBlender": [
+        2.5699989795684814,
+        4.75,
+        2.1500000953674316
+      ],
+      "materials": [
+        "MAT_Pickup_Bed_Interior",
+        "MAT_Pickup_Blue",
+        "MAT_Vehicle_Trim",
+        "MAT_Panel_Seam",
+        "MAT_Wheel_Hub",
+        "MAT_Headlamp",
+        "MAT_Bluegray_Glass",
+        "MAT_Tail_Lamp",
+        "MAT_Tire_Rubber",
+        "MAT_Glass_Reflection"
+      ]
+    },
+    {
+      "name": "White_Van",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\White_Van.fbx",
+      "sizeBlender": [
+        2.620001435279846,
+        4.84999942779541,
+        2.619999885559082
+      ],
+      "materials": [
+        "MAT_Van_Ivory",
+        "MAT_Vehicle_Trim",
+        "MAT_Panel_Seam",
+        "MAT_Wheel_Hub",
+        "MAT_Headlamp",
+        "MAT_Tail_Lamp",
+        "MAT_Bluegray_Glass",
+        "MAT_Tire_Rubber",
+        "MAT_Glass_Reflection"
+      ]
+    },
+    {
+      "name": "AC_Condenser",
+      "file": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-27\\new-chat-3\\outputs\\FBX\\AC_Condenser.fbx",
+      "sizeBlender": [
+        2.596375584602356,
+        2.4383755922317505,
+        2.56000018119812
+      ],
+      "materials": [
+        "MAT_Off_White",
+        "MAT_Charcoal",
+        "MAT_Metal_Silver"
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "MAT_Foliage_0",
+      "linearColor": [
+        0.12999999523162842,
+        0.3400000035762787,
+        0.017999999225139618,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_1",
+      "linearColor": [
+        0.15700000524520874,
+        0.375,
+        0.024000000208616257,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_2",
+      "linearColor": [
+        0.18400000035762787,
+        0.4099999964237213,
+        0.029999999329447746,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_3",
+      "linearColor": [
+        0.210999995470047,
+        0.4449999928474426,
+        0.035999998450279236,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_4",
+      "linearColor": [
+        0.23800000548362732,
+        0.47999998927116394,
+        0.041999999433755875,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_5",
+      "linearColor": [
+        0.26499998569488525,
+        0.5149999856948853,
+        0.04800000041723251,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Foliage_6",
+      "linearColor": [
+        0.2919999957084656,
+        0.550000011920929,
+        0.05400000140070915,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bark_0",
+      "linearColor": [
+        0.1599999964237213,
+        0.07199999690055847,
+        0.024000000208616257,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bark_1",
+      "linearColor": [
+        0.1850000023841858,
+        0.08399999886751175,
+        0.029999999329447746,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bark_2",
+      "linearColor": [
+        0.20999999344348907,
+        0.09600000083446503,
+        0.035999998450279236,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bark_3",
+      "linearColor": [
+        0.23499999940395355,
+        0.1080000028014183,
+        0.041999999433755875,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bark_4",
+      "linearColor": [
+        0.25999999046325684,
+        0.11999999731779099,
+        0.04800000041723251,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pine_0",
+      "linearColor": [
+        0.012000000104308128,
+        0.1599999964237213,
+        0.05299999937415123,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pine_1",
+      "linearColor": [
+        0.017999999225139618,
+        0.1809999942779541,
+        0.061000000685453415,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pine_2",
+      "linearColor": [
+        0.024000000208616257,
+        0.20200000703334808,
+        0.0689999982714653,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pine_3",
+      "linearColor": [
+        0.029999999329447746,
+        0.22300000488758087,
+        0.07699999958276749,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pine_4",
+      "linearColor": [
+        0.035999998450279236,
+        0.24400000274181366,
+        0.08500000089406967,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_0",
+      "linearColor": [
+        0.2549999952316284,
+        0.26499998569488525,
+        0.30000001192092896,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_1",
+      "linearColor": [
+        0.2770000100135803,
+        0.28700000047683716,
+        0.3240000009536743,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_2",
+      "linearColor": [
+        0.29899999499320984,
+        0.3089999854564667,
+        0.3479999899864197,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_3",
+      "linearColor": [
+        0.32100000977516174,
+        0.3310000002384186,
+        0.3720000088214874,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_4",
+      "linearColor": [
+        0.34299999475479126,
+        0.3529999852180481,
+        0.3959999978542328,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_5",
+      "linearColor": [
+        0.36500000953674316,
+        0.375,
+        0.41999998688697815,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stone_6",
+      "linearColor": [
+        0.3869999945163727,
+        0.3970000147819519,
+        0.4440000057220459,
+        1.0
+      ],
+      "roughness": 0.8999999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Safety_Orange",
+      "linearColor": [
+        1.0,
+        0.23000000417232513,
+        0.012000000104308128,
+        1.0
+      ],
+      "roughness": 0.47999998927116394,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Off_White",
+      "linearColor": [
+        0.8199999928474426,
+        0.8299999833106995,
+        0.8100000023841858,
+        1.0
+      ],
+      "roughness": 0.5600000023841858,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Metal_Silver",
+      "linearColor": [
+        0.44999998807907104,
+        0.47999998927116394,
+        0.5099999904632568,
+        1.0
+      ],
+      "roughness": 0.41999998688697815,
+      "metallic": 0.5
+    },
+    {
+      "name": "MAT_Charcoal",
+      "linearColor": [
+        0.03200000151991844,
+        0.041999999433755875,
+        0.0560000017285347,
+        1.0
+      ],
+      "roughness": 0.6499999761581421,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Stop_Red",
+      "linearColor": [
+        0.8299999833106995,
+        0.02500000037252903,
+        0.02199999988079071,
+        1.0
+      ],
+      "roughness": 0.44999998807907104,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Car_Red",
+      "linearColor": [
+        0.8799999952316284,
+        0.02500000037252903,
+        0.02800000086426735,
+        1.0
+      ],
+      "roughness": 0.3199999928474426,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Vehicle_Trim",
+      "linearColor": [
+        0.03799999877810478,
+        0.04800000041723251,
+        0.06199999898672104,
+        1.0
+      ],
+      "roughness": 0.5600000023841858,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Panel_Seam",
+      "linearColor": [
+        0.054999999701976776,
+        0.06499999761581421,
+        0.07500000298023224,
+        1.0
+      ],
+      "roughness": 0.7200000286102295,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Wheel_Hub",
+      "linearColor": [
+        0.49000000953674316,
+        0.5400000214576721,
+        0.5600000023841858,
+        1.0
+      ],
+      "roughness": 0.3799999952316284,
+      "metallic": 0.550000011920929
+    },
+    {
+      "name": "MAT_Headlamp",
+      "linearColor": [
+        0.949999988079071,
+        0.9300000071525574,
+        0.7400000095367432,
+        1.0
+      ],
+      "roughness": 0.27000001072883606,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Tail_Lamp",
+      "linearColor": [
+        0.7200000286102295,
+        0.01600000075995922,
+        0.012000000104308128,
+        1.0
+      ],
+      "roughness": 0.3499999940395355,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Bluegray_Glass",
+      "linearColor": [
+        0.08500000089406967,
+        0.1599999964237213,
+        0.2199999988079071,
+        1.0
+      ],
+      "roughness": 0.23999999463558197,
+      "metallic": 0.20000000298023224
+    },
+    {
+      "name": "MAT_Tire_Rubber",
+      "linearColor": [
+        0.017999999225139618,
+        0.024000000208616257,
+        0.032999999821186066,
+        1.0
+      ],
+      "roughness": 0.8700000047683716,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Glass_Reflection",
+      "linearColor": [
+        0.14000000059604645,
+        0.23999999463558197,
+        0.3100000023841858,
+        1.0
+      ],
+      "roughness": 0.2800000011920929,
+      "metallic": 0.12999999523162842
+    },
+    {
+      "name": "MAT_Bus_Yellow",
+      "linearColor": [
+        1.0,
+        0.6000000238418579,
+        0.014000000432133675,
+        1.0
+      ],
+      "roughness": 0.36000001430511475,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Amber_Lamp",
+      "linearColor": [
+        1.0,
+        0.23999999463558197,
+        0.00800000037997961,
+        1.0
+      ],
+      "roughness": 0.3799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pickup_Bed_Interior",
+      "linearColor": [
+        0.008999999612569809,
+        0.04800000041723251,
+        0.23999999463558197,
+        1.0
+      ],
+      "roughness": 0.699999988079071,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Pickup_Blue",
+      "linearColor": [
+        0.01600000075995922,
+        0.12999999523162842,
+        0.8600000143051147,
+        1.0
+      ],
+      "roughness": 0.3199999928474426,
+      "metallic": 0.0
+    },
+    {
+      "name": "MAT_Van_Ivory",
+      "linearColor": [
+        0.8399999737739563,
+        0.8500000238418579,
+        0.8500000238418579,
+        1.0
+      ],
+      "roughness": 0.4000000059604645,
+      "metallic": 0.0
+    }
+  ]
+}

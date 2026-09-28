@@ -1,0 +1,7 @@
+AC_Condenser_Plot01_0 flat support verified, gap=0
+AC_Condenser_Plot01_1 flat support verified, gap=0
+AC_Condenser_Plot03_0 flat support verified, gap=-4.768372E-07
+AC_Condenser_Plot03_1 flat support verified, gap=0
+AC_Condenser_Plot04_0 flat support verified, gap=-9.536743E-07
+AC_Condenser_Plot04_1 flat support verified, gap=-9.536743E-07
+VERIFIED 20 prefab instances; 17 FBX and 17 reusable prefabs; materials valid; AC only on approved flat house roofs.
