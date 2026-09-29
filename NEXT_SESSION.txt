@@ -126,3 +126,12 @@ Unity: 6000.5.10f1
 - Directional Light의 Soft Shadows 활성화(강도 0.72). PC 품질의 그림자 거리 40→240, 캐스케이드 2→4, 해상도 High로 변경해 섬 전체 시점에서도 지면 그림자가 보이게 했다. 실제 게임 성능 프로파일링은 아직 하지 않았다.
 - 검증: 식물 지지점은 잔디 위/차도 밖, 4개 공원 입구의 포장 Collider, 벤치의 입구 간섭 없음, 해안 바위의 지형 접촉, 6개 실외기 평지붕 지지 모두 통과. 기존 10채와 실외기 Transform이 재배치 전후 동일한지 확인. Unity 씬 검증 문제 0, 컴파일/Console 오류 0.
 - 검수: `art-review/reference-landscape-final.png` 전체 렌더, `reference-park-final.png` 공원 확대, `reference-coast-review.png` 해안 사선 확대. 배치 기록 `reference-landscape-audit.txt`. 사용자 삭제 상태를 포함한 재작업 전 씬 복사본은 `art-review/before-landscape-redesign.unity`이며 재실행 시 덮어쓰지 않는다. 커밋/푸시 없음.
+
+## 도로 끝 STOP 바리케이드 (2026-09-29)
+- `Layer_06_LowPolyTownProps/06_Road_Barriers`에 북쪽과 남쪽 도로 끝마다 중앙 STOP 표지 1개와 양옆 안전 바리케이드 2개를 추가했다. 기존 동쪽 도로 끝 표지는 유지했다.
+- 각 3개가 차도 폭 안에 놓이도록 크기 0.8배와 간격을 조정하고 STOP 표지는 마을 안쪽 운전자를 향하게 했다. `art-review/road-end-north-final.png`, `road-end-south-final.png`에서 확인했다. `SampleScene` 저장, 씬 검증 0건, Console 오류 0건.
+
+## 집별 지붕색 변화 (2026-09-29)
+- 레퍼런스의 색 분포를 반영해 Plot 01~10 지붕을 점토색, 회청색, 밝은 회색, 짙은 먹색, 갈색, 청록색 등으로 각각 다르게 베이크했다. 벽과 창문 색 및 지붕 형태는 유지했다.
+- `Assets/Art/BakedCottages/House_*/House_*_Albedo.png` 10개만 교체했다. 동일한 원본 Blender 장면에서 다시 베이크했으며 노멀·거칠기·메탈릭/스무스니스 맵 30개는 기존 파일과 해시가 전부 일치했다. FBX/프리팹과 실외기 배치는 변경하지 않았다.
+- Blender 재베이크 작업 스크립트: `C:/Users/xlfhf/Documents/Codex/2026-09-27/new-chat-3/work/roof_palette_rebake.py`. Unity 에셋 새로고침 후 전체 상단뷰 `art-review/roof-palette-overview.png`에서 색 차이를 확인했다. 씬 검증 0건, Console 오류 0건.
