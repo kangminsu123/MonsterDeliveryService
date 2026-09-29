@@ -135,3 +135,17 @@ Unity: 6000.5.10f1
 - 레퍼런스의 색 분포를 반영해 Plot 01~10 지붕을 점토색, 회청색, 밝은 회색, 짙은 먹색, 갈색, 청록색 등으로 각각 다르게 베이크했다. 벽과 창문 색 및 지붕 형태는 유지했다.
 - `Assets/Art/BakedCottages/House_*/House_*_Albedo.png` 10개만 교체했다. 동일한 원본 Blender 장면에서 다시 베이크했으며 노멀·거칠기·메탈릭/스무스니스 맵 30개는 기존 파일과 해시가 전부 일치했다. FBX/프리팹과 실외기 배치는 변경하지 않았다.
 - Blender 재베이크 작업 스크립트: `C:/Users/xlfhf/Documents/Codex/2026-09-27/new-chat-3/work/roof_palette_rebake.py`. Unity 에셋 새로고침 후 전체 상단뷰 `art-review/roof-palette-overview.png`에서 색 차이를 확인했다. 씬 검증 0건, Console 오류 0건.
+
+## 가로등과 새벽 조명 (2026-09-29)
+- SampleScene / Layer_09_StreetLighting에 가로등 프리팹 64개를 추가했다. 외곽 보도와 6개 블록 보도의 실제 경로를 따라 약 17.2~18.3m 간격으로 배치하고, 차도 쪽으로 등갓을 향하게 했다. 보행 공간을 남기도록 보도 가장자리로 0.52m 옮겼다.
+- Assets/Art/StreetLighting/StreetLamp.prefab: 약 5.9m 높이의 짙은 금속 기둥, 발광 렌즈, 따뜻한 실시간 Spot Light(강도 4.2, 범위 18m, 각도 130도). 64개 조명의 비용을 줄이기 위해 개별 가로등 그림자는 끄고 픽셀 조명으로 도로/보도를 비춘다. 런타임 성능 프로파일링은 미실시.
+- 태양을 지평선 아래 3도로 낮추고, 차가운 삼색 환경광과 옅은 안개를 적용했다. PredawnSky.shader / Predawn_Skybox.mat로 남색 상공과 해 뜨기 직전의 옅은 붉은 지평선을 구성했다. 현재는 고정된 새벽 장면이며 시간 흐름 시스템은 추가하지 않았다.
+- 검증: 64/64 조명 켜짐, 64/64 기둥 바닥 보도 접촉, 기존 물체와 기둥 겹침 0. 실제 Play Mode에서도 새벽 하늘과 조명 64개 유지. Console 오류/경고 0, 하늘 셰이더 오류 0. 기존 지붕 계단 3개, 투명 경계벽 96개/높이 87m, Ocean 스케일 (3,1,3) 유지 확인.
+- 검수 이미지: art-review/predawn-street-final.png, predawn-game-final.png. 씬 저장 후 Edit Mode로 복귀. 이번 가로등/새벽 변경은 커밋하지 않았다.
+
+## 현관등과 공원 바닥 장식 조명 (2026-09-29)
+- SampleScene / Layer_10_EntranceAndParkLighting 추가. 집 10채 모두 현관 문틀 바로 위에 금속 후드와 발광 렌즈가 있는 PorchLight 프리팹을 달았다. 각 집 MeshCollider의 실제 벽면에 맞춰 설치했고, Plot 07의 치우친 현관과 Plot 08의 돌출 현관, Plot 09/10의 반대 방향을 반영했다.
+- 현관 Point Light: 따뜻한 색, 강도 2.8, 범위 12m. 문과 앞 계단, 주변 외벽을 밝힌다. 기존 가로등과 같은 짙은 금속 재질을 재사용했다.
+- 중앙 공원: 기존 사각 나무 식재 구멍 둘레에 얇은 발광 테두리 4변, 광장에 RecessedGroundLight 프리팹 8개, 식재 구멍 안에 나무 상향등 4개를 배치했다. 매립등은 바닥 위 약 5cm 이하이며 충돌체를 추가하지 않았다. Point 강도 1.6/범위 6m, 나무 Spot 강도 1.6/범위 12m. 신규 실시간 조명 22개는 그림자 없이 사용한다.
+- Unity Editor 렌더에서 평지붕/돌출 현관/반대 방향 주택과 공원 배치를 확인했다. Console 오류/경고 0. 기존 가로등 64개, 지붕 계단 3개, 바다 경계벽 96개 및 새벽 하늘 유지. 이번 변경은 Play Mode 및 성능 테스트를 실행하지 않았다.
+- 검수 이미지: art-review/porch-light-review.png, porch-08-review.png, porch-09-review.png, park-ground-lighting-final-soft.png. SampleScene 저장 완료. 커밋/푸시 없음.

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Predawn_Skybox
+  m_Shader: {fileID: 4800000, guid: f928482b2d7ac3941b64aec206d6f4ff, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _SUNDISK_SIMPLE
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AtmosphereThickness: 1
+    - _Exposure: 0.48
+    - _SunDisk: 1
+    - _SunSize: 0.025
+    - _SunSizeConvergence: 5
+    m_Colors:
+    - _Dawn: {r: 0.55, g: 0.29, b: 0.22, a: 1}
+    - _Ground: {r: 0.09, g: 0.12, b: 0.2, a: 1}
+    - _GroundColor: {r: 0.055, g: 0.065, b: 0.1, a: 1}
+    - _Horizon: {r: 0.25, g: 0.28, b: 0.4, a: 1}
+    - _SkyTint: {r: 0.55, g: 0.5, b: 0.45, a: 1}
+    - _Zenith: {r: 0.025, g: 0.055, b: 0.13, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
