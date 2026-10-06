@@ -1,0 +1,10 @@
+Plot_01_Mailbox | house=Plot_01_House_01_Courtyard_L | position=(-40.818, -0.250, 44.777) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_02_Mailbox | house=Plot_02_House_02_Split_Shed | position=(5.996, -0.250, 44.777) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_03_Mailbox | house=Plot_03_House_03_Corner_Tower | position=(43.275, -0.250, 44.777) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_04_Mailbox | house=Plot_04_House_04_Recessed_Veranda | position=(-38.174, -0.250, 9.167) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_05_Mailbox | house=Plot_05_House_05_Saltbox_Bay | position=(44.715, -0.250, 9.167) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_06_Mailbox | house=Plot_06_House_06_Wraparound_Hip | position=(-38.038, -0.250, -25.345) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_07_Mailbox | house=Plot_07_House_07_Staggered_Gables | position=(7.818, -0.250, -25.345) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_08_Mailbox | house=Plot_08_House_08_Vestibule_LeanTo | position=(45.453, -0.250, -25.345) | road-facing=(0.0, 0.0, -1.0) | height=2.832 | gate-path clearance=0.507 | overlaps=0
+Plot_09_Mailbox | house=Plot_09_House_09_Long_Farmhouse | position=(-38.418, -0.250, -39.655) | road-facing=(0.0, 0.0, 1.0) | height=2.832 | gate-path clearance=0.476 | overlaps=0
+Plot_10_Mailbox | house=Plot_10_House_10_Loft_Cottage | position=(44.101, -0.250, -39.655) | road-facing=(0.0, 0.0, 1.0) | height=2.832 | gate-path clearance=0.476 | overlaps=0

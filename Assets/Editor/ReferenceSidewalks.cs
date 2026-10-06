@@ -89,6 +89,7 @@ public static class ReferenceSidewalks
             throw new System.Exception("Sidewalk validation failed");
         foreach (var r in root.GetComponentsInChildren<Renderer>())
             if (Mathf.Abs(r.bounds.max.y-ground-0.18f)>0.002f) throw new System.Exception("Height mismatch");
+        SidewalkCornerRepair.Repair();
         Undo.CollapseUndoOperations(undo);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);

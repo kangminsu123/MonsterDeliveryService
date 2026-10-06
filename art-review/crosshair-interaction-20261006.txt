@@ -1,0 +1,49 @@
+INTERACTION_OK: 48 checks
+PASS actual mailbox 1 selected by center ray and ready within 3m
+PASS mailbox 1 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 2 selected by center ray and ready within 3m
+PASS mailbox 2 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 3 selected by center ray and ready within 3m
+PASS mailbox 3 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 4 selected by center ray and ready within 3m
+PASS mailbox 4 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 5 selected by center ray and ready within 3m
+PASS mailbox 5 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 6 selected by center ray and ready within 3m
+PASS mailbox 6 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 7 selected by center ray and ready within 3m
+PASS mailbox 7 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 8 selected by center ray and ready within 3m
+PASS mailbox 8 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 9 selected by center ray and ready within 3m
+PASS mailbox 9 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS actual mailbox 10 selected by center ray and ready within 3m
+PASS mailbox 10 outline enabled
+PASS only the aimed mailbox is highlighted
+PASS all neutral mailbox rings and sparks are white
+PASS distant mailbox is identified but not interactable
+PASS distant target has no outline
+PASS ready outline is white
+PASS unavailable targets cannot interact or highlight
+PASS stun disables interaction and outline
+PASS nearest solid occluder prevents through-wall highlighting
+PASS triggers do not obstruct interaction rays
+PASS looking away immediately removes outline
+PASS targets outside 12m detection range are cleared
+PASS E captures the aimed actual mailbox, not a nearby/nearest one
+PASS E capture makes only that mailbox's ring and sparks yellow
+PASS capture leaves mailbox body color unchanged
+PASS rival recapture changes only the beacon to the new owner's color
+PASS player color selection updates owned beacons without changing neutral ones
+PASS owned mailbox cannot be recaptured or highlighted
+PASS looking away cancels capture progress
+PASS other objects use the same center-ray marker without mailbox-specific selection

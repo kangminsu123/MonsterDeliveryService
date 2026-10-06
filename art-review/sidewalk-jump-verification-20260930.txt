@@ -1,0 +1,47 @@
+Unity 6000.5.10f1 / SampleScene
+2026-09-30
+Play Mode: real CharacterController, real scene MeshColliders, synthetic Keyboard Space; invoke existing UpdatePlayer at dt=0.02, settle 90 steps and hold Space 240 steps.
+
+BASELINE (original HEAD movement):
+JUMP_SURFACES: 0/18 passed; dt=0.01999999
+FAIL road at (-10.00, -0.23, 38.84) rise=0.000 jumps=0 grounded=True settled=(-10.00, 0.81, 38.84) velocity=-35.99999 pressed=True
+FAIL Red_Car_00 at (-4.39, 2.68, 38.84) rise=0.000 jumps=0 grounded=True settled=(-4.39, 3.72, 38.84) velocity=-35.99999 pressed=True
+FAIL Blue_Pickup_01 at (-60.37, 2.74, 19.70) rise=0.000 jumps=0 grounded=True settled=(-60.37, 3.78, 19.70) velocity=-35.99999 pressed=True
+FAIL Red_Car_02 at (60.61, 2.68, 19.33) rise=0.000 jumps=0 grounded=True settled=(60.61, 3.72, 19.33) velocity=-35.99999 pressed=True
+FAIL White_Van_03 at (45.85, 3.48, 0.67) rise=0.000 jumps=0 grounded=True settled=(45.85, 4.52, 0.67) velocity=-35.99999 pressed=True
+FAIL School_Bus_04 at (-63.90, 4.08, -17.74) rise=0.000 jumps=0 grounded=True settled=(-63.90, 5.12, -17.74) velocity=-35.99999 pressed=True
+FAIL Blue_Pickup_05 at (-0.73, 2.74, -30.67) rise=0.000 jumps=0 grounded=True settled=(-0.73, 3.78, -30.67) velocity=-35.99999 pressed=True
+FAIL White_Van_06 at (-17.20, 3.38, -47.01) rise=0.000 jumps=0 grounded=True settled=(-17.20, 4.42, -47.01) velocity=-35.99999 pressed=True
+FAIL Plot_01_House_01_Courtyard_L step at (-43.40, 0.10, 47.12) rise=0.000 jumps=0 grounded=True settled=(-43.40, 1.44, 46.93) velocity=-35.99999 pressed=True
+FAIL Plot_02_House_02_Split_Shed step at (1.96, 0.16, 47.12) rise=0.000 jumps=0 grounded=True settled=(1.97, 1.24, 46.81) velocity=-35.99999 pressed=True
+FAIL Plot_03_House_03_Corner_Tower step at (40.97, 0.16, 46.77) rise=0.000 jumps=0 grounded=True settled=(40.97, 1.20, 46.77) velocity=-35.99999 pressed=True
+FAIL Plot_04_House_04_Recessed_Veranda step at (-41.54, 0.21, 13.10) rise=0.000 jumps=0 grounded=True settled=(-41.54, 1.25, 13.10) velocity=-35.99999 pressed=True
+FAIL Plot_05_House_05_Saltbox_Bay step at (42.36, 0.17, 14.59) rise=0.000 jumps=0 grounded=True settled=(42.36, 1.21, 14.59) velocity=-35.99999 pressed=True
+FAIL Plot_06_House_06_Wraparound_Hip step at (-38.95, 0.17, -21.04) rise=0.000 jumps=0 grounded=True settled=(-38.95, 1.21, -21.04) velocity=-35.99999 pressed=True
+FAIL Plot_07_House_07_Staggered_Gables step at (4.44, 0.19, -20.53) rise=0.000 jumps=0 grounded=True settled=(4.44, 1.27, -20.85) velocity=-35.99999 pressed=True
+FAIL Plot_08_House_08_Vestibule_LeanTo step at (42.81, 0.11, -20.27) rise=0.000 jumps=0 grounded=True settled=(42.81, 1.15, -20.27) velocity=-35.99999 pressed=True
+FAIL Plot_09_House_09_Long_Farmhouse step at (-40.51, 0.44, -50.21) rise=0.000 jumps=0 grounded=True settled=(-40.51, 1.48, -50.21) velocity=-35.99999 pressed=True
+FAIL Plot_10_House_10_Loft_Cottage step at (42.63, 0.17, -41.13) rise=0.000 jumps=0 grounded=True settled=(42.63, 1.25, -40.87) velocity=-35.99999 pressed=True
+
+FIXED:
+JUMP_SURFACES: 18/18 passed; dt=0.01999999
+PASS road at (-10.00, -0.23, 38.84) rise=1.372 jumps=7 grounded=True settled=(-10.00, 0.81, 38.84) velocity=-2.4 pressed=True
+PASS Red_Car_00 at (-4.39, 2.68, 38.84) rise=1.372 jumps=7 grounded=True settled=(-4.39, 3.72, 38.84) velocity=-2.4 pressed=True
+PASS Blue_Pickup_01 at (-60.37, 2.74, 19.70) rise=1.372 jumps=7 grounded=True settled=(-60.37, 3.78, 19.70) velocity=-2.4 pressed=True
+PASS Red_Car_02 at (60.61, 2.68, 19.33) rise=1.372 jumps=7 grounded=True settled=(60.61, 3.72, 19.33) velocity=-2.4 pressed=True
+PASS White_Van_03 at (45.85, 3.48, 0.67) rise=1.372 jumps=7 grounded=True settled=(45.85, 4.52, 0.67) velocity=-2.4 pressed=True
+PASS School_Bus_04 at (-63.90, 4.08, -17.74) rise=1.372 jumps=7 grounded=True settled=(-63.90, 5.12, -17.74) velocity=-2.4 pressed=True
+PASS Blue_Pickup_05 at (-0.73, 2.74, -30.67) rise=1.371 jumps=7 grounded=True settled=(-0.73, 3.78, -30.67) velocity=-2.4 pressed=True
+PASS White_Van_06 at (-17.20, 3.38, -47.01) rise=1.372 jumps=7 grounded=True settled=(-17.20, 4.42, -47.01) velocity=-2.4 pressed=True
+PASS Plot_01_House_01_Courtyard_L step at (-43.40, 0.10, 47.12) rise=1.332 jumps=7 grounded=True settled=(-43.40, 1.44, 46.93) velocity=-2.4 pressed=True
+PASS Plot_02_House_02_Split_Shed step at (1.96, 0.16, 47.12) rise=1.332 jumps=7 grounded=True settled=(1.97, 1.24, 46.81) velocity=-2.4 pressed=True
+PASS Plot_03_House_03_Corner_Tower step at (40.97, 0.16, 46.77) rise=1.372 jumps=7 grounded=True settled=(40.97, 1.20, 46.77) velocity=-2.4 pressed=True
+PASS Plot_04_House_04_Recessed_Veranda step at (-41.54, 0.21, 13.10) rise=1.372 jumps=7 grounded=True settled=(-41.54, 1.25, 13.10) velocity=-2.4 pressed=True
+PASS Plot_05_House_05_Saltbox_Bay step at (42.36, 0.17, 14.59) rise=1.372 jumps=7 grounded=True settled=(42.36, 1.21, 14.59) velocity=-2.4 pressed=True
+PASS Plot_06_House_06_Wraparound_Hip step at (-38.95, 0.17, -21.04) rise=1.372 jumps=7 grounded=True settled=(-38.95, 1.21, -21.04) velocity=-2.4 pressed=True
+PASS Plot_07_House_07_Staggered_Gables step at (4.44, 0.19, -20.53) rise=1.332 jumps=7 grounded=True settled=(4.44, 1.27, -20.85) velocity=-2.4 pressed=True
+PASS Plot_08_House_08_Vestibule_LeanTo step at (42.81, 0.11, -20.27) rise=1.376 jumps=7 grounded=True settled=(42.81, 1.15, -20.27) velocity=-2.4 pressed=True
+PASS Plot_09_House_09_Long_Farmhouse step at (-40.51, 0.44, -50.21) rise=1.372 jumps=7 grounded=True settled=(-40.51, 1.48, -50.21) velocity=-2.4 pressed=True
+PASS Plot_10_House_10_Loft_Cottage step at (42.63, 0.17, -41.13) rise=1.332 jumps=7 grounded=True settled=(42.63, 1.25, -40.87) velocity=-2.4 pressed=True
+
+Visual: art-review/sidewalk-corners-fixed-20260930.png. Overlapping coplanar sidewalk surfaces are partitioned; authored BoxColliders and transforms remain unchanged.

@@ -1,0 +1,43 @@
+DELIVERY_ITEMS: 42 checks passed
+PASS normal startup has no default item, model, or enabled rollout
+PASS disabled rollout blocks grants, pickups, and item use
+PASS 0.8sec stun interrupts capture and expires
+PASS stun immunity lasts 2sec after recovery
+PASS bubble wrap blocks one control hit; slow bypasses shield
+PASS repeat knockback reduced to 35 percent
+PASS slow preserves capture; slow and speed buffs expire
+PASS catalog contains exactly ten household items and empty hands
+PASS catalog grant and budget: BoxingGloves
+PASS catalog grant and budget: Plunger
+PASS catalog grant and budget: Megaphone
+PASS catalog grant and budget: PackingTape
+PASS catalog grant and budget: CordlessFan
+PASS catalog grant and budget: RunningShoes
+PASS catalog grant and budget: BubbleWrap
+PASS catalog grant and budget: WorkGloves
+PASS catalog grant and budget: PrinterInk
+PASS catalog grant and budget: MiniTrampoline
+PASS fourth pickup cannot overwrite three occupied slots
+PASS discard frees the selected slot for a new item
+PASS boxing gloves launch and interrupt without damage or death
+PASS cooldown prevents duplicate item consumption
+PASS plunger pulls target toward the user
+PASS solid cover blocks cone attacks
+PASS megaphone schedules a dodgeable windup
+PASS megaphone windup resolves to stun
+PASS fan pushes while held and disappears when battery is spent
+PASS running shoes grant a 5sec speed and stamina buff
+PASS bubble wrap grants 8sec one-hit protection
+PASS work gloves stay in their slot until successful capture
+PASS work gloves cannot capture before 2sec
+PASS knockback cancels progress but retains unspent work gloves
+PASS successful 2sec capture consumes work gloves; slow does not interrupt
+PASS packing tape creates a non-lethal throwable
+PASS tape area slows rivals while allowing capture
+PASS printer ink blocks sight through its area
+PASS expired areas are removed and sight recovers
+PASS trampoline deploys only on a reachable upward-facing surface
+PASS trampoline launches the user as well as opponents
+PASS out-of-bounds player returns safely without death
+PASS normal match restart also defaults to empty hands with rollout off
+PASS lethal damage and death paths are removed
