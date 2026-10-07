@@ -1,4 +1,37 @@
 프로젝트: Monster Delivery Service — Mailbox Brawl
+
+현재 기준: 2026-10-08
+현재 기술 문서: Docs/TechnicalDocument_20261008.md
+기획: GAME_DESIGN.md / 상태: TEAM_STATUS.md
+
+인수인계:
+- Unity6000.5.10f1, SampleScene 탐색, 기본1인칭·빈손. 중앙 조준점 유지.
+- Shift 대쉬(1회50), 최대스태미나100. 달리기/Ctrl 구르기 제거.
+- 우체통10개 E3초 점령. 흰 테두리는 거리/시선/가림/행동 가능 판정. 흰 효과는 소유자색으로만 변경.
+- 로봇 플레이어: 회색 몸통, 플레이어색 모자/조끼, 몸통/양팔 리그, IDLE/WALK/IDLE_ARMED/WALK_ARMED. 부유, 장착시 양손 앞으로/안쪽.
+- 전체 섬 미니맵은 조명/안개와 무관한 밝은지도. 점령자색 실시간 표시.
+- UI PNG30개 Resources/UI/InGame. 실제 참가자만 점수 표시, 택배 게이지 없음, 대쉬/50, 슬롯의 선택/비어 있음 문구 없음.
+- 부유택배10개(지상7/계단있는 평면옥상3).1.5배/은은한 발광/흰테두리/E줍기.
+- 택배는10종 동일확률 랜덤 지급, 첫빈칸/자동선택. 슬롯에 기존 이미지와 사용량 표시.
+- 3칸 가득차면 줍기/흰테두리 차단하고 G안내.1·2·3선택 후 G영구삭제, 재드랍/재습득 없음.
+- itemPlaytestEnabled=false는 공격/효과/손모델 보류를 뜻한다. 현재 랜덤 획득/슬롯/G삭제는 활성화.
+
+검증:
+- parcel-random-loot-check-20261008.txt: 실제E/2/G, full/no duplicate/no drop/refill,200회샘플10종,사용량/이미지39PASS.
+- ingame-ui-check-20261008.txt: PNG30개/Resources/실시간안내15PASS.
+- 이전 이동20,전체미니맵25,우체통48,양손애니메이션37은 각 보고서의 구현 당시 결과.
+- 문서화 시 Console오류0,Git변경 검토. 전체검사 재실행/빌드/성능측정으로 해석하지 않는다.
+- 현재 화면: art-review/parcel-random-loot-full-verified-20261008.png.
+- Play중 코드컴파일 후에는 Stop→새Play 진입해 검증한다. 비직렬화 배열 초기화로 임시 검수 상태가 틀어질 수 있다.
+
+다음 후보:
+- 입장 전 색 선택을 SetPlayerColor에 연결.
+- 아이템 모델/사용연출/효과음/잉크구름 후 공격 노출 범위 결정.
+- 봇 파밍/사용AI와 온라인 소유권/상태 동기화.
+- 택배 개봉/재생성 규칙, 목표기기 Profiler·빌드 검증.
+
+아래는 이전 개발 이력이다. 현재 기준은 위 항목이며 예전 총기/달리기/3인칭/지급 보류 내용은 당시 기록이다.
+
 Unity: 6000.5.10f1
 갱신: 2026-09-19
 
@@ -249,3 +282,140 @@ Unity: 6000.5.10f1
 - Docs/TechnologyOverview_20261006.pptx: 실제 코드·에셋·게임 검수 화면 기반 한국어 기술 자료 17장. 아이템 로직의 미노출 상태와 아직 없는 색 선택 UI/온라인 연결을 구분했다.
 - Unity에서 상호작용 48, 아이템 42, 기본 이동 14, 점프 지면 18, 투척 충돌 121 검사를 다시 확인했다. 우체통 배치 10/10 및 고리/입자의 네이티브 애니메이션 활성 확인.
 - GAME_DESIGN.md와 HANDOFF.md의 2026-10-06 항목을 현재 구현 기준으로 사용한다.
+
+## 기술문서 작성 (2026-10-06)
+- 기준 커밋 0efe5a6의 코드와 기획, 저장된 검증 보고서를 바탕으로 기술문서를 작성했다.
+- Docs/TechnicalDocument_20261006.md 및 .docx: 15개 장, Word 17쪽. 맵 생성과 셰이더, 이동, 상호작용과 점령, 생활용품 10종 및 상태 처리, 투척 충돌, FBX 임포트, 우체통 배치와 이펙트, 검증 메뉴 및 후속 작업을 설명한다.
+- 현재 플레이에 노출된 기능과 itemPlaytestEnabled=false로 보류한 기능을 구분했다. 색 선택 UI, 온라인 동기화, 택배 드랍/개봉/무작위 파밍, 아이템 모델 및 봇 사용 AI는 후속 작업이다.
+- Word PDF 렌더 결과 17쪽 전체를 시각 확인했다. 이번 작업은 문서만 추가했으며 게임 코드를 수정하거나 Unity 검사를 재실행하지 않았다. 검증 결과는 문서에 명시한 2026-10-06의 기존 확인 기록이다.
+
+## 테스트 택배 무작위 배치 (2026-10-06)
+- 사용자 요청으로 기존 parcel.prefab 10개를 SampleScene/Layer_12_TestParcelDrops/TestParcel_01~10에 배치하고 씬 저장했다. 현재 최종 위치는 지상 7개, 4번 집 평면 옥상 3개다.
+- Assets/Editor/TestParcelDrops.cs: Tools/Gameplay/Test Parcels/Random Drop 10은 Edit Mode에서 기존 테스트 10개만 새 무작위 위치로 교체한다. 매번 Play 진입 때 다시 생성하지 않고 저장한 배치를 사용한다. 첫 2개는 옥상/지상 테스트 예시를 보장하며 나머지 위치 종류는 무작위다.
+- 현재 옥상 계단 그룹의 1/3/4번 집만 허용하고 Roof_Landing 높이와 수평 법선을 확인해 더 높은 장식용 탑과 경사 지붕을 제외한다. 첫 고체 표면만 검사해 나무·소품 아래 지면으로 건너뛰지 않는다. 9점 지지, 가장자리, 서 있을 공간, 조경 렌더 Bounds와 물리 겹침, 상자 간 4m 간격 검사.
+- Verify Drops: Edit/Play Mode에서 10/10 지면 접촉·장애물 없음·재질·간격 통과. 계단 없는 7개 집의 실제 지붕 Raycast가 거절되는 음성 검사 7/7 통과. 재배치로 좌표 변경과 중복 없는 10개 유지 확인. 최종 Play 검사 후 Console 오류 0, Edit Mode 복귀.
+- 검수: art-review/test-parcel-drops-20261006.txt, test-parcel-ground-20261006.png, test-parcel-roof-20261006.png. 배치 전 씬 before-test-parcel-drops.unity 보관. 기존 씬 컴포넌트 변경 없이 새 그룹/프리팹 인스턴스만 추가.
+- 이번 범위는 보이는 택배 상자 테스트 배치다. 상자 개봉/아이템 지급/무작위 내용물은 연결하지 않았으며 itemPlaytestEnabled=false 및 빈손 시작은 유지한다. 기존 기술문서 미커밋 파일 보존, 커밋/푸시 없음.
+
+## 택배 확대·비눗방울 부유·줍기 (2026-10-06)
+- 요청 반영: parcel.prefab의 Model만 1.5배(약 0.75×0.576×0.650m). 고정된 지면 앵커 아래 Floating 그룹에 상자와 지름 1.4m의 반투명 Bubble을 함께 넣었다. 새 Delivery/Parcel Bubble 셰이더는 프레넬 가장자리, 은은한 무지갯빛과 광택을 사용하며 그림자/별도 Collider를 만들지 않는다.
+- FloatingParcel.cs: 앵커 위 중심 높이 1.1m, 상하 진폭 0.12m의 절대 좌표 Sin, 초당 12도 회전과 작은 흔들림. 위치에 따른 위상 차이로 10개가 동시에 움직이지 않는다. 모델의 약한 albedo emission으로 기존 야간 조명에서 가독성을 보완했다.
+- 기존 InteractionTarget과 흰 Outline 재사용. 3m/중앙 시선/가림/행동 상태 판정에 Floating의 BoxCollider를 사용하며 원본 MeshCollider는 비활성화. UpdateInteraction 전 Physics.SyncTransforms로 부유 콜라이더 위치 반영. 버블 표면은 선택을 가로막지 않는다.
+- 탐색/일반 모드에서 E 첫 입력은 TryPickup에 연결된다. FloatingParcel.TryCollect는 상자와 방울을 한 번에 비활성화하고 중복 수집을 막는다. 이번 테스트는 상자 수집만이며 itemPlaytestEnabled=false, 빈손 시작, 생활용품 지급/사용/슬롯 HUD 미노출 유지.
+- Drop 메뉴 재실행과 DeliveryPropsPlacement의 프리팹 재임포트에서도 새 구성을 유지한다. 이전 지상 7/옥상 3 배치 유지, 커진 지지 검사(.65m 9점) 때문에 보도 끝의 TestParcel_02만 0.5m 가까운 안전 위치로 보정했다. 앵커/옥상 허용 규칙 보존.
+- Tools/Gameplay/Test Parcels/Verify Floating Interaction: 실제 10개 흰 테두리, 줍기 안내, 부유 범위, 거리/사용 불가/기절/가림/Trigger/시선 해제, 실제 Input System E→Update 경로 수집과 중복 차단/아이템 미지급 등 23개 통과. 테스트 후 상자/상태/카메라/입력 장치 복원. 기존 상호작용 48개 및 생활용품 42개 통과. Edit/Play 배치 10/10과 금지 옥상 7/7 제외 검사 통과. Console 오류 0.
+- 실제 Game View에서 흰 테두리·조준점·택배 상자/E 줍기 문구와 버블 확인: art-review/floating-parcel-ready-20261006.png 및 -1.png. 상세 보고서 floating-parcel-interaction-20261006.txt. 프리팹/재질/씬 저장 완료. 현재 Play Mode TestParcel_04 앞에서 직접 E 줍기를 확인할 수 있게 두었다(검수 위치는 런타임 상태).
+- 기존 미커밋 기술문서와 테스트 배치 변경을 보존했다. 커밋/푸시 없음.
+
+## 새벽 택배 가독성·보호막 발광 조정 (2026-10-06)
+- ParcelBubble.shader에서 무지갯빛과 유리 반사 하이라이트를 제거했다. SrcAlpha/One 가산 블렌드와 약한 프레넬 가장자리(.18 + .025)로 옅은 흰빛 보호막을 표현한다. 중심은 투명하게 유지해 상자를 가리지 않는다.
+- 택배 albedo emission을 (.55, .50, .42)로 올렸다. Standard 재질의 EmissiveIsBlack 플래그 때문에 저장 후 발광 키워드가 꺼지는 문제를 BakedEmissive/FixupEmissiveFlag로 수정했다. 이번 변경은 자체 발광이며 새 Light나 라이트맵 베이크는 추가하지 않았다.
+- Verify Drops에 저장된 재질의 _EMISSION 키워드/EmissiveIsBlack 검사를 추가했다. 최종 Edit 검사 10/10 통과(지상 7/옥상 3), 기존 계단 없는 옥상 7/7 제외 검사 통과. Console 오류 0.
+- Play Mode 실제 Game View에서 상자 종이/테이프 질감과 흰 테두리, 조준점, E 줍기 안내 확인. 검수 이미지: art-review/floating-parcel-soft-glow-verified-20261006.png. 기존 부유/줍기 동작 코드 및 10개 위치는 그대로다. 검수 후 Edit Mode 복귀. 이전 미커밋 변경 보존, 커밋/푸시 없음.
+## 배달 로봇 FBX 임포트 (2026-10-07)
+- 연결된 MonsterDeliveryService@2674b4d9add3b8c6 프로젝트에 최신 블렌더 캐릭터를 Assets/Art/Characters/DeliveryRobot/DeliveryRobot.fbx로 임포트했다. 원본/복사본 SHA256 일치, 원래 크기 유지(globalScale/fileScale 1/1), Unity Bounds 1.58733 × 1.38704 × 0.82900m.
+- Generic 리깅, Create From This Model 아바타, 루트 노드 Body. Body / Arm.L / Arm.R 정확히 3개 변형 뼈, 스킨 메시 22개, 부품별 단일 뼈 100% 웨이트. 좌우 팔을 각각 45도 회전해 반대 팔/몸통에 영향 없음과 실제 스킨 정점 이동 확인.
+- 재질 4개 유지, 조끼·모자는 MAT_PlayerColor 공유. 눈/하단 표시등의 발광은 DeliveryRobotGlow.mat로 분리해 Standard _EMISSION과 원본 강도 2를 복원하고 FBX 임포터에서 매핑했다. 기존 2초/24fps 부유 클립 Scene 포함.
+- 실제 Unity 임포트 데이터로 기본/팔 포즈 렌더 검수: art-review/delivery-robot-unity-rest-20261007.png 및 -arm-pose-20261007.png. 검증 보고서 delivery-robot-import-20261007.txt. 임시 에디터 검수 스크립트는 제거했고 작업 소스는 Codex 작업 폴더에 보관했다.
+- 이번 범위는 캐릭터 에셋 반입. 기존 SampleScene과 dirty 상태, 게임 컴포넌트 보존. 마지막 에디터 검증에서 Console 오류 0, Project 창에서 FBX 선택. 기존 미커밋 작업 보존, 커밋/푸시 없음.
+
+## 로봇 플레이어 연결·부유 (2026-10-07)
+- MonsterDeliveryPrototype.CreateWorld의 Player 캡슐 메시/중복 CapsuleCollider를 제거하고 빈 Player + 기존 규격 CharacterController(height 2, radius .45)에 실제 로봇 프리팹을 연결했다. Resources/Characters/DeliveryRobotPlayer.prefab이 FBX를 참조하여 빌드에도 포함된다. 탐색/일반 모드 공통 생성 경로에 적용한다.
+- DeliveryRobotVisual.cs: FBX 자식 모델만 2초 주기, 상하 진폭 .03m로 부유. 프리팹 오프셋 -.95899993m는 실제 스킨 최하단을 측정해 컨트롤러 바닥 기준 .25m 여유를 주며 최저/최고 .22/.28m를 확인했다. 바닥 충돌, 중력, 점프와 1인칭 카메라는 기존 로직을 사용한다. FBX의 Animator는 프리팹에서 비활성화해 부유 중복을 막고 리깅과 원본 클립은 보존했다.
+- SetPlayerColor(0, color)가 조끼·모자 MAT_PlayerColor 슬롯에 MaterialPropertyBlock을 적용한다. 공유 재질이나 본체/발광 색은 바꾸지 않는다. 현재 색은 노란색이며 이미 점령한 우체통 효과도 같은 API를 따른다.
+- Assets/Editor/DeliveryRobotPlayerSetup.cs: Tools/Gameplay/Delivery Robot/Create Player Prefab (Edit), Verify Player (Play). 로봇 실제 연결, 단일 이동 Collider, 스킨 메시 22개/뼈 3개, 부유 범위/카메라 독립, 선택 색/공유 재질 보존 등 31개 통과. 보고서 art-review/delivery-robot-player-20261007.txt 및 실제 맵 렌더 delivery-robot-player-20261007.png.
+- 기존 PlayerBasicsCheck의 삭제된 weaponAmmo 참조를 제거한 뒤 실제 이동·달리기·스태미나·점프·빈손 검사 14개 통과. 우체통 중앙 시선/점령/소유자 효과 검사 48개와 택배 흰 테두리/실제 E 줍기 검사 23개 통과. 마지막 Console 오류 0, Edit Mode 복귀. 원본 맵/택배 저장 배치 보존, 기존 미커밋 작업 유지, 커밋/푸시 없음.
+
+## 캐릭터 확인용 임시 3인칭 (2026-10-07)
+- 사용자 요청으로 MonsterDeliveryPrototype.thirdPersonPreview=true를 기본값으로 추가했다. 뒤 4m, 오른쪽 .85m, 플레이어 중심 위 .9m를 기준으로 따라가며 초기 아래 보기 각도는 12도다. 마우스 방향 조작과 WASD는 기존 방식이다. 이동 후에도 카메라 위치를 갱신해 한 프레임 지연을 줄인다.
+- SphereCastAll 반경 .15m로 벽/지면 앞에서 카메라를 당긴다. Trigger와 자기 CharacterController는 제외한다. 임시 프리뷰는 Unity 기본 물리 쿼리를 사용하며 별도 카메라 패키지는 추가하지 않았다.
+- 중앙 시선 Raycast의 자기 콜라이더를 제외한다. 3인칭에서 상호작용 거리는 카메라 대신 플레이어 중심+.35m에서 실제 충돌점까지 측정한다(3m). 플레이어-대상 경로도 검사해 어깨 카메라만 볼 수 있는 벽 뒤 대상과 상호작용하지 못한다. Preview=false이면 원래 1인칭 위치와 거리 판정으로 복귀한다.
+- Tools/Gameplay/Delivery Robot/Verify Third Person: 로봇 전체 화면 안 표시, 추적 위치, 벽/Trigger 보정, 실제 parcel.prefab의 흰 테두리/거리/플레이어 쪽 가림/자기 콜라이더 제외/수집 dispatch, 1인칭 복귀 검사 10개 통과. 보고서 art-review/third-person-preview-20261007.txt. 메인 카메라 실렌더 third-person-camera-20261007.png(좌우 16:9, OnGUI HUD 미포함).
+- 기존 우체통/택배 테스트는 직접 카메라를 놓는 1인칭 회귀 검사로 명시하고 프리뷰 플래그를 검사 후 복원한다. 이동 14개, 우체통 48개, 택배 23개 통과. 최종 Console 오류 0. 현재 Play Mode/3인칭으로 두어 바로 확인할 수 있다. 씬 배치/FBX 수정 없음, 커밋/푸시 없음.
+- 별도로 실제 ScreenCapture Game View 결과 third-person-gameview-20261007.png의 지연 저장을 확인하고 이미지를 열어 중앙 조준점/이동 안내 HUD와 로봇 전체 표시까지 검수했다.
+
+## 상호작용 에러·캐릭터 밝기 수정 (2026-10-07)
+- 사용자 신고 콘솔 확인: NullReferenceException, InteractionTarget.SetFocus의 properties.SetColor(기존 36행). MaterialPropertyBlock은 Play 중 스크립트 재로드 후 복구되지 않는 비직렬화 데이터다. SetFocus에서 필요한 순간 properties ??= new MaterialPropertyBlock()으로 복구한다. 같은 데이터형인 DeliveryRobotVisual.SetColor의 colorBlock에도 복구를 적용했다.
+- 기존 Verify Crosshair Interaction에서 실제 우체통 10개의 properties를 null로 만들어 데이터 누락을 재현했다. 그 상태에서 48개 흰 테두리/거리/가림/점령 검사 통과. 실제 스크립트 재로드 전체를 실행한 검사는 아니다. 캐릭터 검사도 colorBlock=null 이후 플레이어 색 적용을 확인했다.
+- Apply Readable Materials(Edit) 메뉴: Standard 기반 MAT_RobotBody.mat, MAT_PlayerColor.mat, MAT_RobotDark.mat를 외부 에셋으로 저장하고 FBX 임포터에 매핑. 원래 색 × .70(몸통/플레이어색), × .12(어두운 부품)의 _EmissionColor를 설정하고 _EMISSION/BakedEmissive/FixupEmissiveFlag로 저장 뒤에도 기본 발광을 유지한다. 눈/하단 DeliveryRobotGlow.mat는 그대로다. 원본 FBX/리깅, 맵 조명 및 광원 수를 변경하지 않았다.
+- 조끼/모자 선택 색은 MaterialPropertyBlock에서 _Color와 _EmissionColor를 함께 갱신한다. 밝기 조정 후 로봇/저장 재질/색상 검사 41개 통과, 변경된 데이터 복구와 우체통 48개/3인칭 10개/택배 23개 검사 통과. 최종 캐릭터는 실제 3인칭 렌더 delivery-robot-readable-20261007.png로 시각 확인했다.
+- 최종 콘솔 오류 0, 3인칭 Play로 확인 가능하게 둔다. 이전 미커밋 변경 보존, 커밋/푸시 없음.
+
+## 블렌더 애니메이션 유니티 적용 (2026-10-07)
+- 블렌더의 IDLE/WALK/IDLE_ARMED 세 NLA take만 24fps/48구간(2초), 프레임별 무손실 베이크로 FBX에 내보냈다. 기존 DeliveryRobot.fbx를 갱신하고 .meta GUID/외부 발광 재질 매핑을 유지했다. Blender 원래 Char.blend는 덮어쓰지 않았으며 export용 임시 NLA를 제거하고 현재 Action/프레임/선택을 복원했다.
+- Generic 아바타의 motionNodeName을 정적인 RIG_RobotSkeleton으로 변경해 Body 부유와 전방 기울기가 루트 모션으로 추출되지 않게 했다. 세 클립 Loop Time, 압축 Off. DeliveryRobot.controller는 IDLE/WALK/IDLE_ARMED와 Moving/Holding bool, .12초 Any State 전환을 사용한다.
+- DeliveryRobotVisual의 코드 Sin 부유를 제거하고 Animator 파라미터 전달/플레이어 색 처리만 사용한다. MonsterDeliveryPrototype.LateUpdate가 실제 CharacterController 수평 속도와 선택 아이템 상태를 전달한다. 이동→WALK, 정지 빈손→IDLE, 정지 장착→IDLE_ARMED. 현재 itemPlaytestEnabled=false/빈손 시작과 아이템 미노출은 유지한다. 움직임이 있으면 WALK가 무기 정지보다 우선한다.
+- 플레이어 프리팹의 Animator를 켜고 controller를 저장했다. applyRootMotion=false, AlwaysAnimate. 기존 오프셋 -.95899993m와 스킨 22개/Body, Arm.L, Arm.R 뼈 3개 유지. 평가된 최저 바닥 여유 IDLE/IDLE_ARMED .220m, WALK .211m.
+- Tools/Gameplay/Delivery Robot/Apply Blender Animations(Edit)로 임포터/Animator/플레이어 프리팹을 다시 적용할 수 있다. Verify Animations(Play)은 실제 W 입력→WALK, 해제→IDLE, 장착/빈 슬롯/선택 복귀/G 폐기/소진, 오른팔 스킨 전방 변형, 2초 루프/경계/부유 여유 등 24개 통과. Verify Player 41개, Verify Third Person 10개, Verify Player Basics 14개도 통과했다.
+- art-review/delivery-robot-animations-20261007.txt에 결과를 저장했다. Capture Animation Review는 실제 맵 플레이어의 세 자세를 임시 검수 카메라로 촬영한다. 같은 프레임의 여러 스킨 자세 캡처를 위해 forceMatrixRecalculationPerRender를 촬영 중에만 켜고 원래 값을 복원한다. IDLE/WALK/IDLE_ARMED PNG와 실제 메인 카메라 렌더를 열어 검수했다.
+- MCP execute_code는 기존 패키지 DLL의 CodeDom 메타데이터 오류/Roslyn 미설치로 실행 불가라 프로젝트 Editor 메뉴로 적용·검수했다. 게임 스크립트 컴파일과 Play에서 Console 오류 0. 도구 패키지나 의존성은 변경하지 않았다.
+- 마지막 상태: 기존 맵/10개 택배/우체통 배치와 3인칭 시점을 유지하고 Play에서 바로 이동 애니메이션 확인 가능. 변경 파일과 git diff 검토, 기존 미커밋 작업 보존. 커밋/푸시 없음.
+
+## 아이템 장착 이동 WALK_ARMED 추가 (2026-10-07)
+- Blender WALK Action을 복제하고 오른팔 회전 세 채널만 IDLE_ARMED의 장착 자세로 고정했다. Body 전방 4.7~5.3도 기울기, 상하 ±2cm 부유, 왼팔 뒤로 빠짐은 WALK와 정확히 같으며 오른팔은 몸통 기준 전방 75도 자세를 유지한다. 2초 루프, 스킨 시작/끝 정점 오차 0m. 기존 세 동작/메시/가중치/재질을 보존했다.
+- 네 NLA take만 베이크한 FBX로 기존 DeliveryRobot.fbx를 갱신했다. GUID와 외부 발광 재질 매핑 유지, 원본 Char.blend는 덮어쓰지 않았다. 추가 Action이 담긴 복구본은 dn/outputs/DeliveryRobot_ArmedWalk_Recovery.blend. 라이브 블렌더는 WALK_ARMED/1프레임으로 둔다.
+- Apply Blender Animations와 Capture Animation Review가 네 동작을 포함한다. 모든 Any State 전환은 Moving/Holding 둘 다 검사한다: false/false→IDLE, true/false→WALK, false/true→IDLE_ARMED, true/true→WALK_ARMED. .12초 전환과 시각 전용 뼈 부유/루트 모션 비활성 유지. 기존 런타임 파라미터 전달 코드를 재사용했으며 별도 런타임 로직을 추가하지 않았다.
+- Verify Animations 33개 통과: 실제 장착+W 입력, 이동 중 빈 슬롯/장착 슬롯 선택, 정지→무기 정지, 이동 중 G 폐기→WALK, 오른팔 실제 스킨 전방 이동과 왼팔 뒤로/몸 기울기, 네 클립 루프/바닥 여유. WALK_ARMED 최저 바닥 여유 .211m. 상세 보고서 art-review/delivery-robot-animations-20261007.txt.
+- 실제 맵의 런타임 플레이어를 네 자세로 렌더했다. 새 art-review/delivery-robot-animation-WALK_ARMED-20261007.png를 열어 오른팔 들기와 몸 기울기를 검수했다. 촬영 뒤 Animator와 임시 스킨 캐시 설정은 복원했다. Console 오류 0.
+- 아이템 노출 보류/itemPlaytestEnabled=false 및 빈손 시작 유지. 검증에서만 임시 장착한 상태를 복원했다. 기존 3인칭 Play로 확인 가능, 기존 미커밋 변경 보존, 커밋/푸시 없음.
+
+## 아이템 장착 양손 자세 수정 (2026-10-07)
+- IDLE_ARMED와 WALK_ARMED의 양팔 Euler 회전 채널만 변경했다. 양팔은 앞/아래 15도 방향으로 들고 안쪽 약 12도로 모은다. Body 부유/기울기와 빈손 IDLE/WALK는 유지했다. 기존 메시 22개/뼈 3개/가중치/재질을 그대로 사용한다.
+- Blender 1~49프레임 전체 평가: 양팔 끝의 몸통 기준 X는 ±.474669m, 어깨보다 각각 약 8cm 안쪽이며 어깨 기준 .377927m 전방이다. 두 Action의 시작/끝 스킨 오차 0m. 각 최고/최저 부유 프레임 네이티브 렌더를 열어 연결부와 자세를 확인했다.
+- 복구본 dn/outputs/DeliveryRobot_TwoHand_Recovery.blend, 감사 결과 DeliveryRobot_TwoHand_Audit.json. 원본 Char.blend는 덮어쓰지 않았다. 네 take를 DeliveryRobot_Animated_TwoHand.fbx로 내보내 기존 프로젝트 DeliveryRobot.fbx에 복사했다. FBX .meta GUID/외부 재질 매핑 유지. Apply Blender Animations로 기존 컨트롤러와 프리팹 갱신.
+- 기존 Moving/Holding 상태 전환과 런타임 코드를 재사용했다. Verify Animations는 장착 정지/이동의 양팔 스킨 전방 이동·안쪽 모임·대칭 검사로 갱신했다. 실제 입력/장착/빈 슬롯/폐기/소진 포함 37개, Verify Player 41개 통과. 이동 최저 바닥 여유 .211m, 정지 .220m 유지. 상세 결과 art-review/delivery-robot-animations-20261007.txt.
+- Capture Animation Review로 실제 맵의 네 자세를 다시 렌더했고 IDLE_ARMED/WALK_ARMED PNG를 열어 양손 자세를 확인했다. 아이템 노출 보류·빈손 기본 시작을 유지한다. 검수 뒤 라이브 게임/Animator 상태는 복원했다. Console 오류 0. 커밋/푸시는 수행하지 않았다.
+
+## 캐릭터 밝은 아이보리 색상 수정 (2026-10-07)
+- MAT_RobotBody 기본색/발광색을 (.95,.93,.87) 밝은 아이보리로 변경했다. 기존 Apply Readable Materials 메뉴에도 색을 반영해 재적용 시 유지한다. 몸통과 팔 모두 같은 재질을 사용한다.
+- 조끼/모자 플레이어 색 발광 계수는 .70에서 .88로 올렸으며 DeliveryRobotVisual.TeamEmission을 저장 재질/런타임 색 변경에 함께 사용한다. 테스트 노란색과 점령자 색 연결을 유지한다. 어두운 얼굴/관절 재질과 눈/하단 표시등, 맵 조명 및 애니메이션은 그대로다.
+- 실제 Play Verify Player 41개 통과: 플레이어 색 변경의 기본색/발광 및 재질 공유 보존 포함. 밝은 양손 자세와 실제 3인칭 메인 카메라 렌더를 열어 확인했다. art-review/delivery-robot-bright-ivory-20261007.png, delivery-robot-bright-thirdperson-20261007.png. Console 오류 0. 기존 미커밋 변경 보존, 커밋/푸시 없음.
+
+## 밝은 회색톤 복원 (2026-10-07)
+- 사용자 피드백에 따라 몸통/팔의 아이보리를 밝은 회색(.78,.78,.76)으로 낮추고 발광 계수를 1에서 .85로 조정했다. Apply Readable Materials에서 저장 재질/FBX remap을 갱신했다. 모자/조끼의 플레이어색 발광 .88은 유지한다.
+- 실제 Unity 맵의 양손 자세 렌더를 열어 회색톤과 밝기를 확인했다. art-review/delivery-robot-light-gray-20261007.png. 컴파일/Play Console 오류 0. 이전 아이보리 기록보다 이 회색 수정이 우선한다. 애니메이션/모델/맵 조명은 그대로이며 커밋/푸시 없음.
+
+## 인게임 UI 디자인 시안 (2026-10-07)
+- 사용자 요청으로 현재 맵/로봇/우체통을 참고한 인게임 UI 콘셉트 1장 생성. art-review/ingame-ui-concept-20261007.png, dn/outputs/InGame_UI_Concept_20261007.png. imagegen으로 생성한 디자인 이미지이며 실행 화면이 아니다. 게임 코드/씬/UI는 수정하지 않았다. 시간·점령 점수·중앙 조준점/우체통 E 유지 안내·진행바·스태미나를 포함한다. 제작 프롬프트: dn/outputs/InGame_UI_Concept_Prompt.md.
+
+## 인게임 미니맵 적용 (2026-10-08)
+- DeliveryMinimap: 실제 주택가를 위에서 한 번 렌더한 512px 지도와 우체통 10개 표시, 내 위치/방향 화살표를 오른쪽 위에 배치했다. 맵 bounds는 실제 집/우체통 위치와 14m 여백으로 계산하며 북쪽 고정/해상도 대응이다. 임시 카메라/RenderTexture는 제거하고 정적 지도 텍스처만 유지한다.
+- 기존 owner/colors를 매 HUD 렌더에서 읽어 미점령 흰색, 점령/탈환은 현재 소유자 색으로 표시한다. SetPlayerColor 변경과 Begin 초기화도 즉시 반영한다. 우체통 본체 색은 그대로다.
+- 미니맵 Verify 22개와 기존 상호작용 48개 통과, Console 오류 0. 상세 결과는 art-review/minimap-check-20261008.txt 및 콘솔 기록을 확인한다. 실제 HUD 검수: minimap-neutral-20261008.png, minimap-owned-20261008.png. 검수용 임시 점령 상태는 Restore Preview로 복원한다.
+- 이번 적용은 미니맵만이다. 1인칭/Shift 대쉬는 이미지 시안 상태이며 게임 이동/카메라/아이템 노출을 변경하지 않았다. 커밋/푸시 없음.
+
+
+## 미니맵 밝기 및 전체 맵 표시 수정 (2026-10-08)
+- 미니맵 전용 MinimapFlat 셰이더를 Resources에서 불러와 조명·그림자·안개·발광 영향을 제거한다. 기존 재질 기본색에 밝기 하한을 적용하여 새벽에도 길/집/녹지가 균일하게 읽힌다. 실제 월드 조명은 그대로다.
+- 표시 범위는 집과 우체통 중심에서 잔디 섬 전체, 해안 절벽, 외곽 숲/공원, 도로/마당/옥상 진입 구조까지 확대했다. 사각 지도와 14m 여백, 북쪽 고정 유지. 바다 평면과 보이지 않는 경계 콜라이더는 범위 계산에서 제외한다.
+- 흰색 미점령/점령 플레이어색 우체통, 플레이어 위치·방향·선택색 표시 유지. 시작 시 512px 1회 생성, 임시 카메라/렌더 타깃 정리.
+- 실제 Unity Game View 검수: art-review/minimap-flat-neutral-20261008.png 및 minimap-flat-owned-20261008.png. 25개 검사 통과: 전체 섬/해안/외곽 숲 포함, 모든 광원 비활성화+짙은 안개에서도 지도 픽셀 동일, 실제 E 점령/재점령/선택색/라운드 리셋 포함. 결과 minimap-flat-check-20261008.txt. Console 오류 0, 검수 임시 점령 복원 후 Edit Mode 복귀.
+- 이번 변경은 미니맵 밝기/범위 수정이다. 기존 임시 3인칭, 이동·아이템 상태 유지. 1인칭/Shift 대쉬 전환은 앞선 이미지 시안만 완료한 상태다.
+
+
+## 인게임 UI 시안 실제 적용 (2026-10-08)
+- 최신 1인칭/미니맵/대쉬 시안을 참고해 점령 카드, 상단 시간/플레이어 점수, 중앙 조준점/상호작용 안내/진행바, 하단 로봇 프로필/스태미나/키 안내를 적용했다. 기존 OnGUI를 재사용하고 HUD를 MonsterDeliveryHUD partial 파일로 분리했다. 별도 UI 패키지는 추가하지 않았다. 텍스트·수치는 실제 owner/colors/stamina/captureTarget/round time을 사용한다. 탐색은 자유 탐색, 일반 경기는 MM:SS 표시다.
+- Assets/Resources/UI/InGame에 투명 PNG 18개를 개별 저장했다. 패널은 2배 해상도/Sprite 9-slice border, 아이콘 3개는 현재 우체통·택배·로봇 모델에서 네이티브 렌더했다. 글자를 이미지에 굽지 않아 값 변경/해상도에 대응한다. README.md에 용도 정리. Codex dn/outputs/InGame_UI_Parts와 InGame_UI_Parts_20261008.zip에도 모았다. Tools/Gameplay/InGame UI/Build Image Assets에서 재생성 가능.
+- 앞서 요청한 기본 1인칭(thirdPersonPreview=false)과 Shift 대쉬를 실제 연결했다. 달리기와 Ctrl 구르기 제거. 대쉬 1회 50, 속도17/0.35초, 이동키 방향/입력 없으면 전방, 유지 시 자동 반복 없음. 대쉬 밖에서 초당20 회복. 숙이기/기절/스태미나 부족이면 제한하며 점령 취소/상호작용 차단. 러닝화는 이동 강화만 남고 대쉬 비용은 그대로50.
+- Play 검증: UI15, 플레이어/실제 Shift 입력20, 미니맵25, 우체통48 통과. Editor 메뉴에서 합성 입력의 pressed-this-frame 값이 갱신되지 않아 플레이어 검사를 실제 코루틴 프레임에서 실행하도록 수정했다. 검사 중 runInBackground를 임시 활성화하고 마지막에 복원한다. 결과 art-review/ingame-ui-check-20261008.txt 및 dash-firstperson-check-20261008.txt.
+- 네이티브 Game View 이미지: ingame-ui-exploration-20261008-1.png, ingame-ui-capture-progress-20261008-verified.png. 점령 장면은 임시 3개 소유/50 스태미나/점령 진행 검수 상태이며 촬영 후 복원했다. Console 오류0. 기본 빈손, 새 아이템 노출 보류, 10개 택배 배치와 흰 테두리 판정 유지. 커밋/푸시 없음.
+
+
+## 인게임 UI 표시 수정 (2026-10-08)
+- 택배 줍기 안내에서는 점령 게이지를 그리지 않고 패널 높이를 줄였다. 우체통 점령 게이지는 유지한다.
+- Shift 안내는 상태와 관계없이 대쉬, 비용은 50으로 표시한다. 실제 대쉬 비용은 그대로50이다.
+- 상단 점수는 실제 생성되어 활성 상태인 참가자만 표시하고 인원수에 맞춰 가운데 정렬한다. 탐색 모드에서 혼자면 나만 보인다. 현재 프로토타입의 일반 경기에서는 생성된 AI 참가자도 포함된다.
+- 네이티브 Play 화면 검수: art-review/ingame-ui-parcel-revision-verified-20261008.png. Console 오류0.
+
+
+## 중앙 하단 아이템 슬롯 UI (2026-10-08)
+- 1·2·3 슬롯을 중앙 하단에 항상 표시한다. 기존 UI 톤의 반투명 카드/숫자 키/플레이어색 선택 테두리. 기존 숫자키 선택 로직을 재사용한다. 후속 요청으로 선택/비어 있음 문구를 제거했다. 장착 슬롯은 실제 아이템 이름과 잔여 횟수 또는 선풍기 초를 표시한다. HUD만 노출하며 아이템 지급/사용 보류와 기본 빈손은 유지한다.
+- slot_panel.png와 slot_outline.png를 Resources/UI/InGame에 개별 저장했다. UI PNG 총20개. Build Item Slot Images 메뉴로 해당 이미지 2개만 재생성 가능. 기존 출력 폴더와 ZIP에도 추가했다.
+- 네이티브 Editor Play 검수: art-review/ingame-ui-slots-empty-20261008.png 및 ingame-ui-slots-filled-20261008.png. 기존 UI Verify 15개 통과, Console 오류0. 장착 예시는 촬영용 임시 상태이며 촬영 후 복원했다. 커밋/푸시 없음.
+
+
+## 택배 랜덤 파밍·이미지·G 삭제 연결 (2026-10-08)
+- 현재 맵의 부유 택배에 E를 누르면 생활용품 10종 중 동일 확률10%로 하나를 첫 빈 슬롯에 획득하고 자동 선택한다. 개봉한 택배와 보호막은 비활성화하며 중복 획득을 막는다. 기존 상품 PNG10개를 item_종류.png로 Resources/UI/InGame에 복사하고 슬롯에 실제 이미지/이름/남은 사용량을 표시한다. 원본 유지. UI PNG 총30개 및 기존 출력/ZIP 갱신.
+- 3칸이 가득 차면 상호작용/흰 테두리를 막고 G로 선택 아이템 버리기 안내를 표시한다. 기존 칸 덮어쓰기와 택배 소비 없음. 1·2·3 선택 후 G를 누르면 선택한 아이템과 사용량/장갑 준비만 즉시 삭제한다. 바닥 드랍 및 재습득 없음. G 안내도 하단에 표시한다.
+- 획득은 기본 탐색에서 활성화했다. itemPlaytestEnabled=false는 아이템 공격/효과/손 모델의 기존 노출 제한에만 남는다. 시작은 빈손이며 새 공격이나 모델은 이번 요청에서 활성화하지 않았다.
+- Tools/Gameplay/Test Parcels/Verify Random Loot: 실제 E·2·G 입력, 꽉 찬 상태/중복/빈 슬롯/G삭제 후 획득/사용량/200회 샘플10종/기존 이미지 연결 검증. 결과 art-review/parcel-random-loot-check-20261008.txt. 기존 UI Verify15도 통과. 실제 Game View parcel-random-loot-full-verified-20261008.png, Console 오류0. 촬영은 실제 랜덤 획득이며 Play 종료로 복원했다. 커밋/푸시 없음.

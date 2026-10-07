@@ -1,0 +1,42 @@
+ROBOT_PLAYER_OK: 41 checks
+PASS real Player owns the robot visual prefab
+PASS only the original movement CharacterController remains; no capsule mesh or model colliders
+PASS standing movement capsule keeps height 2m and radius .45m
+PASS 22 imported skinned parts retain their rig
+PASS body and two independent arm bones retained
+PASS Blender clips animate the visual only, without an extra runtime bob
+PASS visual hovers 22–28cm above the controller bottom throughout the bob
+PASS hover does not move the collision controller or first-person camera
+PASS body/dark/glow material unaffected on HERO_Arm_L
+PASS body/dark/glow material unaffected on HERO_Arm_R
+PASS body/dark/glow material unaffected on HERO_Body
+PASS player color reaches HERO_Cap
+PASS player color also tints the soft emission on HERO_Cap
+PASS body/dark/glow material unaffected on HERO_Eye_L
+PASS body/dark/glow material unaffected on HERO_Eye_R
+PASS body/dark/glow material unaffected on HERO_FacePanel
+PASS body/dark/glow material unaffected on HERO_FaceRim
+PASS body/dark/glow material unaffected on HERO_HoverBase
+PASS body/dark/glow material unaffected on HERO_HoverEmitterRim
+PASS body/dark/glow material unaffected on HERO_HoverLight
+PASS body/dark/glow material unaffected on HERO_HoverUnderside
+PASS body/dark/glow material unaffected on HERO_ShoulderJoint_L
+PASS body/dark/glow material unaffected on HERO_ShoulderJoint_R
+PASS player color reaches HERO_VestBack
+PASS player color also tints the soft emission on HERO_VestBack
+PASS player color reaches HERO_VestFront_L
+PASS player color also tints the soft emission on HERO_VestFront_L
+PASS player color reaches HERO_VestFront_R
+PASS player color also tints the soft emission on HERO_VestFront_R
+PASS player color reaches HERO_VestPocket_L
+PASS player color also tints the soft emission on HERO_VestPocket_L
+PASS player color reaches HERO_VestPocket_R
+PASS player color also tints the soft emission on HERO_VestPocket_R
+PASS player color reaches HERO_VestSide_L
+PASS player color also tints the soft emission on HERO_VestSide_L
+PASS player color reaches HERO_VestSide_R
+PASS player color also tints the soft emission on HERO_VestSide_R
+PASS player color reaches HERO_VestZipper
+PASS player color also tints the soft emission on HERO_VestZipper
+PASS vest/cap use per-player color without modifying shared FBX materials
+PASS saved character materials retain emission in shadow

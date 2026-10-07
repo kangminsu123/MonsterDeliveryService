@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 public enum WeaponKind { None, BoxingGloves, Plunger, Megaphone, PackingTape, CordlessFan, RunningShoes, BubbleWrap, WorkGloves, PrinterInk, MiniTrampoline }
 
-public sealed class MonsterDeliveryPrototype : MonoBehaviour
+public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
 {
     const int HouseCount = 10, BotCount = 3, SlotCount = 3;
     readonly Color[] colors = { Color.yellow, new(1f, .25f, .25f), new(.95f, .75f, .1f), new(.65f, .3f, 1f) };
@@ -15,18 +15,20 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
     readonly WeaponKind[] inventory = new WeaponKind[SlotCount];
     readonly float[] weaponSeconds = new float[SlotCount];
     CharacterController player; Camera cam; GameObject heldWeapon;
+    DeliveryRobotVisual playerVisual;
     InteractionTarget focusedTarget;
     bool interactionReady;
     int selectedSlot, captureTarget = -1, armedGloveSlot = -1;
     bool started, finished, crouching;
-    float startedAt, lookPitch, vertical, captureStarted, nextAttackAt, stamina = 100, rollUntil, mapCameraPitch = 42, mapCameraYaw;
+    float startedAt, lookPitch = 12, vertical, captureStarted, nextAttackAt, stamina = 100, rollUntil, mapCameraPitch = 42, mapCameraYaw;
     Vector3 rollDirection;
     string feedback = "Enter를 눌러 우편함 난투를 시작하세요.";
     [Min(30)] public float roundSeconds = 180;
     public bool mapEditMode;
     public bool mapExploreMode = true;
-    bool sprintExhausted;
-    // Deliberately non-serialized: new items remain unavailable in normal Play until rollout.
+    public bool thirdPersonPreview = false;
+    // Shift now triggers a dash once per key press.
+    // Item attacks and held models remain staged; floating parcels award inventory items.
     bool itemPlaytestEnabled = false;
     DeliveryItemState playerItems = new();
     readonly DeliveryItemState[] botItems = new DeliveryItemState[BotCount];
@@ -47,15 +49,26 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
             RenderSettings.fogDensity = .008f;
         }
         CreateWorld();
+        if (!mapEditMode) gameObject.AddComponent<DeliveryMinimap>().Initialize(this, player.transform, mailboxes);
         if (mapExploreMode) started = true;
         Cursor.lockState = mapEditMode || mapExploreMode ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !mapEditMode && !mapExploreMode;
     }
+    public bool ShowMinimap => !mapEditMode && started && !finished;
+    public Color LocalPlayerColor => colors[0];
+    public Color GetMailboxMapColor(int index) => owner[index] < 0 ? Color.white : colors[owner[index]];
+
     void CreateWorld()
     {
         cam = Camera.main ?? new GameObject("Main Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
         if (mapEditMode) { cam.transform.position = new Vector3(0, 95, -110); cam.transform.rotation = Quaternion.Euler(mapCameraPitch, mapCameraYaw, 0); return; }
-        player = Create("Player", PrimitiveType.Capsule, SpawnPosition(0), Vector3.one, colors[0]).AddComponent<CharacterController>(); player.height = 2; player.radius = .45f; playerItems.safePosition = SpawnPosition(0);
+        player = new GameObject("Player").AddComponent<CharacterController>();
+        player.transform.position = SpawnPosition(0);
+        player.height = 2; player.radius = .45f; playerItems.safePosition = SpawnPosition(0);
+        var robotPrefab = Resources.Load<GameObject>("Characters/DeliveryRobotPlayer");
+        if (!robotPrefab) throw new System.InvalidOperationException("DeliveryRobotPlayer prefab is missing.");
+        playerVisual = Instantiate(robotPrefab, player.transform, false).GetComponent<DeliveryRobotVisual>();
+        playerVisual.SetColor(colors[0]);
         var authored = GameObject.Find("Layer_11_Mailboxes");
         if (authored) for (int i = 0; i < HouseCount; i++)
         {
@@ -107,13 +120,20 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
         if (mapEditMode) { UpdateMapCamera(); return; }
         if (started && !finished) UpdateItemAreas();
         UpdateCamera(); var kb = Keyboard.current;
-        if (mapExploreMode) { UpdatePlayer(kb); UpdateInteraction(); UpdateCapture(kb); UpdateHeldWeapon(); return; }
+        if (mapExploreMode) { UpdatePlayer(kb); UpdateInteraction(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); UpdateCapture(kb); UpdateHeldWeapon(); return; }
         if (!started) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) Begin(); return; }
         if (finished) { if (kb != null && kb.enterKey.wasPressedThisFrame) Begin(); return; }
         if (Time.time - startedAt >= roundSeconds) { Finish(); return; }
         UpdatePlayer(kb); UpdateInteraction();
-        if (itemPlaytestEnabled && kb != null && kb.eKey.wasPressedThisFrame) TryPickup();
+        if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup();
         UpdateBots(); UpdatePickups(); UpdateCapture(kb); UpdateHeldWeapon();
+    }
+    void LateUpdate()
+    {
+        if (!playerVisual) return;
+        var velocity = player.velocity;
+        playerVisual.SetMotion(started && !finished && !mapEditMode && new Vector2(velocity.x, velocity.z).sqrMagnitude > .04f,
+            itemPlaytestEnabled && Selected != WeaponKind.None);
     }
     void UpdatePlayer(Keyboard kb)
     {
@@ -123,14 +143,16 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
         // Resizing the controller resets contact state, even when the value is unchanged.
         var height = crouching ? 1.15f : 2f;
         if (player.height != height) { player.height = height; player.center = crouching ? new Vector3(0, -.425f, 0) : Vector3.zero; }
-        var wantsSprint = kb != null && kb.leftShiftKey.isPressed;
-        if (!wantsSprint) sprintExhausted = false;
-        var sprinting = move.sqrMagnitude > 0 && wantsSprint && stamina > 0 && !sprintExhausted && !crouching && Time.time >= rollUntil;
-        stamina = Mathf.Clamp(stamina + (sprinting && Time.time >= playerItems.speedUntil ? -28 : 20) * Time.deltaTime, 0, 100);
-        if (stamina <= 0) sprintExhausted = true;
-        if (kb != null && kb.leftCtrlKey.wasPressedThisFrame && move.sqrMagnitude > .01f && stamina >= 50 && Time.time >= rollUntil) { stamina -= 50; rollDirection = player.transform.TransformDirection(move.normalized); rollUntil = Time.time + .35f; feedback = "구르기! (-50 스태미나)"; }
         var rolling = !playerItems.Stunned(Time.time) && Time.time < rollUntil;
-        var velocity = rolling ? rollDirection * 17f : player.transform.TransformDirection(move.normalized) * (crouching ? 3.6f : sprinting ? 10.5f : 6.5f);
+        if (kb != null && kb.leftShiftKey.wasPressedThisFrame && !crouching && stamina >= 50 && Time.time >= rollUntil)
+        {
+            stamina -= 50;
+            rollDirection = player.transform.TransformDirection(move.sqrMagnitude > .01f ? move.normalized : Vector3.forward);
+            rollUntil = Time.time + .35f; rolling = true;
+            captureTarget = -1; captureStarted = 0; feedback = "대쉬! (-50 스태미나)";
+        }
+        else if (!rolling) stamina = Mathf.Min(100, stamina + 20 * Time.deltaTime);
+        var velocity = rolling ? rollDirection * 17f : player.transform.TransformDirection(move.normalized) * (crouching ? 3.6f : 6.5f);
         velocity *= playerItems.MoveMultiplier(Time.time);
         var grounded = player.isGrounded;
         if (grounded && vertical < 0) vertical = -2;
@@ -140,6 +162,7 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
         // isGrounded describes the last Move: preserve the previous landing until the jump is decided.
         player.Move((velocity + playerItems.TakeForce(Time.deltaTime) + Vector3.up * vertical) * Time.deltaTime);
         RecoverActor(player, playerItems, ref vertical);
+        PositionCamera();
         if (!mapExploreMode) KeepPlayerOutOfEnemySpawn();
         SelectSlot(kb);
         if (kb != null && kb.gKey.wasPressedThisFrame) DropSelectedWeapon();
@@ -151,9 +174,20 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
         var mouse = Mouse.current;
         if (started && player != null && mouse != null) { var d = mouse.delta.ReadValue(); player.transform.Rotate(0, d.x * .12f, 0); lookPitch = Mathf.Clamp(lookPitch - d.y * .12f, -80, 80); }
         if (player == null) return;
-        cam.transform.position = player.transform.position + Vector3.up * (crouching ? 1f : 1.6f);
         cam.transform.rotation = Quaternion.Euler(lookPitch, player.transform.eulerAngles.y, 0);
+        PositionCamera();
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 60, Time.deltaTime * 12);
+    }
+    void PositionCamera()
+    {
+        if (!thirdPersonPreview) { cam.transform.position = player.transform.position + Vector3.up * (crouching ? 1f : 1.6f); return; }
+        var pivot = player.transform.position + Vector3.up * (crouching ? .6f : .9f);
+        var offset = cam.transform.right * .85f - cam.transform.forward * 4;
+        float distance = offset.magnitude;
+        Physics.SyncTransforms();
+        foreach (var hit in Physics.SphereCastAll(pivot, .15f, offset.normalized, distance, ~0, QueryTriggerInteraction.Ignore))
+            if (hit.collider != player) distance = Mathf.Min(distance, Mathf.Max(0, hit.distance - .05f));
+        cam.transform.position = pivot + offset.normalized * distance;
     }
     void UpdateMapCamera()
     {
@@ -196,24 +230,55 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
     void UpdatePickups() { for (var i = 0; i < pickups.Length; i++) { if (pickups[i] != null && !pickups[i].activeSelf && Time.time >= pickupRespawnAt[i]) pickups[i].SetActive(true); if (pickups[i] != null && pickups[i].activeSelf) pickups[i].transform.position += Vector3.up * Mathf.Sin(Time.time * 3 + i) * .003f; } }
     void UpdateInteraction()
     {
+        Physics.SyncTransforms(); // Floating parcel colliders follow the current visual pose.
         InteractionTarget next = null; float distance = float.PositiveInfinity;
         if (cam && started && !finished && !mapEditMode &&
-            Physics.Raycast(cam.ViewportPointToRay(new Vector3(.5f, .5f, 0)), out var hit, 12, ~0, QueryTriggerInteraction.Ignore))
+            InteractionRayHit(cam.ViewportPointToRay(new Vector3(.5f, .5f, 0)), 12, out var hit))
         {
             next = hit.collider.GetComponentInParent<InteractionTarget>(); distance = hit.distance + cam.nearClipPlane;
+            if (thirdPersonPreview)
+            {
+                var origin = player.transform.position + Vector3.up * .35f;
+                distance = Vector3.Distance(origin, hit.point);
+                var toward = hit.point - origin;
+                if (InteractionRayHit(new Ray(origin, toward.normalized), toward.magnitude + .01f, out var obstruction) &&
+                    obstruction.collider.GetComponentInParent<InteractionTarget>() != next) next = null;
+            }
             if (next && !next.isActiveAndEnabled) next = null;
         }
         if (focusedTarget && focusedTarget != next) focusedTarget.SetFocus(false, false);
         focusedTarget = next;
-        interactionReady = next && next.available && distance <= next.interactionDistance && playerItems.CanCapture(Time.time);
-        if (next && next.GetComponent<PickupKind>() && (!itemPlaytestEnabled || !HasEmptySlot())) interactionReady = false;
+        interactionReady = next && next.available && distance <= next.interactionDistance && playerItems.CanCapture(Time.time) && Time.time >= rollUntil;
+        if (next && (next.GetComponent<FloatingParcel>() || next.GetComponent<PickupKind>()) && !HasEmptySlot()) interactionReady = false;
+        if (next && next.GetComponent<PickupKind>() && !itemPlaytestEnabled) interactionReady = false;
         for (int i = 0; i < HouseCount; i++) if (next && mailboxes[i] == next.gameObject && owner[i] == 0) interactionReady = false;
         if (next) next.SetFocus(true, interactionReady);
+    }
+    bool InteractionRayHit(Ray ray, float range, out RaycastHit nearest)
+    {
+        if (!thirdPersonPreview) return Physics.Raycast(ray, out nearest, range, ~0, QueryTriggerInteraction.Ignore);
+        nearest = default; float closest = float.PositiveInfinity;
+        // Temporary preview: native all-hit queries keep self-collisions out. Reuse a NonAlloc buffer if profiling shows GC pressure.
+        foreach (var hit in Physics.RaycastAll(ray, range, ~0, QueryTriggerInteraction.Ignore))
+            if (hit.collider != player && hit.distance < closest) { closest = hit.distance; nearest = hit; }
+        return closest < float.PositiveInfinity;
     }
     void OnDisable() { if (focusedTarget) focusedTarget.SetFocus(false, false); }
     void TryPickup()
     {
-        if (!itemPlaytestEnabled || !interactionReady || !focusedTarget) return;
+        if (!interactionReady || !focusedTarget) return;
+        var parcel = focusedTarget.GetComponent<FloatingParcel>();
+        if (parcel)
+        {
+            if (!HasEmptySlot()) return;
+            if (parcel.TryCollect())
+            {
+                AddWeapon((WeaponKind)Random.Range(1, 11)); focusedTarget = null; interactionReady = false;
+                captureTarget = -1; captureStarted = 0;
+            }
+            return;
+        }
+        if (!itemPlaytestEnabled) return;
         for (var i = 0; i < pickups.Length; i++) if (pickups[i] == focusedTarget.gameObject)
         {
             if (!HasEmptySlot()) { feedback = "아이템 칸이 가득 찼습니다. G로 현재 아이템을 버리세요."; return; }
@@ -235,6 +300,7 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
     {
         if ((uint)playerId >= colors.Length) throw new System.ArgumentOutOfRangeException(nameof(playerId));
         color.a = 1; colors[playerId] = color;
+        if (playerId == 0 && playerVisual) playerVisual.SetColor(color);
         for (int i = 0; i < HouseCount; i++) if (mailboxes[i] && owner[i] == playerId) SetMailboxEffectColor(i, color);
     }
     void SetMailboxEffectColor(int house, Color color)
@@ -267,7 +333,7 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
 
     void AddWeapon(WeaponKind item)
     {
-        if (!itemPlaytestEnabled || (int)item < 1 || (int)item > 10) return;
+        if ((int)item < 1 || (int)item > 10) return;
         for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None)
         {
             inventory[i] = item; weaponAmmo[i] = Ammo(item); weaponSeconds[i] = item == WeaponKind.CordlessFan ? 4 : 0;
@@ -302,7 +368,7 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
                 AttackCone(6, .75f, 8, 0, 0); weaponSeconds[selectedSlot] = Mathf.Max(0, weaponSeconds[selectedSlot] - Time.deltaTime);
                 if (weaponSeconds[selectedSlot] <= 0) ClearSlot(selectedSlot);
                 return;
-            case WeaponKind.RunningShoes: playerItems.speedUntil = Time.time + 5; sprintExhausted = false; break;
+            case WeaponKind.RunningShoes: playerItems.speedUntil = Time.time + 5; break;
             case WeaponKind.BubbleWrap: playerItems.shieldUntil = Time.time + 8; break;
             case WeaponKind.WorkGloves: armedGloveSlot = selectedSlot; return;
             case WeaponKind.MiniTrampoline:
@@ -403,7 +469,7 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
     void UpdateHeldWeapon() { if (heldWeapon != null) { Destroy(heldWeapon); heldWeapon = null; } }
     void Begin()
     {
-        started = true; finished = false; stamina = 100; sprintExhausted = false; vertical = 0; rollUntil = 0; crouching = false; startedAt = Time.time;
+        started = true; finished = false; stamina = 100; vertical = 0; rollUntil = 0; crouching = false; startedAt = Time.time;
         selectedSlot = 0; captureTarget = -1; captureStarted = 0; armedGloveSlot = -1; nextAttackAt = 0; hornAt = -1;
         itemAreas.Clear(); foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
         playerItems = new DeliveryItemState { safePosition = SpawnPosition(0) };
@@ -419,53 +485,16 @@ public sealed class MonsterDeliveryPrototype : MonoBehaviour
     int Score(int id) { var total = 0; for (var i = 0; i < HouseCount; i++) if (owner[i] == id) total++; return total; }
     int Rank(int id) { var rank = 1; for (var other = 0; other <= BotCount; other++) if (Score(other) > Score(id)) rank++; return rank; }
     string ResultBoard() { var board = ""; for (var rank = 1; rank <= BotCount + 1; rank++) for (var id = 0; id <= BotCount; id++) if (Rank(id) == rank) board += rank + "위  " + (id == 0 ? "나" : "Rival " + id) + "  ·  " + Score(id) + "개 점령\n"; return board; }
-    void OnGUI()
+void OnGUI()
     {
-        if (!mapEditMode && started && !finished) DrawInteractionHUD();
-        var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 18, fontStyle = FontStyle.Bold, normal = { textColor = Color.white } };
-        if (mapExploreMode) { GUI.Box(new Rect(12, 12, 760, 76), "맵 탐색  ·  스태미나 " + stamina.ToString("0") + "/100\nWASD 이동 · Space 점프 · Shift 달리기 · C 숙이기 · Left Ctrl 구르기\n빈손으로 탐색합니다."); DrawEquipmentHUD(style);
-            if (captureTarget >= 0) GUI.Box(new Rect(Screen.width / 2 - 130, Screen.height / 2 + 85, 260, 30), "점령 중 " + Mathf.Clamp01((Time.time - captureStarted) / CaptureSeconds).ToString("P0"));
-            return; }
-        if (mapEditMode) { GUI.Box(new Rect(15, 15, 600, 70), "맵 제작 모드  ·  WASD: 이동  ·  Q/E: 하강/상승  ·  Shift: 빠르게  ·  마우스: 시점"); return; }
+        if (mapEditMode) { GUI.Box(new Rect(15, 15, 600, 70), "맵 제작 모드 · WASD 이동 · Q/E 하강/상승 · Shift 빠르게 · 마우스 시점"); return; }
         if (!started) { GUI.Box(new Rect(Screen.width / 2 - 300, Screen.height / 2 - 130, 600, 260), "MAILBOX BRAWL\n\n우체통 앞에서 E를 3초간 유지해 점령하세요.\n빈손으로 시작합니다.\n\nEnter 또는 Space로 시작"); return; }
-        if (finished) { GUI.Box(new Rect(Screen.width / 2 - 260, Screen.height / 2 - 180, 520, 360), "경기 종료\n\n내 순위: " + Rank(0) + "위  ·  점령: " + Score(0) + " / " + HouseCount + "\n\n[ 최종 순위 ]\n" + ResultBoard() + "\nEnter로 다시 시작"); return; }
-        GUI.Box(new Rect(15, 15, 760, 110), "점령 " + Score(0) + "/" + HouseCount + "  ·  스태미나 " + stamina.ToString("0") + "  ·  남은 시간 " + Mathf.Max(0, roundSeconds - (Time.time - startedAt)).ToString("0") + "초\n" + feedback + "\nShift: 달리기 · C: 숙이기 · Left Ctrl: 구르기 · Space: 점프 · E: 점령");
-        if (captureTarget >= 0) GUI.Box(new Rect(Screen.width / 2 - 130, Screen.height / 2 + 40, 260, 30), "점령 중 " + Mathf.Clamp01((Time.time - captureStarted) / CaptureSeconds).ToString("P0"));
-        DrawEquipmentHUD(style);
-        for (var i = 0; i < HouseCount; i++) Label(mailboxes[i], owner[i] < 0 ? "빈 우체통" : "점령: P" + (owner[i] + 1), style);
+        if (finished) { GUI.Box(new Rect(Screen.width / 2 - 260, Screen.height / 2 - 180, 520, 360), "경기 종료\n\n내 순위: " + Rank(0) + "위 · 점령: " + Score(0) + " / " + HouseCount + "\n\n[ 최종 순위 ]\n" + ResultBoard() + "\nEnter로 다시 시작"); return; }
+        DrawGameplayHUD();
+    }
 
-    }
-    void DrawInteractionHUD()
-    {
-        float x = Screen.width * .5f, y = Screen.height * .5f;
-        var old = GUI.color;
-        GUI.color = new Color(0, 0, 0, .8f);
-        GUI.DrawTexture(new Rect(x - 12, y - 2, 8, 4), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x + 4, y - 2, 8, 4), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x - 2, y - 12, 4, 8), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x - 2, y + 4, 4, 8), Texture2D.whiteTexture);
-        GUI.color = Color.white;
-        GUI.DrawTexture(new Rect(x - 11, y - 1, 6, 2), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x + 5, y - 1, 6, 2), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x - 1, y - 11, 2, 6), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x - 1, y + 5, 2, 6), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(x - 1, y - 1, 2, 2), Texture2D.whiteTexture);
-        GUI.color = old;
-        if (focusedTarget)
-        {
-            string hint = interactionReady ? "상호작용 가능 · " + focusedTarget.actionHint : "가까이 이동하거나 상호작용 가능한 상태를 기다리세요";
-            for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObject && owner[i] == 0) hint = "점령 완료";
-            var label = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(x - 210, y + 24, 420, 54), "");
-            GUI.Label(new Rect(x - 205, y + 24, 410, 52), focusedTarget.displayName + "\n" + hint, label);
-        }
-    }
-    void DrawEquipmentHUD(GUIStyle style)
-    {
-        if (!itemPlaytestEnabled) return;
-        for (var i = 0; i < SlotCount; i++) GUI.Box(new Rect(Screen.width / 2 - 202 + i * 135, Screen.height - 75, 125, 52), (i == selectedSlot ? "[" : "") + (i + 1) + ": " + SlotText(i) + (i == selectedSlot ? "]" : ""));
-    }
-    void Label(GameObject go, string text, GUIStyle style) { var p = cam.WorldToScreenPoint(go.transform.position + Vector3.up * 2); if (p.z > 0) GUI.Label(new Rect(p.x - 100, Screen.height - p.y, 200, 24), text, style); }
+
+
 }
 
 public sealed class PickupKind : MonoBehaviour { public WeaponKind kind; }

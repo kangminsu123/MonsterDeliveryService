@@ -1,0 +1,16 @@
+INGAME_UI_OK: 15 checks
+PASS all 30 UI parts and item icons are separate PNG files
+PASS PNG alpha, Sprite import and no mipmaps survive asset import
+PASS every HUD texture resolves through Resources for player builds
+PASS first-person default matches latest concept
+PASS exploration does not show a fake countdown
+PASS match countdown reads actual round time as minutes and seconds; clock=03:24, round=240, elapsed=36
+PASS expired timer clamps to zero
+PASS no target has zero capture progress
+PASS ready mailbox displays the real E capture action
+PASS capture bar reads actual elapsed capture time
+PASS capture bar clamps at full
+PASS owned mailbox shows completion
+PASS unavailable target keeps readable guidance
+PASS parcel uses its pickup guidance
+PASS staged item use stays disabled and slots start empty

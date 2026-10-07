@@ -1,0 +1,39 @@
+PASS existing ten floating parcels preserved
+PASS original icon resolves for BoxingGloves
+PASS original icon resolves for Plunger
+PASS original icon resolves for Megaphone
+PASS original icon resolves for PackingTape
+PASS original icon resolves for CordlessFan
+PASS original icon resolves for RunningShoes
+PASS original icon resolves for BubbleWrap
+PASS original icon resolves for WorkGloves
+PASS original icon resolves for PrinterInk
+PASS original icon resolves for MiniTrampoline
+PASS E awards one random item into first empty slot 1; pressed=True, current=True, ready=False, target=, count=1, parcel=TestParcel_03, active=False
+PASS new slot selected and opened parcel removed
+PASS E awards one random item into first empty slot 2; pressed=True, current=True, ready=False, target=, count=2, parcel=TestParcel_05, active=False
+PASS new slot selected and opened parcel removed
+PASS E awards one random item into first empty slot 3; pressed=True, current=True, ready=False, target=, count=3, parcel=TestParcel_09, active=False
+PASS new slot selected and opened parcel removed
+PASS full slots never overwrite items or consume parcel
+PASS full slots remove white outline and show G discard guidance
+PASS digit 2 selects second slot through actual input
+PASS G deletes only selected item
+PASS discard clears usage and armed bonus
+PASS discard spawns no recoverable world item
+PASS free slot immediately restores parcel eligibility
+PASS next E fills discarded slot without changing others
+PASS opened parcel cannot award twice
+PASS G on empty selected slot is harmless
+PASS loot does not activate staged attacks or held models; enabled=False, held=null
+PASS 200 seeded native pickups reach all ten kinds and never None
+PASS configured usage initialized for BoxingGloves
+PASS configured usage initialized for Plunger
+PASS configured usage initialized for Megaphone
+PASS configured usage initialized for PackingTape
+PASS configured usage initialized for CordlessFan
+PASS configured usage initialized for RunningShoes
+PASS configured usage initialized for BubbleWrap
+PASS configured usage initialized for WorkGloves
+PASS configured usage initialized for PrinterInk
+PASS configured usage initialized for MiniTrampoline

@@ -1,0 +1,13 @@
+PASS: Imported FBX, Generic avatar, 22 skinned meshes, exactly 3 deform bones, 100% rigid weights, 4 valid materials.
+Asset: Assets/Art/Characters/DeliveryRobot/DeliveryRobot.fbx
+Bounds (Unity metres): (1.58733, 1.38704, 0.82900)
+Global/file scale: 1 / 1
+Material: MAT_RobotBody | Standard | RGBA(0.650, 0.640, 0.600, 1.000)
+Material: MAT_PlayerColor | Standard | RGBA(1.000, 0.770, 0.008, 1.000)
+Material: DeliveryRobotGlow | Standard | RGBA(0.770, 0.900, 1.000, 1.000)
+Material: MAT_RobotDark | Standard | RGBA(0.028, 0.033, 0.040, 1.000)
+Animation: Scene | 2 s | 24 fps
+PASS: Arm.L independent rotation; max vertex motion 0.307007 m.
+PASS: Arm.R independent rotation; max vertex motion 0.307007 m.
+PASS: Native Unity rest/arm-pose renders written; FBX selected in Project.
+PASS: Active gameplay scene and dirty state preserved.

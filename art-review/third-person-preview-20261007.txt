@@ -1,0 +1,10 @@
+PASS camera sits 4m behind and .85m right in clear space
+PASS entire hovering robot is visible inside the real perspective camera
+PASS solid wall pulls camera forward without entering the wall
+PASS triggers do not shorten camera distance
+PASS crosshair selects a nearby target and shows a white outline although camera is over 5m away
+PASS target beyond player 3m range has no ready outline
+PASS player-side wall prevents interaction around a corner visible to the shoulder camera
+PASS player's own collider does not obstruct the crosshair ray
+PASS third-person ready target uses the existing parcel pickup dispatch
+PASS disabling preview restores the existing first-person camera position

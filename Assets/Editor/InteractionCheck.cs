@@ -27,6 +27,7 @@ public static class InteractionCheck
         var colors = renderers.Select(x => x.material.color).ToArray();
         var keyboard = InputSystem.AddDevice<Keyboard>(); var temporary = new List<GameObject>(); var report = new List<string>();
         var original = (InteractionTarget)Get("focusedTarget");
+        bool thirdPerson = game.thirdPersonPreview;
         bool EffectIs(int i, Color color)
         {
             var block = new MaterialPropertyBlock();
@@ -42,8 +43,12 @@ public static class InteractionCheck
         }
         try
         {
+            game.thirdPersonPreview = false; // This check positions a first-person camera directly.
             Set("started", true); Set("finished", false); Set("playerItems", new DeliveryItemState());
             game.SetPlayerColor(0, Color.yellow);
+            // Reproduce the non-serialized data loss that happens during a Play Mode script reload.
+            foreach (var box in boxes) typeof(InteractionTarget).GetField("properties", Flags)
+                .SetValue(box.GetComponent<InteractionTarget>(), null);
             for (int i = 0; i < 10; i++)
             {
                 owners[i] = -1; Call("SetMailboxEffectColor", i, Color.white); Aim(i, 2.5f);
@@ -99,6 +104,7 @@ public static class InteractionCheck
         }
         finally
         {
+            game.thirdPersonPreview = thirdPerson;
             if (Get("focusedTarget") is InteractionTarget current) current.SetFocus(false, false);
             foreach (var go in temporary) UnityEngine.Object.DestroyImmediate(go);
             InputSystem.RemoveDevice(keyboard); Array.Copy(savedOwners, owners, owners.Length); Array.Copy(savedPalette, palette, palette.Length);

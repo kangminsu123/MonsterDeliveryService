@@ -138,12 +138,13 @@ public static class DeliveryPropsPlacement
             if (!mat.shader.isSupported || !mat.mainTexture || !mat.GetTexture("_MetallicGlossMap"))
                 throw new Exception(name + " material incomplete.");
             if (name == "mailbox") { AddBeacon(wrapper); AddInteraction(wrapper); }
+            else TestParcelDrops.SetupFloatingParcel(wrapper);
             PrefabUtility.SaveAsPrefabAsset(wrapper, AssetsRoot + "/" + name + ".prefab");
         }
         finally { UnityEngine.Object.DestroyImmediate(wrapper); }
     }
 
-    static void AddInteraction(GameObject mailbox)
+    public static void AddInteraction(GameObject mailbox, string assetName = "mailbox", string displayName = "우체통", string hint = "E 유지 · 점령")
     {
         var source = mailbox.GetComponentInChildren<MeshFilter>();
         var mesh = UnityEngine.Object.Instantiate(source.sharedMesh);
@@ -151,9 +152,9 @@ public static class DeliveryPropsPlacement
         var smooth = new Dictionary<Vector3, Vector3>();
         for (int i = 0; i < vertices.Length; i++) smooth[vertices[i]] = smooth.TryGetValue(vertices[i], out var n) ? n + normals[i] : normals[i];
         for (int i = 0; i < vertices.Length; i++) normals[i] = smooth[vertices[i]].normalized;
-        mesh.normals = normals; mesh.name = "Mailbox_Outline";
+        mesh.normals = normals; mesh.name = assetName + "_Outline";
         var bounds = mesh.bounds; bounds.Expand(.15f); mesh.bounds = bounds;
-        string meshPath = AssetsRoot + "/mailbox_Outline.asset";
+        string meshPath = AssetsRoot + "/" + assetName + "_Outline.asset";
         var saved = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
         if (saved) { EditorUtility.CopySerialized(mesh, saved); UnityEngine.Object.DestroyImmediate(mesh); EditorUtility.SetDirty(saved); }
         else { AssetDatabase.CreateAsset(mesh, meshPath); saved = mesh; }
@@ -162,8 +163,8 @@ public static class DeliveryPropsPlacement
         if (!material) { material = new Material(Shader.Find("Delivery/Interaction Outline")); AssetDatabase.CreateAsset(material, matPath); }
         material.SetFloat("_Width", 4.5f); EditorUtility.SetDirty(material);
         if (!material.shader.isSupported) throw new Exception("Interaction outline shader unsupported.");
-        var target = mailbox.AddComponent<InteractionTarget>(); target.displayName = "우체통";
-        target.actionHint = "E 유지 · 점령"; target.visual = source; target.outlineMesh = saved; target.outlineMaterial = material;
+        var target = mailbox.GetComponent<InteractionTarget>(); if (!target) target = mailbox.AddComponent<InteractionTarget>(); target.displayName = displayName;
+        target.actionHint = hint; target.visual = source; target.outlineMesh = saved; target.outlineMaterial = material;
     }
 
     static void AddBeacon(GameObject mailbox)

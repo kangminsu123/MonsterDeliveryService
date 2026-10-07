@@ -26,13 +26,14 @@ public sealed class InteractionTarget : MonoBehaviour
         outline.shadowCastingMode = ShadowCastingMode.Off;
         outline.receiveShadows = false;
         outline.enabled = false;
-        properties = new MaterialPropertyBlock();
     }
     public void SetFocus(bool focused, bool ready)
     {
         if (!outline) return;
         outline.enabled = focused && ready;
         if (!outline.enabled) return;
+        // MaterialPropertyBlock is not restored by a Play Mode script reload.
+        properties ??= new MaterialPropertyBlock();
         properties.SetColor("_Color", Color.white);
         outline.SetPropertyBlock(properties);
     }

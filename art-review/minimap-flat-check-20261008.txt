@@ -1,0 +1,26 @@
+MINIMAP_OK: 25 checks
+PASS actual player has a baked 512px minimap
+PASS map contains rendered neighborhood geometry
+PASS all ten authored mailbox markers are present
+PASS unlit map shader is available in Resources for builds
+PASS entire island, coastal cliffs and outer woodland fit inside the map
+PASS map pixels stay identical with all lights off and dense fog enabled
+PASS map is square with valid actual world bounds
+PASS all mailbox positions fit inside map padding
+PASS north is up and east is right
+PASS off-map positions clamp to edge
+PASS map is shown during actual exploration
+PASS map hides behind results
+PASS map hides before a match starts
+PASS map hides in map editing
+PASS unclaimed markers are white
+PASS actual mailbox is interactable before E capture
+PASS actual E capture makes its map marker local-player yellow
+PASS capture leaves unrelated markers neutral
+PASS rival recapture immediately replaces the marker color
+PASS changing an owner's chosen color updates owned markers
+PASS all local owned markers, player arrow and legend share the selected player color
+PASS marker changes leave mailbox body materials unchanged
+PASS minimap keeps staged items disabled and default hands empty
+PASS round restart resets all map markers to neutral
+PASS background bake leaves no extra running camera or render target

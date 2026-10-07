@@ -1,0 +1,38 @@
+ROBOT_ANIMATION_OK: 37 checks
+PASS normal startup stays empty-handed with item rollout disabled
+PASS exactly four imported 2-second loop clips
+PASS valid Generic avatar with root motion disabled
+PASS stationary/vertical-only movement selects IDLE
+PASS IDLE moves evaluated skin by 6cm peak-to-peak
+PASS hover stays in bones without moving model root/controller/camera
+PASS real W input and CharacterController movement select WALK
+PASS WALK body leans forward about 5deg (actual 5.284)
+PASS both arms trail relative to the leaning body
+PASS releasing movement returns to IDLE
+PASS existing item acquisition/selection chooses armed idle
+PASS armed idle raises both arms
+PASS armed idle moves both actual arm skins forward
+PASS armed idle brings both arm skins inward toward the center
+PASS armed idle keeps a symmetric two-handed grip
+PASS equipped movement selects WALK_ARMED
+PASS equipped walk keeps the forward body lean
+PASS equipped walk holds both arms forward
+PASS equipped walk moves both actual arm skins forward
+PASS equipped walk brings both arm skins inward toward the center
+PASS equipped walk keeps a symmetric two-handed grip
+PASS empty slot while moving restores empty-handed WALK
+PASS equipped slot while moving restores WALK_ARMED
+PASS stopping equipped movement returns to armed idle
+PASS discard while moving lowers both arms and returns to WALK
+PASS selecting an empty slot lowers the arm
+PASS selecting the occupied slot restores armed idle
+PASS actual G discard returns to empty-handed IDLE
+PASS item exhaustion/clear follows the same idle reset
+PASS IDLE skin loop boundary matches within 1mm
+PASS IDLE keeps skin floating above controller feet (min 0.220m)
+PASS WALK skin loop boundary matches within 1mm
+PASS WALK keeps skin floating above controller feet (min 0.211m)
+PASS IDLE_ARMED skin loop boundary matches within 1mm
+PASS IDLE_ARMED keeps skin floating above controller feet (min 0.220m)
+PASS WALK_ARMED skin loop boundary matches within 1mm
+PASS WALK_ARMED keeps skin floating above controller feet (min 0.211m)

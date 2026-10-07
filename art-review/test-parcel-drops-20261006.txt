@@ -1,0 +1,11 @@
+TestParcel_01 | position=(-37.302, 7.877, 17.302) | surface=Plot_04_House_04_Recessed_Veranda
+TestParcel_02 | position=(-50.899, -0.070, -37.750) | surface=Paver_0071
+TestParcel_03 | position=(41.107, -0.250, -65.796) | surface=Layer_00_GrassBase
+TestParcel_04 | position=(-15.726, -0.230, -32.003) | surface=Asphalt
+TestParcel_05 | position=(-50.033, -0.250, -57.019) | surface=Layer_00_GrassBase
+TestParcel_06 | position=(-20.466, -0.230, 19.382) | surface=Asphalt
+TestParcel_07 | position=(-45.486, 7.877, 25.818) | surface=Plot_04_House_04_Recessed_Veranda
+TestParcel_08 | position=(-39.086, 7.877, 22.443) | surface=Plot_04_House_04_Recessed_Veranda
+TestParcel_09 | position=(21.059, -0.230, 20.992) | surface=Asphalt
+TestParcel_10 | position=(-38.384, -0.230, 35.713) | surface=Asphalt
+Forbidden house roofs rejected=7/7

@@ -1,0 +1,21 @@
+PLAYER_BASICS: 20 checks passed; dt=0.005047102
+PASS grounded exploration startup (no auto flight)
+PASS all three slots start empty
+PASS no default held equipment or drone
+PASS startup stamina 100
+PASS exploration stays free of bots, capture pads, and pickups
+PASS WASD walking speed 6.5
+PASS Shift dash moves at 17 and spends exactly 50 once; delta=5.666668, dt=0.3333333, stamina=50, end=0.7033333, now=0.3533333, pressed=True
+PASS holding Shift during dash does not repeatedly spend stamina
+PASS holding Shift after dash returns to walking without sprint or automatic repeat; speed=6.499996, stamina=51.99561, pressed=False, dashEnd=0, now=0.4032237
+PASS stamina regenerates 20/sec outside a dash
+PASS Shift without movement dashes forward; stamina=50, direction=(0.00, 0.00, 1.00), pressed=True, paused=False
+PASS less than 50 stamina blocks a dash
+PASS Ctrl no longer triggers a roll
+PASS crouching keeps its controller height and blocks dash
+PASS dash cancels capture and disables interaction until it ends
+PASS game defaults to first person
+PASS Space jumps with gravity instead of flight
+PASS mouse buttons cannot grant or fire equipment while empty
+PASS empty hands do not enter rifle aiming FOV
+PASS subsequent Update keeps every slot empty
