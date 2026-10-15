@@ -1,0 +1,60 @@
+PASS item attacks remain gated
+PASS single boxing glove icon bytes are applied
+PASS single work glove icon bytes are applied
+PASS empty selection has no held model
+PASS first-person camera-local carrier: BoxingGloves
+PASS held art cannot block interaction or movement: BoxingGloves
+PASS visible item geometry in first-person frame: BoxingGloves
+PASS forward placement and dedicated overlay camera: BoxingGloves
+PASS two native robot arm meshes visible: BoxingGloves
+PASS unchanged selection reuses its model: BoxingGloves
+PASS first-person camera-local carrier: Plunger
+PASS held art cannot block interaction or movement: Plunger
+PASS visible item geometry in first-person frame: Plunger
+PASS forward placement and dedicated overlay camera: Plunger
+PASS two native robot arm meshes visible: Plunger
+PASS unchanged selection reuses its model: Plunger
+PASS first-person camera-local carrier: Megaphone
+PASS held art cannot block interaction or movement: Megaphone
+PASS visible item geometry in first-person frame: Megaphone
+PASS forward placement and dedicated overlay camera: Megaphone
+PASS two native robot arm meshes visible: Megaphone
+PASS unchanged selection reuses its model: Megaphone
+PASS first-person camera-local carrier: PackingTape
+PASS held art cannot block interaction or movement: PackingTape
+PASS visible item geometry in first-person frame: PackingTape
+PASS forward placement and dedicated overlay camera: PackingTape
+PASS two native robot arm meshes visible: PackingTape
+PASS unchanged selection reuses its model: PackingTape
+PASS first-person camera-local carrier: CordlessFan
+PASS held art cannot block interaction or movement: CordlessFan
+PASS visible item geometry in first-person frame: CordlessFan
+PASS forward placement and dedicated overlay camera: CordlessFan
+PASS two native robot arm meshes visible: CordlessFan
+PASS unchanged selection reuses its model: CordlessFan
+PASS effect-only item has no model or arms: RunningShoes
+PASS effect-only item has no model or arms: BubbleWrap
+PASS first-person camera-local carrier: WorkGloves
+PASS held art cannot block interaction or movement: WorkGloves
+PASS visible item geometry in first-person frame: WorkGloves
+PASS forward placement and dedicated overlay camera: WorkGloves
+PASS two native robot arm meshes visible: WorkGloves
+PASS unchanged selection reuses its model: WorkGloves
+PASS first-person camera-local carrier: PrinterInk
+PASS held art cannot block interaction or movement: PrinterInk
+PASS visible item geometry in first-person frame: PrinterInk
+PASS forward placement and dedicated overlay camera: PrinterInk
+PASS two native robot arm meshes visible: PrinterInk
+PASS unchanged selection reuses its model: PrinterInk
+PASS first-person camera-local carrier: MiniTrampoline
+PASS held art cannot block interaction or movement: MiniTrampoline
+PASS visible item geometry in first-person frame: MiniTrampoline
+PASS forward placement and dedicated overlay camera: MiniTrampoline
+PASS two native robot arm meshes visible: MiniTrampoline
+PASS unchanged selection reuses its model: MiniTrampoline
+PASS real 2 key changes selected held item
+PASS real G key removes selected model with no dropped copy
+PASS third-person switches back to normal world art
+PASS gloves have independent left/right parts
+PASS return to first-person rebuilds visible presentation
+PASS presentation does not enable item use or consume budgets

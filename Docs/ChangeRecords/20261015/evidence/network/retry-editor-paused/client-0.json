@@ -1,0 +1,15 @@
+{
+    "own": 0,
+    "players": 0,
+    "uniqueColors": false,
+    "teamsBalanced": false,
+    "sawLobby": false,
+    "sawPlaying": false,
+    "sawFrozen": false,
+    "sawOwnership": false,
+    "sawResults": false,
+    "remoteInput": false,
+    "checks": [
+        "FAIL session timed out before results"
+    ]
+}

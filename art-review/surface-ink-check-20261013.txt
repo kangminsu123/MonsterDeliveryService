@@ -1,0 +1,27 @@
+SURFACE_INK: 26 checks passed
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint
+PASS wall mark lies on the real face without adding a collider
+PASS surface ink is black including its edge
+PASS ink remains fully visible during the first second
+PASS ink fades gradually after the one-second hold
+PASS finished stain and its generated mesh are removed after the fade
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint
+PASS downward projectile places ink on the floor surface
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint
+PASS ink fits a tilted surface with nonuniform scale
+PASS stain remains attached when the struck prop moves
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint
+PASS ink mesh follows a curved prop instead of floating in front of it
+PASS shielded actor hit creates no environment stain and applies no screen ink
+PASS unshielded actor keeps the existing actor ink effect without a surface decal
+PASS authored map fence exposes a real impact face
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint
+PASS authored wall capture reaches the fading phase
+PASS authored map provides a solid floor
+PASS real projectile ends on the struck surface
+PASS impact creates a visible surface footprint

@@ -1,0 +1,815 @@
+{
+  "date": "2026-10-15",
+  "title": "몬스터 딜리버리 서비스 아이템 트러블슈팅 기록",
+  "requests": [
+    [
+      "R01",
+      "러닝화",
+      "유니티 연결 및 아이템 목록 확인 후 신발 모델 없이 본인과 상대에게 부스터 효과 표시",
+      "01"
+    ],
+    [
+      "R02",
+      "러닝화",
+      "상대 효과를 떠 있는 몸 높이로 올리고 하늘색 전 화면 박동 효과로 변경",
+      "01 02"
+    ],
+    [
+      "R03",
+      "러닝화",
+      "이동 속도 증가를 50퍼센트로 올리고 상대 효과 범위 확대",
+      "02"
+    ],
+    [
+      "R04",
+      "러닝화",
+      "부스터 연출을 더 자연스럽고 눈에 띄게 발전",
+      "02"
+    ],
+    [
+      "R05",
+      "목록 조회",
+      "현재 아이템 목록 다시 확인",
+      "부록"
+    ],
+    [
+      "R06",
+      "에어캡",
+      "손 모델 없이 본인과 상대에게 보호되는 효과 표시",
+      "03"
+    ],
+    [
+      "R07",
+      "에어캡",
+      "정지한 땡땡이를 폭폭 터지는 기포로 변경",
+      "03"
+    ],
+    [
+      "R08",
+      "에어캡",
+      "기포 안의 별 모양 제거",
+      "03"
+    ],
+    [
+      "R09",
+      "만년필",
+      "잉크를 돌아오지 않는 만년필 투척으로 바꾸고 적중 시 시야 차단",
+      "04"
+    ],
+    [
+      "R10",
+      "만년필",
+      "잉크에 가려지는 화면 범위를 확대",
+      "05"
+    ],
+    [
+      "R11",
+      "만년필",
+      "상대를 맞혔다는 사실이 보이는 적중 효과 추가",
+      "05"
+    ],
+    [
+      "R12",
+      "공통 방어",
+      "에어캡이 공격을 방어하지 않는 문제 확인",
+      "06"
+    ],
+    [
+      "R13",
+      "공통 방어",
+      "새 아이템도 바로 적용되는 공통 피격 파이프라인 구축",
+      "06"
+    ],
+    [
+      "R14",
+      "표면 잉크",
+      "플레이어 외 벽과 바닥에 검은 잉크를 남기고 1초 뒤 서서히 제거",
+      "07"
+    ],
+    [
+      "R15",
+      "뚫어뻥",
+      "흡착컵 끝과 크기에 걸리면 당겨지도록 좁은 판정 수정",
+      "08"
+    ],
+    [
+      "R16",
+      "슬라임",
+      "박스 테이프를 슬라임 투척으로 바꾸고 감속 효과 명확히 표시",
+      "09"
+    ],
+    [
+      "R17",
+      "슬라임",
+      "가로등 적중 및 높은 투척 도중 사라지는 현상 수정",
+      "10"
+    ],
+    [
+      "R18",
+      "뿅망치",
+      "확성기를 근접 뿅망치로 바꾸고 가까운 적 기절",
+      "11"
+    ],
+    [
+      "R19",
+      "뿅망치",
+      "양쪽 타격면을 본인과 상대 방향으로 돌리고 사거리 확대",
+      "12"
+    ],
+    [
+      "R20",
+      "망치와 HUD",
+      "손잡이를 길게 하고 높이를 올리며 점령 패널과 미니맵 축소",
+      "13"
+    ]
+  ],
+  "cases": [
+    {
+      "id": "01",
+      "title": "러닝화 효과를 떠 있는 몸 높이에 맞추기",
+      "req": [
+        "R01",
+        "R02"
+      ],
+      "kind": "연출 구현과 위치 수정",
+      "problem": "러닝화는 이동 강화 아이템이어서 손에 신발을 드는 표현이 필요하지 않았다. 상대 효과는 발아래 빈 공간에 보여 떠 있는 로봇의 몸과 분리되어 보였다.",
+      "cause": "입자 발생 기준이 캐릭터 컨트롤러 원점의 아래쪽에 있었고, 이 프로젝트의 로봇은 지면에서 떠 있다. 지면 기준 장식을 몸통 효과로 그대로 사용하면 시각적 중심이 어긋난다.",
+      "method": "HasHeldModel에서 러닝화 모델을 제외했다. 상대 바람 시작점을 로컬 Y -0.55m에서 +0.25m로 0.8m 올리고, 수명 0.65~0.85초와 상승 속도 1.1~1.4m/s를 조정해 하단 몸통에서 머리 주변으로 흐르게 했다.",
+      "result": "손에 신발을 표시하지 않아도 발동을 알 수 있고, 상대의 효과가 몸통과 함께 이동한다. 효과가 끝나면 입자와 잔상을 정리한다.",
+      "verify": "Running Shoes 검사 29개를 2026년 10월 15일 다시 통과했다. 몸통 시작 높이, 손 모델 미표시, 활성화와 만료를 확인한다.",
+      "files": [
+        "Assets/Gameplay/HeldItemPresentation.cs",
+        "Assets/Gameplay/RunningShoesAura.cs",
+        "Assets/Gameplay/RunningShoesFX.cs"
+      ],
+      "figures": [
+        [
+          "running_before",
+          "초기 상대 효과 검수 화면 2026년 10월 13일"
+        ],
+        [
+          "running_world",
+          "몸통 높이로 올리고 회전 바람을 적용한 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "02",
+      "title": "러닝화의 화면 박동과 속도 체감 개선",
+      "req": [
+        "R02",
+        "R03",
+        "R04"
+      ],
+      "kind": "수치 변경과 연출 개선",
+      "problem": "본인 효과가 화면 양옆에만 보여 화면 전체를 감싸는 부스터 느낌이 부족했다. 상대 효과는 작아서 사용 여부가 잘 보이지 않았고, 입자만 크게 늘린 표현도 만족스럽지 않았다.",
+      "cause": "표현 범위와 입자 크기만으로 속도감을 전달하려 해 화면의 방향성과 상대의 움직임을 충분히 드러내지 못했다.",
+      "method": "이동 배율을 1.4에서 1.5로 바꾸고 화면 안내도 +50%로 맞췄다. 하늘색 RGB 0.42 0.75 1의 네 가장자리 그라데이션에 강한 박동과 약한 박동, 쉼을 반복했다. 상대는 단순 큰 입자에서 회전 바람 3줄과 이동 시 0.24초 잔상, 작은 상승 입자로 개선했다.",
+      "result": "5초간 이동 속도 +50%가 적용되고, 상대가 움직일 때 바람 띠와 잔상이 몸통을 둘러싼다. 화면 중앙은 투명하게 유지해 부스터 효과와 조준 시야를 함께 확보했다. 재사용은 지속 시간 갱신이며 배율이 중첩되지 않는다.",
+      "verify": "29개 검사가 네 가장자리와 투명 중앙, 강약 박동, 실제 회전, 이동 잔상, 종료 정리까지 확인했다. 슬로우와 함께 적용되면 0.6 × 1.5 = 0.9배다.",
+      "files": [
+        "Assets/Gameplay/DeliveryItemState.cs",
+        "Assets/Gameplay/RunningShoesFX.cs",
+        "Assets/Gameplay/RunningShoesAura.cs"
+      ],
+      "figures": [
+        [
+          "running_screen",
+          "하늘색 전체 테두리와 부스터 표시를 재캡처한 화면 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "03",
+      "title": "에어캡 기포가 터지는 보호막 만들기",
+      "req": [
+        "R06",
+        "R07",
+        "R08"
+      ],
+      "kind": "연출 구현과 시각 요소 제거",
+      "problem": "에어캡은 손에 들고 있는 모델보다 보호 중이라는 표현이 필요했다. 보호막 표면의 점들이 정지해 보였고, 터지는 기포 안에는 요청하지 않은 별 모양이 나타났다.",
+      "cause": "기포의 시간 변화가 부족했고, 셰이더의 각도 기반 6방향 spokes 계산이 별 모양을 만들었다. 장식 기포의 터짐과 실제 방어 성공에 따른 전체 파괴도 구별할 필요가 있었다.",
+      "method": "본인은 민트색 화면 가장자리와 기포, 상대는 떠 있는 몸을 감싸는 투명 보호막으로 표시했다. 셀별 난수와 _BubbleTime으로 부풀기, 확산, 사라짐, 재생성의 주기를 다르게 만들었다. 6방향 spokes를 제거하고 둥근 기포와 중심 빛을 유지했다.",
+      "result": "보호막 표면이 각자 다른 타이밍으로 폭폭 터진다. 이 장식은 방어 횟수를 쓰지 않는다. 실제 유효 공격을 막으면 보호막이 약 0.45초 동안 퍼지며 터지고, 8초 자연 만료는 조용히 사라진다.",
+      "verify": "Bubble Wrap 검사 32개를 2026년 10월 15일 다시 통과했다. 서로 다른 시간의 렌더 픽셀 비교, 한 번 방어, 다음 타격 적용, 자연 만료를 포함한다.",
+      "files": [
+        "Assets/Gameplay/BubbleWrapFX.cs",
+        "Assets/Gameplay/BubbleWrapShield.cs",
+        "Assets/Resources/FX/BubbleWrapShield.shader"
+      ],
+      "figures": [
+        [
+          "bubble_before",
+          "초기 보호막 검수 화면 2026년 10월 13일"
+        ],
+        [
+          "bubble_world",
+          "원형 기포와 최종 보호막을 재캡처한 화면 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "04",
+      "title": "잉크 아이템을 만년필 투척으로 교체하기",
+      "req": [
+        "R09"
+      ],
+      "kind": "아이템 요구 변경",
+      "problem": "기존 잉크 아이템을 던져 맞히는 방식으로 바꾸되, 뚫어뻥처럼 되돌아오는 동작이 아니라 총알처럼 날아가는 만년필이 필요했다.",
+      "cause": "바닥 영역으로 잉크를 처리하는 기존 방식으로는 명확한 투사체와 직접 적중 대상을 표현하기 어려웠다.",
+      "method": "ID 9를 유지하면서 FountainPen으로 교체하고 검은 몸통과 금색 펜촉 모델, 실제 모델 아이콘을 연결했다. 기존 BrawlShot에 무중력 Rigidbody와 연속 충돌, SweepTest를 사용해 48m/s로 발사하고 첫 충돌에서 삭제한다. 사거리는 35m이며 복귀하지 않는다.",
+      "result": "직접 맞은 플레이어의 화면만 4초간 잉크로 가린다. 이동과 점령 자체는 허용한다. 벽 앞 생성 가림과 고속 이동 경로를 검사하며 슬롯 변경이나 폐기 뒤에도 이미 발사한 펜은 유지된다.",
+      "verify": "Fountain Pen 검사 54개를 2026년 10월 15일 다시 통과했다. 실제 비행과 상대 및 본인 적중, 얇은 벽, 생성 위치 가림, 사거리, 복귀 없음이 포함된다.",
+      "files": [
+        "Assets/Gameplay/FountainPenCombat.cs",
+        "Assets/Gameplay/MonsterDeliveryPrototype.cs",
+        "Assets/Editor/FountainPenSetup.cs"
+      ],
+      "figures": [
+        [
+          "pen_held",
+          "현재 만년필 모델과 장착 화면 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "05",
+      "title": "잉크의 시야 차단과 적중 피드백 강화",
+      "req": [
+        "R10",
+        "R11"
+      ],
+      "kind": "표시 범위와 적중 연출 개선",
+      "problem": "잉크에 가려지는 범위가 좁았고, 맞힌 사람이 상대를 봤을 때 성공 여부를 알기 어려웠다.",
+      "cause": "피격자의 화면 효과만으로는 공격자에게 결과가 전달되지 않는다. 작은 얼룩만 사용하면 시야 차단과 명중 피드백 모두 약해진다.",
+      "method": "화면 잉크 크기를 가로 1.06에서 1.48배, 세로 1.24에서 1.72배로 약 40% 넓혔다. 상대 적중에는 큰 잉크 방울 48개, 보라색 충격 고리 2개, 떠 있는 얼굴과 몸통을 따라가는 자국 7개를 추가했다.",
+      "result": "피격자는 화면 중앙과 가장자리까지 넓게 가려지고, 공격자는 잉크 튐과 몸에 남은 자국으로 명중을 구별한다. 자국은 시야 차단과 같은 4초 동안 유지되고 마지막 0.65초에 사라진다.",
+      "verify": "54개 검사에서 실제 투사체 적중, 자국의 몸 추적, 반복 적중 시 시간 갱신, 에어캡에 막혔을 때 잉크 미표시와 종료 복구를 확인했다.",
+      "files": [
+        "Assets/Gameplay/FountainPenCombat.cs",
+        "Assets/Gameplay/FountainInkHit.cs"
+      ],
+      "figures": [
+        [
+          "pen_ink",
+          "넓어진 본인 화면의 잉크 시야 차단"
+        ],
+        [
+          "pen_burst",
+          "상대 적중 때의 잉크 튐과 몸 자국"
+        ]
+      ]
+    },
+    {
+      "id": "06",
+      "title": "에어캡 방어를 공통 피격 경로로 통합하기",
+      "req": [
+        "R12",
+        "R13"
+      ],
+      "kind": "결함 수정과 공통 구조 정리",
+      "problem": "에어캡을 사용해도 만년필 잉크가 들어왔다. 아이템마다 별도로 방어 코드를 넣으면 새로운 공격이 추가될 때 같은 누락이 반복될 수 있었다.",
+      "cause": "만년필이 기존 Control의 방어 판정을 거치지 않고 visionBlockedUntil을 직접 기록해 보호막을 우회했다.",
+      "method": "DeliveryItemHit에 힘, 기절, 슬로우, 잉크 시간과 방어 가능 여부를 담았다. 모든 적중을 ApplyItemHit와 ReceiveHit로 전달하고 Ignored, Blocked, Applied 결과를 반환한다. 유효 효과 확인 뒤 방어를 먼저 처리하고, Applied일 때만 상태 변경과 해당 피격 연출을 보여 준다.",
+      "result": "에어캡은 첫 유효 공격의 모든 효과를 한 번에 막고, 다음 공격은 정상 적용한다. 새 아이템도 같은 입력 구조를 사용하면 기본적으로 방어된다. 슬라임 바닥처럼 지형 위험은 shieldable false를 명시해 별도 정책을 표현한다.",
+      "verify": "만년필 54개와 에어캡 32개 재검증에서 실제 본인과 상대의 방어, 복합 효과 일괄 차단, 면역과 무효 타격의 보호막 미소비, 두 번째 적중을 확인했다. 검사 개수는 서로 다른 고유 사례 수의 합계로 해석하지 않는다.",
+      "files": [
+        "Assets/Gameplay/DeliveryItemHit.cs",
+        "Assets/Gameplay/DeliveryItemState.cs",
+        "Assets/Gameplay/MonsterDeliveryPrototype.cs"
+      ],
+      "figures": [
+        [
+          "pen_block",
+          "실제 만년필이 상대 보호막에 막힌 순간 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "07",
+      "title": "벽과 바닥에 검은 잉크를 남기고 지우기",
+      "req": [
+        "R14"
+      ],
+      "kind": "표면 적중 효과 구현",
+      "problem": "플레이어가 아닌 곳에 맞았을 때도 검은 잉크가 묻고, 1초 뒤부터 서서히 없어지는 흔적이 필요했다.",
+      "cause": "플레이어의 화면 잉크와 환경 표면 자국은 목적과 수명이 다르다. 평면 이미지를 단순히 띄우면 경사나 둥근 소품에 들뜨거나 도로 차선과 겹쳐 깜빡일 수 있다.",
+      "method": "실제 충돌점과 법선을 전달하고 SurfaceInkMark가 Collider.Raycast로 17×17 격자를 표면에 맞췄다. 유효 삼각형만 그리며 표면에서 12mm 띄우고 대상의 자식으로 붙여 이동을 따라가게 했다.",
+      "result": "검은 자국을 처음 1초 유지한 뒤 1초 동안 부드럽게 투명하게 만든다. 총 2초 뒤 오브젝트와 런타임 메시를 제거한다. 플레이어 적중과 에어캡 방어에는 환경 자국을 만들지 않는다.",
+      "verify": "Surface Ink 검사 26개를 2026년 10월 15일 다시 통과했다. 벽, 바닥, 경사, 곡면, 이동 표면과 유지 및 페이드, 만료를 확인한다.",
+      "files": [
+        "Assets/Gameplay/SurfaceInkMark.cs",
+        "Assets/Gameplay/FountainPenCombat.cs"
+      ],
+      "figures": [
+        [
+          "surface_hold",
+          "벽 적중 직후 검은 잉크"
+        ],
+        [
+          "surface_fade",
+          "1초 유지 뒤 서서히 사라지는 구간"
+        ]
+      ]
+    },
+    {
+      "id": "08",
+      "title": "뚫어뻥 흡착컵 전체 크기로 명중 판정하기",
+      "req": [
+        "R15"
+      ],
+      "kind": "충돌 판정 결함 수정",
+      "problem": "뚫어뻥 흡착컵 끝이 플레이어 몸에 걸려 보이는데도 적중하지 않아 상대를 당기지 못했다.",
+      "cause": "루트 중심선의 얇은 Raycast는 컵의 위치와 폭을 포함하지 못했다. 네이티브 캐릭터 쿼리에서 관찰한 반경 약 0.44m와 몸 표시 반경 0.55m 차이도 가장자리 누락을 만들었다.",
+      "method": "실제 MeshFilter bounds에서 흡착면과 컵 반경 약 0.141m를 구하고 2cm 여유를 더했다. 환경은 시작 OverlapSphere와 SphereCastAll, 상대는 CharacterController bounds 전체 수직 캡슐과 컵 구의 정확한 교차로 검사한다. 가장 가까운 접촉 한 번만 처리하고 같은 거리에서는 벽을 우선한다.",
+      "result": "좌우와 상하 가장자리, 시작부터 겹친 상대도 컵 범위에 걸리면 명중한다. 기존 공통 방어 경로를 통과한 상대를 현재 내 앞 약 1.6m까지 당기며 몸 충돌로 벽 통과를 막는다. 이 경로는 이후 뿅망치와 SweepItemPath로 공유했다.",
+      "verify": "Plunger 검사 92개를 2026년 10월 15일 다시 통과했다. 가장자리 적중, 가까운 벽과 얇은 장애물, 이동 상대, 에어캡, 저항, 당겨진 최종 위치가 포함된다. 정지 캡처만으로 판정 폭 수정이 입증되는 것은 아니며 검사 로그가 그 근거다.",
+      "files": [
+        "Assets/Gameplay/PlungerCombat.cs",
+        "Assets/Editor/PlungerEffectsCheck.cs"
+      ],
+      "figures": [
+        [
+          "plunger",
+          "실제 흡착컵 명중과 복귀 구간의 검수 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "09",
+      "title": "박스 테이프를 슬라임 투척과 감속으로 교체하기",
+      "req": [
+        "R16"
+      ],
+      "kind": "아이템 요구 변경과 상태 표시",
+      "problem": "박스 테이프 대신 던지는 슬라임으로 상대를 느리게 만들고, 느려진 상태를 분명히 보여 줄 필요가 있었다.",
+      "cause": "기존 바닥 슬로우만으로는 투척물과 직접 적중, 피격자 및 관찰자에게 필요한 상태 표시가 부족했다.",
+      "method": "ID 4를 Slime으로 교체하고 중력으로 날아가는 젤 모델을 연결했다. 직접 타격은 공통 피격 경로로 3초 감속, 바닥은 반경 3m와 5초 수명으로 만들었다. 상대 몸통에는 코팅 6개와 흐르는 방울 10개, 본인 화면에는 초록 테두리와 감속 문구를 표시한다.",
+      "result": "이동 속도 40% 감소가 눈에 보인다. 바닥을 벗어나면 0.3초 뒤 회복하며 사용자도 밟으면 느려진다. Max로 종료 시간을 갱신해 짧은 바닥 갱신이 긴 직격 감속을 줄이지 않게 했다.",
+      "verify": "Slime 검사 53개에서 본인과 상대 발사, 직격 방어와 바닥 정책, 벽 및 층 구분, 범위, 이탈과 만료를 확인했다. 직접 타격은 에어캡이 막고, 방어된 직격은 즉시 바닥을 생성하지 않는다.",
+      "files": [
+        "Assets/Gameplay/SlimeCombat.cs",
+        "Assets/Gameplay/SlimeSlowEffect.cs",
+        "Assets/Gameplay/SlimePuddle.cs",
+        "Assets/Gameplay/DeliveryItemState.cs"
+      ],
+      "figures": [
+        [
+          "slime_screen",
+          "본인 감속 표시와 상대 코팅 및 바닥 웅덩이 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "10",
+      "title": "슬라임이 공중과 가로등에서 사라지는 현상 수정",
+      "req": [
+        "R17"
+      ],
+      "kind": "비행 수명과 충돌 결과 결함 수정",
+      "problem": "높게 던진 슬라임이 착지 전에 사라지고, 높은 가로등에 맞으면 짧게 터진 뒤 아무것도 남지 않았다.",
+      "cause": "공유 BrawlShot의 3초 삭제 타이머와 Slime의 40m 제한이 중력 비행을 중간에 끊었다. 충돌 뒤 아래 지면을 4m까지만 찾아 높은 위치에서는 웅덩이를 만들지 못했다.",
+      "method": "슬라임의 3초와 40m 제한을 제거해 실제 충돌까지 날아가게 하고, 맵 아래 Y -20m 미만만 정리했다. 하향 지면 탐색 거리 제한을 없애 가장 가까운 유효 지면을 찾고, 충돌 표면에는 납작한 젤 자국을 5초 남겼다.",
+      "result": "높은 투척도 내려와 실제 지면에서 터지고, 가로등에는 초록 자국과 아래쪽 웅덩이가 남는다. 만년필의 기존 35m와 3초 규칙은 별도로 유지한다.",
+      "verify": "53개 검사에 3.2초 뒤 공중 생존과 실제 착지, 40m를 넘는 대각선 착지, 약 9m 높이 기둥, 실제 맵 StreetLamp 적중, 맵 아래 정리가 포함된다.",
+      "files": [
+        "Assets/Gameplay/SlimeCombat.cs",
+        "Assets/Gameplay/MonsterDeliveryPrototype.cs"
+      ],
+      "figures": [
+        [
+          "slime_lamp",
+          "실제 맵 가로등에 남은 초록 젤 자국 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "11",
+      "title": "확성기를 근접 기절 뿅망치로 교체하기",
+      "req": [
+        "R18"
+      ],
+      "kind": "아이템 요구 변경",
+      "problem": "확성기 대신 가까운 적을 때려 기절시키는 근접 뿅망치가 필요했다.",
+      "cause": "전방 광역 기절을 예약하던 hornAt 처리와 확성기 모델로는 실제 휘두르기와 한 명 적중이라는 요구를 표현하지 못했다.",
+      "method": "ID 3을 ToyHammer로 교체하고 고무 주름 머리와 손잡이 모델을 만들었다. 준비 0.18초, 동작 0.48초, 재사용 0.75초로 타격 순간의 가장 가까운 적 한 명만 공통 피격 경로에 전달한다. 머리 폭과 벽 검사는 뚫어뻥의 SweepItemPath를 재사용한다.",
+      "result": "적중한 상대가 1.2초 기절해 이동과 행동, 점령을 멈춘다. 머리 위 노란 고리 2개와 점 4개가 돌아가며 기절을 표시한다. 에어캡 방어와 기절 뒤 2초 면역도 같은 상태 경로로 처리한다.",
+      "verify": "최종 Toy Hammer 검사 36개에서 타격 지연, 일회 적중, 벽, 범위, 가장자리, NPC 이동 정지, 에어캡과 면역, 준비 취소, 폐기, 두 시점을 확인한다. 초기 사거리 2.5m는 다음 조정에서 3.5m로 확대했다.",
+      "files": [
+        "Assets/Gameplay/ToyHammerCombat.cs",
+        "Assets/Gameplay/DeliveryStunEffect.cs",
+        "Assets/Editor/ToyHammerSetup.cs"
+      ],
+      "figures": [
+        [
+          "hammer_hit",
+          "근접 적중과 머리 위 기절 표시 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "12",
+      "title": "뿅망치 타격면 방향과 사거리 조정",
+      "req": [
+        "R19"
+      ],
+      "kind": "장착 방향과 수치 조정",
+      "problem": "망치의 때리는 면이 좌우를 향해 옆면으로 치는 것처럼 보였고 사거리가 짧게 느껴졌다.",
+      "cause": "기본 모델의 두 타격면 축이 로컬 X축에 놓여 장착 시 본인과 상대를 향하지 않았다.",
+      "method": "손잡이를 바꾸지 않고 머리 부품만 HammerHead 자식으로 묶어 Y축 90도로 돌렸다. 타격면은 앞뒤를 향하고 기존 준비와 내리치기를 유지한다. HammerRange를 2.5m에서 3.5m로 40% 늘렸다.",
+      "result": "1인칭과 3인칭 모두 양쪽 타격면이 본인 및 상대 방향과 정렬된다. 기존보다 먼 상대가 맞으며 머리 반경 0.32m, 기절 1.2초와 벽 및 보호막 정책은 유지한다.",
+      "verify": "36개 검사에는 두 시점의 타격면 축 확인, 이전 범위를 넘는 적중과 바깥 제외가 추가되어 있다. 적 중심 거리와 스윕 길이는 몸 반경 때문에 다르므로 수치를 같은 의미로 혼용하지 않는다.",
+      "files": [
+        "Assets/Editor/ToyHammerSetup.cs",
+        "Assets/Gameplay/ToyHammerCombat.cs",
+        "Assets/Editor/ToyHammerEffectsCheck.cs"
+      ],
+      "figures": [
+        [
+          "hammer_third",
+          "상대 방향으로 향하는 망치와 장착 동작의 최종 재캡처 2026년 10월 15일"
+        ]
+      ]
+    },
+    {
+      "id": "13",
+      "title": "망치 손잡이와 화면 배치 및 HUD 크기 조정",
+      "req": [
+        "R20"
+      ],
+      "kind": "모델 비율과 UI 배치 조정",
+      "problem": "손잡이가 짧고 망치가 화면 아래에 놓여 있었다. 왼쪽 점령 패널과 오른쪽 미니맵은 차지하는 면적을 줄일 필요가 있었다.",
+      "cause": "짧은 손잡이와 낮은 1인칭 장착 위치가 결합되어 머리만 두드러졌다. 모델 높이만 올리면 미니맵과 겹치는 추가 문제가 생겼다.",
+      "method": "손잡이를 0.54m에서 0.81m로 1.5배 늘리고 머리 중심 Y를 0.57m에서 0.84m로 옮겼다. 장착 Y는 -0.4m에서 -0.25m로 올리고 X를 0.22m로 안쪽 보정했다. 점령 패널은 310×124에서 248×99, 미니맵은 350×414에서 280×332로 약 20% 줄였다.",
+      "result": "긴 손잡이가 보이고 높아진 망치가 미니맵과 겹치지 않는다. 제목과 수치, 지도 마커와 범례도 함께 줄였다. 지도 원본 512px, 좌표, 점령 데이터와 전투 수치는 유지한다.",
+      "verify": "실제 Game View에서 조준점과 UI 겹침, 휘두르기, 아이콘 프레이밍을 확인하고 기존 36개 검사를 다시 통과했다. 표기 크기는 1920×1080 기준이다.",
+      "files": [
+        "Assets/Editor/ToyHammerSetup.cs",
+        "Assets/Gameplay/MonsterDeliveryHUD.cs",
+        "Assets/Gameplay/DeliveryMinimap.cs"
+      ],
+      "figures": [
+        [
+          "hammer_hud",
+          "길어진 손잡이와 높아진 위치 및 작아진 HUD의 최종 재캡처 2026년 10월 15일"
+        ]
+      ]
+    }
+  ],
+  "assets": {
+    "running_before": [
+      "running-shoes-opponent-20261013.png",
+      "historical",
+      "2026-10-13"
+    ],
+    "running_world": [
+      "running-shoes-opponent-ribbons-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "running_screen": [
+      "running-shoes-first-person-refined-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "bubble_before": [
+      "bubble-wrap-opponent-20261013.png",
+      "historical",
+      "2026-10-13"
+    ],
+    "bubble_world": [
+      "bubble-wrap-opponent-fizz-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "bubble_screen": [
+      "bubble-wrap-first-person-fizz-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "bubble_pop": [
+      "bubble-wrap-opponent-pop-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "pen_held": [
+      "fountain-pen-held-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "pen_ink": [
+      "fountain-pen-ink-hit-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "pen_burst": [
+      "fountain-pen-opponent-burst-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "pen_stain": [
+      "fountain-pen-opponent-stains-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "pen_block": [
+      "fountain-pen-aircap-block-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "surface_hold": [
+      "fountain-pen-wall-ink-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "surface_fade": [
+      "fountain-pen-wall-ink-fade-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "surface_ground": [
+      "fountain-pen-ground-ink-20261013.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "plunger": [
+      "plunger-hit-return-20261012.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "slime_screen": [
+      "slime-screen-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "slime_world": [
+      "slime-opponent-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "slime_lamp": [
+      "slime-lamp-fixed-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "hammer_hit": [
+      "toy-hammer-hit-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "hammer_third": [
+      "toy-hammer-third-person-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "hammer_hud": [
+      "toy-hammer-held-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "hammer_screen": [
+      "toy-hammer-stunned-screen-20261014.png",
+      "fresh",
+      "2026-10-15"
+    ],
+    "glove": [
+      "glove-push-third-person-20261009.png",
+      "historical",
+      "2026-10-09"
+    ],
+    "workglove": [
+      "work-glove-capture-hud-20261009.png",
+      "historical",
+      "2026-10-09"
+    ]
+  },
+  "image_manifest": {
+    "running_before": {
+      "file": "images/running_before_20261013.png",
+      "source": "art-review/running-shoes-opponent-20261013.png",
+      "status": "historical",
+      "capture_date": "2026-10-13",
+      "sha256": "73c42146623a2585c3736386fd6c8029046def2fe98bfa430d18504e48668962"
+    },
+    "running_world": {
+      "file": "images/running_world_20261015.png",
+      "source": "art-review/running-shoes-opponent-ribbons-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "4a43385c21e8104ee7773da721f6809859cb81c986e96893ac26251206371559"
+    },
+    "running_screen": {
+      "file": "images/running_screen_20261015.png",
+      "source": "art-review/running-shoes-first-person-refined-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "41ff5f8a1d42c69f22cd9f0b3c3eb1970fe5ab0727799b9a0c583838c2498a74"
+    },
+    "bubble_before": {
+      "file": "images/bubble_before_20261013.png",
+      "source": "art-review/bubble-wrap-opponent-20261013.png",
+      "status": "historical",
+      "capture_date": "2026-10-13",
+      "sha256": "166e77a15e8dadfe7aa94a72b9316ce9ddc6646aba6bc0232c89eee87f13b83c"
+    },
+    "bubble_world": {
+      "file": "images/bubble_world_20261015.png",
+      "source": "art-review/bubble-wrap-opponent-fizz-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "16751301edcd84765f60888c612ac39295934148d30f0d942fdf510a46acdf46"
+    },
+    "bubble_screen": {
+      "file": "images/bubble_screen_20261015.png",
+      "source": "art-review/bubble-wrap-first-person-fizz-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "6fa85d80aa30235670e93056c86daa7d91ebd1c294ee4e3e60ccc0ca295293c9"
+    },
+    "bubble_pop": {
+      "file": "images/bubble_pop_20261015.png",
+      "source": "art-review/bubble-wrap-opponent-pop-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "3fff10eb97163f47e02c7e0306e63d8d947269bff0e24ed8e7db8120991c62b8"
+    },
+    "pen_held": {
+      "file": "images/pen_held_20261015.png",
+      "source": "art-review/fountain-pen-held-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "a5f3bd98da09c878a266797f65dc71a47d538ca1856ec069215f81792bcf503d"
+    },
+    "pen_ink": {
+      "file": "images/pen_ink_20261015.png",
+      "source": "art-review/fountain-pen-ink-hit-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "7a3804cbb44a5ab350f7b10ae2dd716472936b29d79616614dcb9b1f5b75ccde"
+    },
+    "pen_burst": {
+      "file": "images/pen_burst_20261015.png",
+      "source": "art-review/fountain-pen-opponent-burst-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "3dcab001b7eb54b8e0ed9a510d5bb3aef0422fa27ef4ec452f5375f58461c898"
+    },
+    "pen_stain": {
+      "file": "images/pen_stain_20261015.png",
+      "source": "art-review/fountain-pen-opponent-stains-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "445717e7e295528498ac8561d2aa78bfee4008b07cd3d2b61294478724be66d8"
+    },
+    "pen_block": {
+      "file": "images/pen_block_20261015.png",
+      "source": "art-review/fountain-pen-aircap-block-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "6e285f356be230ad4b5b2fd045a2e20c0c778e703c07d5d6871e4c85f7d24b39"
+    },
+    "surface_hold": {
+      "file": "images/surface_hold_20261015.png",
+      "source": "art-review/fountain-pen-wall-ink-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "d3adc75284129680d765b23486cf39a3a1550aef6085102fabc0296e76d58260"
+    },
+    "surface_fade": {
+      "file": "images/surface_fade_20261015.png",
+      "source": "art-review/fountain-pen-wall-ink-fade-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "6ad522a7af5d6fd2b4fab928e6d6defecab3e6a280417f8517a4184bcd108ed0"
+    },
+    "surface_ground": {
+      "file": "images/surface_ground_20261015.png",
+      "source": "art-review/fountain-pen-ground-ink-20261013.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "289490d7eba5f97e8637033ab328496c47c6ad1a38b1cbfa3bf61e136806330c"
+    },
+    "plunger": {
+      "file": "images/plunger_20261015.png",
+      "source": "art-review/plunger-hit-return-20261012.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "1e493095088a5062e4f61fdb8b815a572398d3cc0d94a9bd5ce4aa9f417f9f5a"
+    },
+    "slime_screen": {
+      "file": "images/slime_screen_20261015.png",
+      "source": "art-review/slime-screen-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "66b371dcb18d95293a7d15146790bfc9af87d3ee971f80f97edd777160275f27"
+    },
+    "slime_world": {
+      "file": "images/slime_world_20261015.png",
+      "source": "art-review/slime-opponent-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "32ae23cb4a6cae73ca133d4539746d953d3d003fd7a9b94adffb10d545ae797a"
+    },
+    "slime_lamp": {
+      "file": "images/slime_lamp_20261015.png",
+      "source": "art-review/slime-lamp-fixed-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "d2d290f151e9d9e6717b428c06563935593893733c646d40f1ff41bb3674b84e"
+    },
+    "hammer_hit": {
+      "file": "images/hammer_hit_20261015.png",
+      "source": "art-review/toy-hammer-hit-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "1266cd518fab9fc9b547ab583c1b6b30a81c46538d4a1ec5a552d23d354938cf"
+    },
+    "hammer_third": {
+      "file": "images/hammer_third_20261015.png",
+      "source": "art-review/toy-hammer-third-person-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "16fd07703eb0152881b333da160b905202e980122457a006c7351643b11b1e10"
+    },
+    "hammer_hud": {
+      "file": "images/hammer_hud_20261015.png",
+      "source": "art-review/toy-hammer-held-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "eb892232ee8d390618995d9d512707765590606121c5585385578ba984500a61"
+    },
+    "hammer_screen": {
+      "file": "images/hammer_screen_20261015.png",
+      "source": "art-review/toy-hammer-stunned-screen-20261014.png",
+      "status": "fresh",
+      "capture_date": "2026-10-15",
+      "sha256": "e056ae0aac9952cd203e6076b8ae868e5534600e6cee2ab5da158a3e8dda369c"
+    },
+    "glove": {
+      "file": "images/glove_20261009.png",
+      "source": "art-review/glove-push-third-person-20261009.png",
+      "status": "historical",
+      "capture_date": "2026-10-09",
+      "sha256": "8aa37b443db1fb4a30038d86a9245b1537bf5499f5305a2079787471720c3051"
+    },
+    "workglove": {
+      "file": "images/workglove_20261009.png",
+      "source": "art-review/work-glove-capture-hud-20261009.png",
+      "status": "historical",
+      "capture_date": "2026-10-09",
+      "sha256": "535a1ea75ae21bf73878e3014d38331dda8fac8c95e25eddca1fd5f1d9401e88"
+    }
+  },
+  "checks": [
+    {
+      "item": "러닝화",
+      "menu": "Tools/Gameplay/Running Shoes/Verify Effects",
+      "count": 29,
+      "date": "2026-10-15",
+      "log": "evidence/running-shoes-effects-check-20261013.txt"
+    },
+    {
+      "item": "에어캡",
+      "menu": "Tools/Gameplay/Bubble Wrap/Verify Effects",
+      "count": 32,
+      "date": "2026-10-15",
+      "log": "evidence/bubble-wrap-effects-check-20261013.txt"
+    },
+    {
+      "item": "만년필과 공통 피격",
+      "menu": "Tools/Gameplay/Fountain Pen/Verify Effects",
+      "count": 54,
+      "date": "2026-10-15",
+      "log": "evidence/fountain-pen-check-20261013.txt"
+    },
+    {
+      "item": "표면 잉크",
+      "menu": "Tools/Gameplay/Fountain Pen/Verify Surface Ink",
+      "count": 26,
+      "date": "2026-10-15",
+      "log": "evidence/surface-ink-check-20261013.txt"
+    },
+    {
+      "item": "뚫어뻥",
+      "menu": "Tools/Gameplay/Plunger/Verify Throw",
+      "count": 92,
+      "date": "2026-10-15",
+      "log": "evidence/plunger-cup-volume-check-20261014.txt"
+    },
+    {
+      "item": "슬라임",
+      "menu": "Tools/Gameplay/Slime/Verify Effects",
+      "count": 53,
+      "date": "2026-10-15",
+      "log": "evidence/slime-check-20261014.txt"
+    },
+    {
+      "item": "뿅망치",
+      "menu": "Tools/Gameplay/Toy Hammer/Verify Effects",
+      "count": 36,
+      "date": "2026-10-15",
+      "log": "evidence/toy-hammer-check-20261014.txt"
+    }
+  ]
+}

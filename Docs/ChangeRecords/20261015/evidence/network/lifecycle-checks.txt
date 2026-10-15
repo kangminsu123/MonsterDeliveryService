@@ -1,0 +1,4 @@
+PASS rematch returns to the same live lobby
+PASS leave returns to menu and clears network session
+PASS host can create another room after leaving
+PASS second leave restores menu

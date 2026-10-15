@@ -1,0 +1,1 @@
+기존 ParcelLootCheck에 NetworkScreens 테스트 설정을 추가했으나 private 필드만 찾던 Reflection 플래그 때문에 첫 실행에서 NullReferenceException. 테스트 플래그에 Public을 포함해 수정 후 재실행. 실제 게임의 획득 로직 오류와 구분한다. 첫 상공 캡처는 장착 아이스크림 카메라가 지도 일부를 가려 별도 장착 카메라를 끄고 재촬영한다.

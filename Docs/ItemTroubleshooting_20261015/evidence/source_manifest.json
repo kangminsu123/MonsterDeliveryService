@@ -1,0 +1,122 @@
+[
+  {
+    "path": "Assets/Editor/FountainPenSetup.cs",
+    "line_count": 89,
+    "sha256": "f19f53b9f1d0a2a5902dbfb5e469c63d17431d318c898cc3ab579d61ae63f642"
+  },
+  {
+    "path": "Assets/Editor/PlungerEffectsCheck.cs",
+    "line_count": 312,
+    "sha256": "59c8f713c96fea4f5a082531d834e3d9dd6da5668a4e8bb28c2cee962d5d9aef"
+  },
+  {
+    "path": "Assets/Editor/ToyHammerEffectsCheck.cs",
+    "line_count": 176,
+    "sha256": "364e7c3f14dac3e21f6872d8045a369d6df6b7f1bf023fcb062d642d8c8f4662"
+  },
+  {
+    "path": "Assets/Editor/ToyHammerSetup.cs",
+    "line_count": 99,
+    "sha256": "10d0624f2b7a7ad454911ea69ecfe40b3a98944be76a47b061ceb877560db6af"
+  },
+  {
+    "path": "Assets/Gameplay/BubbleWrapFX.cs",
+    "line_count": 97,
+    "sha256": "66cdc2b0f1b2ca0aea71f5ee64346d90ee3506d2f2f48567c9903a0d33165cf3"
+  },
+  {
+    "path": "Assets/Gameplay/BubbleWrapShield.cs",
+    "line_count": 79,
+    "sha256": "19d7774e50676e69cc2fb09a8e6c4687abf1c99a8087420935a3e9fb93318b4d"
+  },
+  {
+    "path": "Assets/Gameplay/DeliveryItemHit.cs",
+    "line_count": 18,
+    "sha256": "95e9a9725a9acf7fa7a325af26eeab254f48cb767eac2de8fcd7526614633ae6"
+  },
+  {
+    "path": "Assets/Gameplay/DeliveryItemState.cs",
+    "line_count": 55,
+    "sha256": "408f5dcc9c8a4aadb82b1b38a187b4c001601e2aff986eddd3c15a21808b736e"
+  },
+  {
+    "path": "Assets/Gameplay/DeliveryMinimap.cs",
+    "line_count": 121,
+    "sha256": "4dda26a3f8d905acf505630495a08d27b892da2e1aa163afe1c959dfff03ad90"
+  },
+  {
+    "path": "Assets/Gameplay/DeliveryStunEffect.cs",
+    "line_count": 44,
+    "sha256": "d46fe9e0317a790484c3b6ebbfe819b48ebee255cf16fa8558dde585ca776661"
+  },
+  {
+    "path": "Assets/Gameplay/FountainInkHit.cs",
+    "line_count": 94,
+    "sha256": "1b227da554074920c8f8da3a2c87d3669b1b890df8e8f7330caba350ab2afb6b"
+  },
+  {
+    "path": "Assets/Gameplay/FountainPenCombat.cs",
+    "line_count": 190,
+    "sha256": "a3c794909c9d3ab7015ac7722c6dbeddb9db1a6ff02fb66156ccff988de3e11a"
+  },
+  {
+    "path": "Assets/Gameplay/HeldItemPresentation.cs",
+    "line_count": 64,
+    "sha256": "2f4b019361d1b9a16d98cd0e0fc34bdcaeeb5fbef060c4b49024f456b265ba4f"
+  },
+  {
+    "path": "Assets/Gameplay/MonsterDeliveryHUD.cs",
+    "line_count": 176,
+    "sha256": "8e9de5752861f6d1202b080211c1743ab8d579d36a7304e52cac18886efc301b"
+  },
+  {
+    "path": "Assets/Gameplay/MonsterDeliveryPrototype.cs",
+    "line_count": 605,
+    "sha256": "9caefb98fb46050275fc352e2cfd33189e03e366fa2effc31b97a3fa1ee57e42"
+  },
+  {
+    "path": "Assets/Gameplay/PlungerCombat.cs",
+    "line_count": 227,
+    "sha256": "d608b4d1ecd5766675e95de0ae170b7dde385671b742ae0b1ffa96bfbff2bd0e"
+  },
+  {
+    "path": "Assets/Gameplay/RunningShoesAura.cs",
+    "line_count": 134,
+    "sha256": "d0ed0a594d67fe93b8dc2ee30ad625feaa524667e7692572978cf10ef5dd1e66"
+  },
+  {
+    "path": "Assets/Gameplay/RunningShoesFX.cs",
+    "line_count": 106,
+    "sha256": "9c5eca5bbfe3669b7b59bff278e17da3c54f84213a891d2ff7f3fa361ed39705"
+  },
+  {
+    "path": "Assets/Gameplay/SlimeCombat.cs",
+    "line_count": 143,
+    "sha256": "e890d17b697792ac733b6b368ca17465506851c85ae7de430c95c85c9f9cd6fc"
+  },
+  {
+    "path": "Assets/Gameplay/SlimePuddle.cs",
+    "line_count": 61,
+    "sha256": "dbe9e27be1776c68c39b090a159e02e9ddc82d97b8ff9d50a6c757bca3744acf"
+  },
+  {
+    "path": "Assets/Gameplay/SlimeSlowEffect.cs",
+    "line_count": 37,
+    "sha256": "0c17e34f02cb6308979ae5f3e9c9b89279ab155d4596993eba6a92885ef141e3"
+  },
+  {
+    "path": "Assets/Gameplay/SurfaceInkMark.cs",
+    "line_count": 68,
+    "sha256": "d9d7638c8e69ddd7e25a363e86056791421bddcb3f454b3567f5b093f4303e7e"
+  },
+  {
+    "path": "Assets/Gameplay/ToyHammerCombat.cs",
+    "line_count": 109,
+    "sha256": "c71dbf9c661779da452e7cf3e06ef6bfe3b7d8014f83556952ff694f85782a03"
+  },
+  {
+    "path": "Assets/Resources/FX/BubbleWrapShield.shader",
+    "line_count": 62,
+    "sha256": "83849d57df8318f2ded218c64f94e49b97575ff316ec32d6ec7d600062a80192"
+  }
+]

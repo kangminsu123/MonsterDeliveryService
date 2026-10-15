@@ -1,0 +1,32 @@
+PASS startup retains slot three bubble wrap for immediate testing
+PASS other staged item effects remain gated
+PASS selecting bubble wrap creates no held item model
+PASS selection alone does not grant protection
+PASS real use grants eight seconds of one-hit protection with unlimited item retained
+PASS activation cancels capture
+PASS cooldown rejects immediate duplicate activation
+PASS reuse refreshes eight seconds without adding extra shield charges
+PASS first person uses screen protection and hides own world shell
+PASS opponent protection visibly follows the floating actor
+PASS transparent bubble shader is supported in the Editor
+PASS shield surface bubble animation receives the live game clock
+PASS rendered surface bubbles visibly change between inflation and pop phases
+PASS bubble covers the floating torso and head
+PASS visual bubble adds no physics collision
+PASS third person displays protection around own body without a held model
+PASS slot switching preserves active protection
+PASS discard removes the item without deleting protection already activated
+PASS slow bypasses the shield without consuming it
+PASS stun immunity does not waste shield protection
+PASS non-control events do not consume the shield
+PASS one shared control hit is absorbed without stun, knockback or vertical launch
+PASS an absorbed hit preserves existing capture progress
+PASS first-person block is shown on screen without world particles clipping the camera
+PASS second hit after the shield pops applies control normally
+PASS actual plunger pull is blocked once without cancelling opponent capture
+PASS blocked opponent hit expands the bubble and emits a pop burst
+PASS a single block does not emit duplicate pop bursts
+PASS next plunger can pull after one protection charge is spent
+PASS natural expiry hides protection without a hit burst
+PASS screen protection fades away after expiry
+PASS round finish removes local and opponent protection displays

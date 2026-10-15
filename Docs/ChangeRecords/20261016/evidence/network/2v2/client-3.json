@@ -1,0 +1,23 @@
+{
+    "own": 3,
+    "players": 4,
+    "expectedPlayers": 4,
+    "mode": "2대2",
+    "parcelRelocated": true,
+    "parcelCount": 30,
+    "uniqueColors": true,
+    "teamsBalanced": true,
+    "sawLobby": true,
+    "sawPlaying": true,
+    "sawFrozen": true,
+    "sawOwnership": true,
+    "sawResults": true,
+    "remoteInput": false,
+    "checks": [
+        "PASS network snapshot delivers thirty parcels after relocation",
+        "PASS network parcel anchors remain unique",
+        "PASS client receives unique colours and balanced teams",
+        "PASS client receives server freeze state",
+        "PASS client ownership and result scores match host"
+    ]
+}

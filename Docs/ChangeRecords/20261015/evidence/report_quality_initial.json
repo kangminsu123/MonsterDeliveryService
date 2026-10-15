@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-15",
+  "docx_pages": 3,
+  "render_method": "Microsoft Word read-only ExportAsFixedFormat followed by bundled Poppler pdftoppm",
+  "primary_renderer": "render_docx.py attempted; LibreOffice soffice.exe unavailable; sandbox temporary-folder cleanup denied",
+  "word_sandbox": "COM initially denied inside sandbox; approved elevated read-only export succeeded",
+  "pages_reviewed": [
+    1,
+    2,
+    3
+  ],
+  "result": "All final pages visually checked: Korean glyphs, image aspect, captions, table borders and widths, no blank page or cut-off text.",
+  "iteration": "Initial Word render revealed table overflow, inherited title border, a blank page and separated content. Fixed widths and styles, grouped figures, and verified final 3-page document.",
+  "game_captures": "All 3 final native Game View captures opened and checked; test state is labelled.",
+  "runtime_console": "Fresh Play Mode after final tests: errors 0 / warnings 0. Earlier compilation had 7 pre-existing obsolete API warnings, recorded separately."
+}

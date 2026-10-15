@@ -62,7 +62,9 @@ var shotsBefore = UnityEngine.Object.FindObjectsByType<BrawlShot>();
             Check(inventory.All(item => item == WeaponKind.None), "all three slots start empty");
             Check(Get("heldWeapon") == null && GameObject.Find("Attached Delivery Drone") == null, "no default held equipment or drone");
             Check(Mathf.Approximately((float)Get("stamina"), 100), "startup stamina 100");
-            Check(!UnityEngine.Object.FindObjectsByType<Transform>().Any(t => t.name.StartsWith("Rival ") || t.name.StartsWith("Capture Pad ") || t.name == "Mystery Parcel"), "exploration stays free of bots, capture pads, and pickups");
+            Check(UnityEngine.Object.FindObjectsByType<Transform>().Count(t => t.name.StartsWith("Rival ")) == 1 &&
+                !UnityEngine.Object.FindObjectsByType<Transform>().Any(t => t.name.StartsWith("Capture Pad ") || t.name == "Mystery Parcel"),
+                "exploration has one test rival, without legacy capture pads or pickups");
             int steps = Mathf.Max(2, Mathf.RoundToInt(.2f / Time.deltaTime));
             Place(); var start = player.transform.position; Input(Key.W); Tick(steps); float walk = player.transform.position.z - start.z;
             Check(walk > .1f && Mathf.Abs(walk / (steps * Time.deltaTime) - 6.5f) < .3f, "WASD walking speed 6.5");
@@ -80,7 +82,8 @@ var shotsBefore = UnityEngine.Object.FindObjectsByType<BrawlShot>();
             Input(); yield return null; Set("stamina", 100f); Input(Key.W, Key.LeftCtrl); Tick(1);
             Check((float)Get("rollUntil") == 0 && (float)Get("stamina") == 100, "Ctrl no longer triggers a roll");
             Input(); yield return null; Set("stamina", 100f); Input(Key.W, Key.C, Key.LeftShift); Tick(1);
-            Check((float)Get("rollUntil") == 0 && player.height == 1.15f, "crouching keeps its controller height and blocks dash");
+            Check((float)Get("rollUntil") == 0 && Mathf.Abs(player.height - 1.1f) < .001f &&
+                Mathf.Abs(player.center.y - .55f) < .001f, "crouching shortens the body capsule without filling the lower gap and blocks dash");
             Input(); yield return null; Input(Key.W, Key.LeftShift); Set("stamina", 100f); Tick(1); Call("UpdateInteraction");
             Check(!(bool)Get("interactionReady") && (int)Get("captureTarget") < 0, "dash cancels capture and disables interaction until it ends");
             Set("rollUntil", 0f);

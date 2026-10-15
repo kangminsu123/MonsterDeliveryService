@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public enum WeaponKind { None, BoxingGloves, Plunger, Megaphone, PackingTape, CordlessFan, RunningShoes, BubbleWrap, WorkGloves, PrinterInk, MiniTrampoline }
+public enum WeaponKind { None, BoxingGloves, Plunger, ToyHammer, Slime, IceCream, RunningShoes, BubbleWrap, WorkGloves, FountainPen }
 
 public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
 {
+    static readonly bool UnlimitedItems = true; // Temporary unlimited uses/battery for item testing.
     const int HouseCount = 10, BotCount = 3, SlotCount = 3;
     readonly Color[] colors = { Color.yellow, new(1f, .25f, .25f), new(.95f, .75f, .1f), new(.65f, .3f, 1f) };
     readonly GameObject[] mailboxes = new GameObject[HouseCount], houses = new GameObject[HouseCount], bots = new GameObject[BotCount], pickups = new GameObject[10];
@@ -16,6 +17,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     readonly float[] weaponSeconds = new float[SlotCount];
     CharacterController player; Camera cam; GameObject heldWeapon;
     DeliveryRobotVisual playerVisual;
+    readonly DeliveryRobotVisual[] botVisuals = new DeliveryRobotVisual[BotCount];
     InteractionTarget focusedTarget;
     bool interactionReady;
     int selectedSlot, captureTarget = -1, armedGloveSlot = -1;
@@ -28,7 +30,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     public bool mapExploreMode = true;
     public bool thirdPersonPreview = false;
     // Shift now triggers a dash once per key press.
-    // Item attacks and held models remain staged; floating parcels award inventory items.
+    // Attacks remain staged; selected inventory items now have visible held models.
     bool itemPlaytestEnabled = false;
     DeliveryItemState playerItems = new();
     readonly DeliveryItemState[] botItems = new DeliveryItemState[BotCount];
@@ -38,8 +40,12 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Install() { if (FindAnyObjectByType<MonsterDeliveryPrototype>() == null) new GameObject("MapExplorer").AddComponent<MonsterDeliveryPrototype>(); }
 
+    ParcelSpawnPool parcelPool;
+    public bool ParcelAuthority => !NetworkScreens || NetPlaying && NetServer;
     void Start()
     {
+        parcelPool = FindAnyObjectByType<ParcelSpawnPool>();
+        if (parcelPool && !mapEditMode) parcelPool.Initialize(this);
         // Map preview uses the authored scene lighting so material colors match the Editor.
         if (!mapEditMode && !mapExploreMode)
         {
@@ -50,13 +56,24 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         }
         CreateWorld();
         if (!mapEditMode) gameObject.AddComponent<DeliveryMinimap>().Initialize(this, player.transform, mailboxes);
-        if (mapExploreMode) started = true;
+        if (mapExploreMode)
+        {
+            started = true;
+            // Temporary starting gear for the current item effects test.
+            AddWeapon(WeaponKind.Plunger);
+            AddWeapon(WeaponKind.IceCream);
+            AddWeapon(WeaponKind.BubbleWrap);
+            selectedSlot = 1;
+            nextRivalShoesTest = Time.time + 3;
+            nextRivalBubbleTest = Time.time + 3;
+        }
         Cursor.lockState = mapEditMode || mapExploreMode ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !mapEditMode && !mapExploreMode;
+        InitializeNetworkScreens();
     }
     public bool ShowMinimap => !mapEditMode && started && !finished;
     public Color LocalPlayerColor => colors[0];
-    public Color GetMailboxMapColor(int index) => owner[index] < 0 ? Color.white : colors[owner[index]];
+    public Color GetMailboxMapColor(int index) => owner[index] < 0 ? Color.white : CaptureColor(owner[index]);
 
     void CreateWorld()
     {
@@ -64,11 +81,12 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (mapEditMode) { cam.transform.position = new Vector3(0, 95, -110); cam.transform.rotation = Quaternion.Euler(mapCameraPitch, mapCameraYaw, 0); return; }
         player = new GameObject("Player").AddComponent<CharacterController>();
         player.transform.position = SpawnPosition(0);
-        player.height = 2; player.radius = .45f; playerItems.safePosition = SpawnPosition(0);
+        ConfigureHoverBody(player); playerItems.safePosition = SpawnPosition(0);
         var robotPrefab = Resources.Load<GameObject>("Characters/DeliveryRobotPlayer");
         if (!robotPrefab) throw new System.InvalidOperationException("DeliveryRobotPlayer prefab is missing.");
         playerVisual = Instantiate(robotPrefab, player.transform, false).GetComponent<DeliveryRobotVisual>();
         playerVisual.SetColor(colors[0]);
+        cam.nearClipPlane = .05f;
         var authored = GameObject.Find("Layer_11_Mailboxes");
         if (authored) for (int i = 0; i < HouseCount; i++)
         {
@@ -79,7 +97,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             owner[i] = -1;
             SetMailboxEffectColor(i, Color.white);
         }
-        if (mapExploreMode) return;
+        if (mapExploreMode) { CreateBot(0); InitializeExplorationRival(); return; }
         for (var i = 0; i < HouseCount; i++) if (!mailboxes[i]) CreateCapturePad(i);
         for (var i = 0; i < BotCount; i++) CreateBot(i);
         if (itemPlaytestEnabled) CreatePickups();
@@ -96,11 +114,14 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     }
     void CreateBot(int i)
     {
-        bots[i] = Create("Rival " + (i + 1), PrimitiveType.Capsule, SpawnPosition(i + 1), Vector3.one, colors[i + 1]);
-        botRenderers[i] = bots[i].GetComponent<Renderer>();
-        bots[i].GetComponent<Collider>().enabled = false;
-        botControllers[i] = bots[i].AddComponent<CharacterController>(); botControllers[i].height = 2; botControllers[i].radius = .45f;
-        botItems[i] = new DeliveryItemState { safePosition = SpawnPosition(i + 1) };
+        bots[i] = new GameObject("Rival " + (i + 1));
+        bots[i].transform.position = mapExploreMode ? player.transform.position + new Vector3(4, 0, 4) : SpawnPosition(i + 1);
+        botControllers[i] = bots[i].AddComponent<CharacterController>(); ConfigureHoverBody(botControllers[i]);
+        botVisuals[i] = Instantiate(Resources.Load<GameObject>("Characters/DeliveryRobotPlayer"), bots[i].transform, false).GetComponent<DeliveryRobotVisual>();
+        botVisuals[i].SetColor(colors[i + 1]);
+        botRenderers[i] = bots[i].GetComponentInChildren<Renderer>();
+        botItems[i] = new DeliveryItemState { safePosition = bots[i].transform.position };
+        botTarget[i] = -1;
     }
     void CreatePickups()
     {
@@ -109,7 +130,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         {
             var a = i * Mathf.PI * 2 / pickups.Length;
             pickups[i] = Create("Mystery Parcel", PrimitiveType.Cube, new Vector3(Mathf.Sin(a) * 34, .7f, Mathf.Cos(a) * 28), new Vector3(1.5f, 1.1f, 1.2f), new Color(.46f, .28f, .12f));
-            pickups[i].AddComponent<PickupKind>().kind = (WeaponKind)(i + 1);
+            pickups[i].AddComponent<PickupKind>().kind = (WeaponKind)(i % (int)WeaponKind.FountainPen + 1);
             var interaction = pickups[i].AddComponent<InteractionTarget>(); interaction.displayName = "택배 상자"; interaction.actionHint = "E · 줍기";
         }
     }
@@ -118,9 +139,13 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     void Update()
     {
         if (mapEditMode) { UpdateMapCamera(); return; }
+        if (TickNetwork()) return;
         if (started && !finished) UpdateItemAreas();
         UpdateCamera(); var kb = Keyboard.current;
-        if (mapExploreMode) { UpdatePlayer(kb); UpdateInteraction(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); UpdateCapture(kb); UpdateHeldWeapon(); return; }
+        UpdateGlovePush();
+        UpdateToyHammerSwing();
+        UpdatePlungerThrow();
+        if (mapExploreMode) { UpdatePlayer(kb); UpdateInteraction(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); UpdateCapture(kb); UpdateBots(); UpdateHeldWeapon(); return; }
         if (!started) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) Begin(); return; }
         if (finished) { if (kb != null && kb.enterKey.wasPressedThisFrame) Begin(); return; }
         if (Time.time - startedAt >= roundSeconds) { Finish(); return; }
@@ -133,7 +158,26 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (!playerVisual) return;
         var velocity = player.velocity;
         playerVisual.SetMotion(started && !finished && !mapEditMode && new Vector2(velocity.x, velocity.z).sqrMagnitude > .04f,
-            itemPlaytestEnabled && Selected != WeaponKind.None);
+            HasHeldModel(Selected));
+        UpdateHeldWeapon();
+        if (boxingSlot >= 0 && heldItem)
+        {
+            if (thirdPersonPreview) { playerVisual.PushArm(GlovePushAmount, boxingRightHand); heldItem.FollowBones(); }
+            else heldItem.PushFirstPerson(GlovePushAmount, boxingRightHand);
+        }
+        PosePlungerThrow();
+        if (explorationRivalGloves) explorationRivalGloves.FollowBones();
+        UpdateRunningShoesFX();
+        UpdateBubbleWrapFX();
+        PoseFountainPen();
+        UpdateFountainInkFX();
+        UpdateSlimeFX();
+        PoseSlimeThrow();
+        PoseIceCreamThrow();
+        UpdateIceCreamFX();
+        PoseToyHammer();
+        UpdateStunFX();
+        PoseNetworkPlayers();
     }
     void UpdatePlayer(Keyboard kb)
     {
@@ -141,10 +185,10 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         var move = Vector3.zero; if (kb != null) { if (kb.wKey.isPressed) move.z++; if (kb.sKey.isPressed) move.z--; if (kb.aKey.isPressed) move.x--; if (kb.dKey.isPressed) move.x++; }
         crouching = kb != null && kb.cKey.isPressed;
         // Resizing the controller resets contact state, even when the value is unchanged.
-        var height = crouching ? 1.15f : 2f;
-        if (player.height != height) { player.height = height; player.center = crouching ? new Vector3(0, -.425f, 0) : Vector3.zero; }
+        var height = crouching ? 1.1f : 1.4f;
+        if (player.height != height) { player.height = height; player.center = Vector3.up * (height * .5f); }
         var rolling = !playerItems.Stunned(Time.time) && Time.time < rollUntil;
-        if (kb != null && kb.leftShiftKey.wasPressedThisFrame && !crouching && stamina >= 50 && Time.time >= rollUntil)
+        if (kb != null && kb.leftShiftKey.wasPressedThisFrame && !crouching && !playerItems.KnockedBack && stamina >= 50 && Time.time >= rollUntil)
         {
             stamina -= 50;
             rollDirection = player.transform.TransformDirection(move.sqrMagnitude > .01f ? move.normalized : Vector3.forward);
@@ -154,20 +198,23 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         else if (!rolling) stamina = Mathf.Min(100, stamina + 20 * Time.deltaTime);
         var velocity = rolling ? rollDirection * 17f : player.transform.TransformDirection(move.normalized) * (crouching ? 3.6f : 6.5f);
         velocity *= playerItems.MoveMultiplier(Time.time);
-        var grounded = player.isGrounded;
-        if (grounded && vertical < 0) vertical = -2;
-        if (grounded && kb != null && kb.spaceKey.isPressed) vertical = 7.5f;
-        vertical = Mathf.Max(vertical, playerItems.pendingLift > 0 ? playerItems.TakeLift() : vertical);
-        vertical += -20 * Time.deltaTime;
-        // isGrounded describes the last Move: preserve the previous landing until the jump is decided.
-        player.Move((velocity + playerItems.TakeForce(Time.deltaTime) + Vector3.up * vertical) * Time.deltaTime);
+        if (playerItems.KnockedBack) velocity = Vector3.zero;
+        if (!MovePulledActor(player, playerItems, ref vertical))
+        {
+            var grounded = vertical <= 0 && HoverGrounded(player);
+            if (grounded && vertical < 0) vertical = -2;
+            if (grounded && !playerItems.KnockedBack && kb != null && kb.spaceKey.isPressed) vertical = 7.5f;
+            vertical = Mathf.Max(vertical, playerItems.pendingLift > 0 ? playerItems.TakeLift() : vertical);
+            vertical += -20 * Time.deltaTime;
+            MoveHoverActor(player, (velocity + playerItems.TakeForce(Time.deltaTime) + Vector3.up * vertical) * Time.deltaTime, ref vertical);
+        }
         RecoverActor(player, playerItems, ref vertical);
         PositionCamera();
         if (!mapExploreMode) KeepPlayerOutOfEnemySpawn();
         SelectSlot(kb);
         if (kb != null && kb.gKey.wasPressedThisFrame) DropSelectedWeapon();
         // Pickup dispatch happens after the shared crosshair query in Update.
-        if (Time.time >= rollUntil && Mouse.current != null && (Selected == WeaponKind.CordlessFan ? Mouse.current.leftButton.isPressed : Mouse.current.leftButton.wasPressedThisFrame)) UseWeapon();
+        if (Time.time >= rollUntil && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) UseWeapon();
     }
     void UpdateCamera()
     {
@@ -176,11 +223,23 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (player == null) return;
         cam.transform.rotation = Quaternion.Euler(lookPitch, player.transform.eulerAngles.y, 0);
         PositionCamera();
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 60, Time.deltaTime * 12);
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, RunningShoesFieldOfView, Time.deltaTime * 12);
     }
     void PositionCamera()
     {
-        if (!thirdPersonPreview) { cam.transform.position = player.transform.position + Vector3.up * (crouching ? 1f : 1.6f); return; }
+        playerVisual.SetFirstPerson(!thirdPersonPreview);
+        if (!thirdPersonPreview)
+        {
+            var eye = playerVisual.EyePosition + Vector3.down * (crouching ? .6f : 0);
+            var origin = new Vector3(player.transform.position.x, eye.y, player.transform.position.z);
+            var toward = eye - origin;
+            float eyeDistance = toward.magnitude;
+            Physics.SyncTransforms();
+            foreach (var hit in Physics.SphereCastAll(origin, cam.nearClipPlane, toward.normalized, eyeDistance, ~0, QueryTriggerInteraction.Ignore))
+                if (hit.collider != player) eyeDistance = Mathf.Min(eyeDistance, Mathf.Max(0, hit.distance - .01f));
+            cam.transform.position = origin + toward.normalized * eyeDistance;
+            return;
+        }
         var pivot = player.transform.position + Vector3.up * (crouching ? .6f : .9f);
         var offset = cam.transform.right * .85f - cam.transform.forward * 4;
         float distance = offset.magnitude;
@@ -203,19 +262,34 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         {
             if (bots[i] == null || !bots[i].activeSelf) continue;
             var state = botItems[i]; var controller = botControllers[i];
-            KeepBotOutOfEnemySpawn(i);
-            if (botTarget[i] < 0 || owner[botTarget[i]] == i + 1) botTarget[i] = FindBotTarget(i);
-            var target = mailboxes[botTarget[i]].transform.position;
+            if (mapExploreMode)
+            {
+                PrepareExplorationRivalTarget();
+            }
+            else
+            {
+                KeepBotOutOfEnemySpawn(i);
+                if (botTarget[i] < 0 || owner[botTarget[i]] == i + 1) botTarget[i] = FindBotTarget(i);
+            }
+            bool hasTarget = botTarget[i] >= 0;
+            var target = hasTarget ? mailboxes[botTarget[i]].transform.position : bots[i].transform.position;
             var flat = target - bots[i].transform.position; flat.y = 0;
-            var moving = flat.magnitude > 1.5f && !state.Stunned(Time.time) && !VisionBlocked(bots[i].transform.position + Vector3.up, target + Vector3.up);
-            var velocity = moving ? flat.normalized * 3.5f * state.MoveMultiplier(Time.time) : Vector3.zero;
-            if (moving) bots[i].transform.rotation = Quaternion.LookRotation(flat);
-            if (controller.isGrounded && botVertical[i] < 0) botVertical[i] = -2;
-            if (state.pendingLift > 0) botVertical[i] = Mathf.Max(botVertical[i], state.TakeLift());
-            botVertical[i] -= 20 * Time.deltaTime;
-            controller.Move((velocity + state.TakeForce(Time.deltaTime) + Vector3.up * botVertical[i]) * Time.deltaTime);
+            var moving = flat.magnitude > 1.5f && !state.Stunned(Time.time) && !state.KnockedBack;
+            var direction = mapExploreMode ? ExplorationRivalDirection() : flat.normalized;
+            var velocity = moving ? direction * 3.5f * state.MoveMultiplier(Time.time) : Vector3.zero;
+            if (moving && direction.sqrMagnitude > .01f) bots[i].transform.rotation = Quaternion.LookRotation(direction);
+            if (!MovePulledActor(controller, state, ref botVertical[i]))
+            {
+                if (HoverGrounded(controller) && botVertical[i] < 0) botVertical[i] = -2;
+                if (state.pendingLift > 0) botVertical[i] = Mathf.Max(botVertical[i], state.TakeLift());
+                botVertical[i] -= 20 * Time.deltaTime;
+                MoveHoverActor(controller, (velocity + state.TakeForce(Time.deltaTime) + Vector3.up * botVertical[i]) * Time.deltaTime, ref botVertical[i]);
+            }
             RecoverActor(controller, state, ref botVertical[i]);
-            if (state.CanCapture(Time.time) && Vector3.Distance(bots[i].transform.position, target) < 2.2f)
+            botVisuals[i].SetMotion(new Vector2(controller.velocity.x, controller.velocity.z).sqrMagnitude > .04f, mapExploreMode && i == 0 && explorationRivalGloves);
+            bool clear = hasTarget && (!mapExploreMode || !Physics.Linecast(bots[i].transform.position + Vector3.up * .4f, target + Vector3.up * 1.2f, out var obstruction, ~0, QueryTriggerInteraction.Ignore) ||
+                obstruction.collider.GetComponentInParent<InteractionTarget>()?.gameObject == mailboxes[botTarget[i]]);
+            if (state.CanCapture(Time.time) && clear && Vector3.Distance(bots[i].transform.position, target) < 2.2f)
             {
                 if (botCaptureStarted[i] == 0) botCaptureStarted[i] = Time.time;
                 if (Time.time - botCaptureStarted[i] >= 3) { Capture(botTarget[i], i + 1); botCaptureStarted[i] = 0; botTarget[i] = -1; }
@@ -251,14 +325,13 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         interactionReady = next && next.available && distance <= next.interactionDistance && playerItems.CanCapture(Time.time) && Time.time >= rollUntil;
         if (next && (next.GetComponent<FloatingParcel>() || next.GetComponent<PickupKind>()) && !HasEmptySlot()) interactionReady = false;
         if (next && next.GetComponent<PickupKind>() && !itemPlaytestEnabled) interactionReady = false;
-        for (int i = 0; i < HouseCount; i++) if (next && mailboxes[i] == next.gameObject && owner[i] == 0) interactionReady = false;
+        for (int i = 0; i < HouseCount; i++) if (next && mailboxes[i] == next.gameObject && MailboxOwnedByUs(i)) interactionReady = false;
         if (next) next.SetFocus(true, interactionReady);
     }
     bool InteractionRayHit(Ray ray, float range, out RaycastHit nearest)
     {
-        if (!thirdPersonPreview) return Physics.Raycast(ray, out nearest, range, ~0, QueryTriggerInteraction.Ignore);
         nearest = default; float closest = float.PositiveInfinity;
-        // Temporary preview: native all-hit queries keep self-collisions out. Reuse a NonAlloc buffer if profiling shows GC pressure.
+        // Eye-front and shoulder views both ignore the player's own collision capsule.
         foreach (var hit in Physics.RaycastAll(ray, range, ~0, QueryTriggerInteraction.Ignore))
             if (hit.collider != player && hit.distance < closest) { closest = hit.distance; nearest = hit; }
         return closest < float.PositiveInfinity;
@@ -273,7 +346,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             if (!HasEmptySlot()) return;
             if (parcel.TryCollect())
             {
-                AddWeapon((WeaponKind)Random.Range(1, 11)); focusedTarget = null; interactionReady = false;
+                AddWeapon((WeaponKind)Random.Range(1, (int)WeaponKind.FountainPen + 1)); focusedTarget = null; interactionReady = false;
                 captureTarget = -1; captureStarted = 0;
             }
             return;
@@ -292,7 +365,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObject) { target = i; break; }
         if (target < 0 || owner[target] == 0) { captureTarget = -1; captureStarted = 0; return; }
         if (captureTarget != target) { captureTarget = target; captureStarted = Time.time; }
-        if (Time.time - captureStarted >= CaptureSeconds) { Capture(target, 0); if (armedGloveSlot >= 0) { ClearSlot(armedGloveSlot); armedGloveSlot = -1; } captureTarget = -1; captureStarted = 0; }
+        if (Time.time - captureStarted >= CaptureSeconds) { Capture(target, 0); if (Selected == WeaponKind.WorkGloves) Consume(); captureTarget = -1; captureStarted = 0; }
     }
     void Capture(int house, int playerId) { owner[house] = playerId; SetMailboxEffectColor(house, colors[playerId]); feedback = (playerId == 0 ? "우편함 점령!" : "Rival " + playerId + "이 우편함을 탈환했습니다."); }
 
@@ -301,7 +374,8 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if ((uint)playerId >= colors.Length) throw new System.ArgumentOutOfRangeException(nameof(playerId));
         color.a = 1; colors[playerId] = color;
         if (playerId == 0 && playerVisual) playerVisual.SetColor(color);
-        for (int i = 0; i < HouseCount; i++) if (mailboxes[i] && owner[i] == playerId) SetMailboxEffectColor(i, color);
+        if (playerId > 0 && botVisuals[playerId - 1]) botVisuals[playerId - 1].SetColor(color);
+        for (int i = 0; i < HouseCount; i++) if (mailboxes[i] && owner[i] == playerId) SetMailboxEffectColor(i, CaptureColor(playerId));
     }
     void SetMailboxEffectColor(int house, Color color)
     {
@@ -315,91 +389,112 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     }
 
     WeaponKind Selected => inventory[selectedSlot];
-    void SelectSlot(Keyboard kb) { if (kb == null) return; if (kb.digit1Key.wasPressedThisFrame) selectedSlot = 0; if (kb.digit2Key.wasPressedThisFrame) selectedSlot = 1; if (kb.digit3Key.wasPressedThisFrame) selectedSlot = 2; }
+    void SelectSlot(Keyboard kb)
+    {
+        if (kb == null || boxingSlot >= 0 || plungerSlot >= 0 || hammerSlot >= 0) return;
+        int previous = selectedSlot;
+        if (kb.digit1Key.wasPressedThisFrame) selectedSlot = 0;
+        if (kb.digit2Key.wasPressedThisFrame) selectedSlot = 1;
+        if (kb.digit3Key.wasPressedThisFrame) selectedSlot = 2;
+        if (previous != selectedSlot) { captureTarget = -1; captureStarted = 0; }
+    }
     bool HasEmptySlot() { for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None) return true; return false; }
     string ItemName(WeaponKind item) => item switch
     {
         WeaponKind.BoxingGloves => "복싱 글러브", WeaponKind.Plunger => "압축 뚫어뻥",
-        WeaponKind.Megaphone => "휴대용 확성기", WeaponKind.PackingTape => "포장용 테이프",
-        WeaponKind.CordlessFan => "무선 선풍기", WeaponKind.RunningShoes => "러닝화",
+        WeaponKind.ToyHammer => "뿅망치", WeaponKind.Slime => "슬라임",
+        WeaponKind.IceCream => "아이스크림", WeaponKind.RunningShoes => "러닝화",
         WeaponKind.BubbleWrap => "에어캡", WeaponKind.WorkGloves => "작업용 장갑",
-        WeaponKind.PrinterInk => "프린터 잉크", WeaponKind.MiniTrampoline => "미니 트램펄린", _ => "빈손"
+        WeaponKind.FountainPen => "만년필", _ => "빈손"
     };
-    string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + (inventory[slot] == WeaponKind.CordlessFan ? weaponSeconds[slot].ToString("0.0") + "초" : weaponAmmo[slot] + "회");
-    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves or WeaponKind.Plunger => 3, WeaponKind.Megaphone or WeaponKind.PackingTape or WeaponKind.PrinterInk => 2, WeaponKind.None or WeaponKind.CordlessFan => 0, _ => 1 };
+    string ItemRemainingText(int slot) => UnlimitedItems || inventory[slot] == WeaponKind.BoxingGloves ? "무제한" : weaponAmmo[slot] + "회";
+    string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + ItemRemainingText(slot);
+    int Ammo(WeaponKind item) => item switch { WeaponKind.Plunger => 3, WeaponKind.ToyHammer or WeaponKind.Slime or WeaponKind.FountainPen or WeaponKind.IceCream => 2, WeaponKind.None or WeaponKind.BoxingGloves => 0, _ => 1 };
     readonly int[] weaponAmmo = new int[SlotCount];
-    float hornAt = -1;
-    float CaptureSeconds => armedGloveSlot >= 0 ? 2 : 3;
+
+    float CaptureSeconds => Selected == WeaponKind.WorkGloves ? 1.5f : 3;
 
     void AddWeapon(WeaponKind item)
     {
-        if ((int)item < 1 || (int)item > 10) return;
+        if ((int)item < 1 || (int)item > (int)WeaponKind.FountainPen) return;
         for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None)
         {
-            inventory[i] = item; weaponAmmo[i] = Ammo(item); weaponSeconds[i] = item == WeaponKind.CordlessFan ? 4 : 0;
+            inventory[i] = item; weaponAmmo[i] = Ammo(item); weaponSeconds[i] = 0;
             selectedSlot = i; feedback = ItemName(item) + " 획득!"; return;
         }
     }
-    void ClearSlot(int slot) { inventory[slot] = WeaponKind.None; weaponAmmo[slot] = 0; weaponSeconds[slot] = 0; if (armedGloveSlot == slot) armedGloveSlot = -1; }
-    void Consume() { if (--weaponAmmo[selectedSlot] <= 0) ClearSlot(selectedSlot); }
+    void ClearSlot(int slot) { if (plungerSlot == slot) FinishPlungerThrow(); inventory[slot] = WeaponKind.None; weaponAmmo[slot] = 0; weaponSeconds[slot] = 0; if (armedGloveSlot == slot) armedGloveSlot = -1; if (boxingSlot == slot) boxingSlot = -1; if (hammerSlot == slot) FinishToyHammerSwing(); if (selectedSlot == slot) { captureTarget = -1; captureStarted = 0; } }
+    void Consume() { if (!UnlimitedItems && --weaponAmmo[selectedSlot] <= 0) ClearSlot(selectedSlot); }
     void DropSelectedWeapon() { if (Selected == WeaponKind.None) return; feedback = ItemName(Selected) + "을 버렸습니다."; ClearSlot(selectedSlot); }
     void UseWeapon()
     {
-        if (!itemPlaytestEnabled || !started || finished || playerItems.Stunned(Time.time) || Selected == WeaponKind.None || Time.time < nextAttackAt) return;
+        if ((!itemPlaytestEnabled && Selected != WeaponKind.BoxingGloves && Selected != WeaponKind.Plunger && Selected != WeaponKind.RunningShoes && Selected != WeaponKind.BubbleWrap && Selected != WeaponKind.FountainPen && Selected != WeaponKind.Slime && Selected != WeaponKind.ToyHammer && Selected != WeaponKind.IceCream) || !started || finished || playerItems.Stunned(Time.time) || Selected == WeaponKind.None || Time.time < nextAttackAt || boxingSlot >= 0 || plungerSlot >= 0 || hammerSlot >= 0) return;
         var kind = Selected;
-        if (kind == WeaponKind.WorkGloves && armedGloveSlot >= 0) return;
-        if (kind == WeaponKind.MiniTrampoline && (!Physics.Raycast(cam.transform.position, cam.transform.forward, out var floor, 8, ~0, QueryTriggerInteraction.Ignore) || floor.normal.y < .5f)) return;
+        if (kind == WeaponKind.WorkGloves) return; // Wearing the selected gloves shortens capture without a separate click.
+        if (kind == WeaponKind.BoxingGloves) { StartGlovePush(); return; }
+        if (kind == WeaponKind.Plunger) { StartPlungerThrow(); return; }
+        if (kind == WeaponKind.ToyHammer) { StartToyHammerSwing(); return; }
         captureTarget = -1; captureStarted = 0;
-        playerItems.busyUntil = Time.time + (kind == WeaponKind.CordlessFan ? .15f : .5f);
-        nextAttackAt = Time.time + (kind == WeaponKind.CordlessFan ? 0 : .6f);
+        playerItems.busyUntil = Time.time + .5f;
+        nextAttackAt = Time.time + .6f;
         feedback = ItemName(kind) + " 사용!";
         switch (kind)
         {
-            case WeaponKind.BoxingGloves: AttackCone(3, .6f, 18, 6, 0); break;
-            case WeaponKind.Plunger:
-                if (Physics.SphereCast(cam.transform.position, .15f, cam.transform.forward, out var hit, 9, ~0, QueryTriggerInteraction.Ignore) && !VisionBlocked(cam.transform.position, hit.point))
-                    for (var id = 1; id <= BotCount; id++) if (ActorController(id) != null && hit.transform == ActorController(id).transform)
-                    { var pull = player.transform.position - hit.transform.position; pull.y = 0; ApplyControl(id, pull.normalized * 14 + Vector3.up * 2); }
-                break;
-            case WeaponKind.Megaphone: hornAt = Time.time + .25f; playerItems.busyUntil = Time.time + .8f; feedback = "확성기 준비!"; break;
-            case WeaponKind.PackingTape:
-            case WeaponKind.PrinterInk: MakeShot(cam.transform.forward, 18, kind); break;
-            case WeaponKind.CordlessFan:
-                AttackCone(6, .75f, 8, 0, 0); weaponSeconds[selectedSlot] = Mathf.Max(0, weaponSeconds[selectedSlot] - Time.deltaTime);
-                if (weaponSeconds[selectedSlot] <= 0) ClearSlot(selectedSlot);
-                return;
-            case WeaponKind.RunningShoes: playerItems.speedUntil = Time.time + 5; break;
-            case WeaponKind.BubbleWrap: playerItems.shieldUntil = Time.time + 8; break;
-            case WeaponKind.WorkGloves: armedGloveSlot = selectedSlot; return;
-            case WeaponKind.MiniTrampoline:
-                Physics.Raycast(cam.transform.position, cam.transform.forward, out var ground, 8, ~0, QueryTriggerInteraction.Ignore);
-                AddArea(kind, ground.point, player.transform.forward); break;
+            case WeaponKind.Slime:
+                MakeShot(cam.transform.forward, 18, kind); slimeThrownAt = Time.time; break;
+            case WeaponKind.FountainPen:
+                MakeShot(cam.transform.forward, 48, kind); fountainThrownAt = Time.time; break;
+            case WeaponKind.IceCream:
+                MakeIceCreamShot(cam.transform.forward); iceCreamThrownAt = Time.time; break;
+            case WeaponKind.RunningShoes: ActivateRunningShoes(0); break;
+            case WeaponKind.BubbleWrap: ActivateBubbleWrap(0); break;
         }
         Consume();
     }
     CharacterController ActorController(int id) => id == 0 ? player : botControllers[id - 1];
     DeliveryItemState ActorState(int id) => id == 0 ? playerItems : botItems[id - 1];
-    void ApplyControl(int id, Vector3 impulse, float stun = 0)
+    bool ApplyControl(int id, Vector3 impulse, float stun = 0) =>
+        ApplyItemHit(id, new DeliveryItemHit(impulse, stunSeconds: stun)) == DeliveryHitResult.Applied;
+
+    // Use this entry point for every new item's confirmed hit, then show hit VFX only on Applied.
+    public DeliveryHitResult ApplyItemHit(int id, DeliveryItemHit hit)
     {
-        if (!ActorState(id).Control(Time.time, impulse, stun)) return;
-        if (id == 0) { captureTarget = -1; captureStarted = 0; rollUntil = 0; }
-        else botCaptureStarted[id - 1] = 0;
+        if (!started || finished || mapEditMode || (uint)id > BotCount) return DeliveryHitResult.Ignored;
+        var actor = ActorController(id);
+        if (!actor || !actor.gameObject.activeInHierarchy) return DeliveryHitResult.Ignored;
+        var state = ActorState(id);
+        var result = state.ReceiveHit(Time.time, hit);
+        if (result == DeliveryHitResult.Blocked)
+        {
+            feedback = id == 0 ? "에어캡 · 공격을 막았습니다!" : "상대 에어캡이 공격을 막았습니다!";
+            UpdateBubbleWrapFX();
+        }
+        else if (result == DeliveryHitResult.Applied &&
+            (hit.impulse.sqrMagnitude > .001f || hit.stunSeconds > 0 && state.Stunned(Time.time)))
+        {
+            if (id == 0) { captureTarget = -1; captureStarted = 0; rollUntil = 0; }
+            else botCaptureStarted[id - 1] = 0;
+        }
+        return result;
     }
+
     void AttackCone(float range, float dot, float push, float lift, float stun)
     {
         for (var id = 1; id <= BotCount; id++)
         {
             var actor = ActorController(id); if (actor == null || !actor.gameObject.activeSelf) continue;
-            var point = actor.transform.position + Vector3.up * .5f;
+            var point = actor.transform.TransformPoint(actor.center);
             var offset = point - cam.transform.position;
-            if (offset.magnitude > range || Vector3.Dot(cam.transform.forward, offset.normalized) < dot || VisionBlocked(cam.transform.position, point)) continue;
-            if (Physics.Linecast(cam.transform.position, point, out var hit, ~0, QueryTriggerInteraction.Ignore) && hit.transform != actor.transform) continue;
+            if (offset.magnitude > range || Vector3.Dot(cam.transform.forward, offset.normalized) < dot) continue;
+            if (InteractionRayHit(new Ray(cam.transform.position, offset.normalized), offset.magnitude, out var hit) && hit.collider != actor) continue;
             var direction = actor.transform.position - player.transform.position; direction.y = 0;
             ApplyControl(id, direction.normalized * push + Vector3.up * lift, stun);
         }
     }
     void MakeShot(Vector3 direction, float speed, WeaponKind kind)
     {
+        if (kind == WeaponKind.FountainPen) { MakeFountainPenShot(direction, speed); return; }
+        if (kind == WeaponKind.Slime) { MakeSlimeShot(direction, speed); return; }
         // Preserve near-cover and swept-path collision checks for thrown household items.
         if (Physics.Raycast(cam.transform.position, direction, out var hit, .6f, ~0, QueryTriggerInteraction.Ignore) || Physics.SphereCast(cam.transform.position, .12f, direction, out hit, .6f, ~0, QueryTriggerInteraction.Ignore)) { ItemImpact(kind, hit.point); return; }
         var bolt = Create("Thrown Delivery Item", PrimitiveType.Sphere, cam.transform.position + direction * .6f, Vector3.one * .24f, Color.white);
@@ -410,68 +505,44 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     }
     public void ItemImpact(WeaponKind kind, Vector3 point)
     {
-        if (!itemPlaytestEnabled || finished || !started) return;
-        if (kind == WeaponKind.PackingTape && Physics.Raycast(point + Vector3.up * .2f, Vector3.down, out var ground, 8, ~0, QueryTriggerInteraction.Ignore)) point = ground.point;
-        AddArea(kind, point, Vector3.forward);
+        if (finished || !started || mapEditMode) return;
+        if (kind == WeaponKind.Slime) AddSlimePuddle(point);
     }
     sealed class ItemArea
     {
-        public WeaponKind kind; public Vector3 point, direction; public float until;
-        public readonly float[] bounceAt = new float[BotCount + 1];
-    }
-    void AddArea(WeaponKind kind, Vector3 point, Vector3 direction)
-    {
-        itemAreas.Add(new ItemArea { kind = kind, point = point, direction = direction, until = Time.time + (kind == WeaponKind.PackingTape ? 5 : kind == WeaponKind.PrinterInk ? 4 : 8) });
+        public WeaponKind kind; public Vector3 point; public float until; public SlimePuddle visual;
     }
     void UpdateItemAreas()
     {
-        if (!itemPlaytestEnabled || !started || finished) return;
-        if (hornAt >= 0 && Time.time >= hornAt)
-        { hornAt = -1; if (!playerItems.Stunned(Time.time)) AttackCone(4, .65f, 0, 0, .8f); }
-        itemAreas.RemoveAll(area => Time.time >= area.until);
+        if (!started || finished || mapEditMode) return;
+        itemAreas.RemoveAll(area => { if (Time.time < area.until && area.visual) return false; if (area.visual) Destroy(area.visual.gameObject); return true; });
         foreach (var area in itemAreas)
         for (var id = 0; id <= BotCount; id++)
         {
             var actor = ActorController(id); if (actor == null || !actor.gameObject.activeSelf) continue;
-            var state = ActorState(id); var offset = actor.transform.position - area.point;
-            if (area.kind == WeaponKind.PrinterInk)
-            { if (offset.sqrMagnitude < 9) state.visionBlockedUntil = Time.time + .05f; continue; }
-            if (Mathf.Abs(offset.y) > 2.2f || new Vector2(offset.x, offset.z).sqrMagnitude > (area.kind == WeaponKind.PackingTape ? 9 : 1.5f)) continue;
-            if (area.kind == WeaponKind.PackingTape) state.slowUntil = Time.time + .05f;
-            else if (actor.isGrounded && Time.time >= area.bounceAt[id])
-            {
-                // Friendly launch pads benefit everyone and bypass defensive armor.
-                area.bounceAt[id] = Time.time + .8f; state.force = area.direction * 12; state.pendingLift = 11; state.forceUntil = Time.time + .35f;
-                if (id == 0) { captureTarget = -1; captureStarted = 0; } else botCaptureStarted[id - 1] = 0;
-            }
+            var offset = actor.transform.position - area.point;
+            if (Mathf.Abs(offset.y - 1) > .65f || new Vector2(offset.x, offset.z).sqrMagnitude > SlimeRadius * SlimeRadius) continue;
+            // Ground goo is a floor hazard. Solid cover and another storey separate the area.
+            if (Physics.Raycast(area.point + Vector3.up * .18f, new Vector3(offset.x, 0, offset.z).normalized,
+                new Vector2(offset.x, offset.z).magnitude, ~0, QueryTriggerInteraction.Ignore)) continue;
+            ApplyItemHit(id, new DeliveryItemHit(slowSeconds: .3f, shieldable: false));
         }
-    }
-    bool VisionBlocked(Vector3 from, Vector3 to)
-    {
-        var segment = to - from;
-        foreach (var area in itemAreas) if (area.kind == WeaponKind.PrinterInk && Time.time < area.until)
-        {
-            var center = area.point + Vector3.up;
-            var t = segment.sqrMagnitude < .001f ? 0 : Mathf.Clamp01(Vector3.Dot(center - from, segment) / segment.sqrMagnitude);
-            if ((from + segment * t - center).sqrMagnitude < 9) return true;
-        }
-        return false;
     }
     void RecoverActor(CharacterController actor, DeliveryItemState state, ref float falling)
     {
-        if (actor.isGrounded && actor.transform.position.y > -5) state.safePosition = actor.transform.position + Vector3.up * .1f;
+        if (HoverGrounded(actor) && actor.transform.position.y > -5) state.safePosition = actor.transform.position + Vector3.up * .1f;
         if (actor.transform.position.y >= -8) return;
         actor.enabled = false; actor.transform.position = state.safePosition; actor.enabled = true;
         falling = 0; state.force = Vector3.zero; state.pendingLift = 0; state.forceUntil = 0;
+        state.pullSource = null; state.pullUntil = 0;
         if (actor == player) { captureTarget = -1; captureStarted = 0; } else for (var i = 0; i < BotCount; i++) if (actor == botControllers[i]) botCaptureStarted[i] = 0;
         feedback = "안전한 지면으로 복귀했습니다.";
     }
-    void UpdateHeldWeapon() { if (heldWeapon != null) { Destroy(heldWeapon); heldWeapon = null; } }
     void Begin()
     {
         started = true; finished = false; stamina = 100; vertical = 0; rollUntil = 0; crouching = false; startedAt = Time.time;
-        selectedSlot = 0; captureTarget = -1; captureStarted = 0; armedGloveSlot = -1; nextAttackAt = 0; hornAt = -1;
-        itemAreas.Clear(); foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
+        selectedSlot = 0; captureTarget = -1; captureStarted = 0; armedGloveSlot = -1; nextAttackAt = 0; hammerSlot = -1;
+        ClearSlimePuddles(); ClearIceCreamMarks(); foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
         playerItems = new DeliveryItemState { safePosition = SpawnPosition(0) };
         player.enabled = false; player.transform.position = SpawnPosition(0); player.enabled = true;
         for (var i = 0; i < HouseCount; i++) if (mailboxes[i] != null) { owner[i] = -1; SetMailboxEffectColor(i, Color.white); }
@@ -487,6 +558,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     string ResultBoard() { var board = ""; for (var rank = 1; rank <= BotCount + 1; rank++) for (var id = 0; id <= BotCount; id++) if (Rank(id) == rank) board += rank + "위  " + (id == 0 ? "나" : "Rival " + id) + "  ·  " + Score(id) + "개 점령\n"; return board; }
 void OnGUI()
     {
+        if (DrawNetworkScreens()) return;
         if (mapEditMode) { GUI.Box(new Rect(15, 15, 600, 70), "맵 제작 모드 · WASD 이동 · Q/E 하강/상승 · Shift 빠르게 · 마우스 시점"); return; }
         if (!started) { GUI.Box(new Rect(Screen.width / 2 - 300, Screen.height / 2 - 130, 600, 260), "MAILBOX BRAWL\n\n우체통 앞에서 E를 3초간 유지해 점령하세요.\n빈손으로 시작합니다.\n\nEnter 또는 Space로 시작"); return; }
         if (finished) { GUI.Box(new Rect(Screen.width / 2 - 260, Screen.height / 2 - 180, 520, 360), "경기 종료\n\n내 순위: " + Rank(0) + "위 · 점령: " + Score(0) + " / " + HouseCount + "\n\n[ 최종 순위 ]\n" + ResultBoard() + "\nEnter로 다시 시작"); return; }
@@ -502,20 +574,38 @@ public sealed class PickupKind : MonoBehaviour { public WeaponKind kind; }
 public sealed class BrawlShot : MonoBehaviour
 {
     public MonsterDeliveryPrototype owner; public WeaponKind kind;
+    public float maxDistance = float.PositiveInfinity;
+    public int sourceId;
+    Vector3 launchPosition;
     Rigidbody body; bool impacted;
-    void Awake() => body = GetComponent<Rigidbody>();
-    void Start() => Destroy(gameObject, 3);
+    void Awake() { body = GetComponent<Rigidbody>(); launchPosition = transform.position; }
+    void Start() { if (kind != WeaponKind.Slime) Destroy(gameObject, 3); }
     void FixedUpdate()
     {
         if (impacted || body == null) return;
+        if ((transform.position - launchPosition).sqrMagnitude >= maxDistance * maxDistance ||
+            kind == WeaponKind.Slime && transform.position.y < -20)
+        { gameObject.SetActive(false); Destroy(gameObject); return; }
         var travel = body.linearVelocity * Time.fixedDeltaTime;
-        if (travel.sqrMagnitude > .0001f && body.SweepTest(travel.normalized, out var hit, travel.magnitude, QueryTriggerInteraction.Ignore)) Impact(hit.point);
+        if (travel.sqrMagnitude > .0001f && body.SweepTest(travel.normalized, out var hit, travel.magnitude, QueryTriggerInteraction.Ignore)) Impact(hit.point, hit.collider, hit.normal);
     }
-    void OnCollisionEnter(Collision c) => Impact(c.contacts.Length > 0 ? c.contacts[0].point : transform.position);
-    void Impact(Vector3 point)
+    void OnCollisionEnter(Collision c)
+    {
+        var contact = c.contactCount > 0 ? c.GetContact(0) : default;
+        Impact(c.contactCount > 0 ? contact.point : transform.position, c.collider,
+            c.contactCount > 0 ? contact.normal : -body.linearVelocity.normalized);
+    }
+    void Impact(Vector3 point, Collider collider, Vector3 normal)
     {
         if (impacted) return;
         impacted = true; gameObject.SetActive(false); Destroy(gameObject);
-        if (owner != null) owner.ItemImpact(kind, point);
+        if (owner != null)
+        {
+            owner.ReplicateNetImpact(kind, point, normal, collider);
+            if (kind == WeaponKind.FountainPen) owner.FountainPenImpact(collider, point, sourceId, normal);
+            else if (kind == WeaponKind.Slime) owner.SlimeImpact(collider, point, sourceId, normal);
+            else if (kind == WeaponKind.IceCream) owner.IceCreamImpact(collider, point, sourceId, normal);
+            else owner.ItemImpact(kind, point);
+        }
     }
 }

@@ -1,0 +1,43 @@
+PASS 30 active floating parcels
+PASS TestParcel_01 ready white outline while item rollout disabled
+PASS TestParcel_02 ready white outline while item rollout disabled
+PASS TestParcel_03 ready white outline while item rollout disabled
+PASS TestParcel_04 ready white outline while item rollout disabled
+PASS TestParcel_05 ready white outline while item rollout disabled
+PASS TestParcel_06 ready white outline while item rollout disabled
+PASS TestParcel_07 ready white outline while item rollout disabled
+PASS TestParcel_08 ready white outline while item rollout disabled
+PASS TestParcel_09 ready white outline while item rollout disabled
+PASS TestParcel_10 ready white outline while item rollout disabled
+PASS TestParcel_11 ready white outline while item rollout disabled
+PASS TestParcel_12 ready white outline while item rollout disabled
+PASS TestParcel_13 ready white outline while item rollout disabled
+PASS TestParcel_14 ready white outline while item rollout disabled
+PASS TestParcel_15 ready white outline while item rollout disabled
+PASS TestParcel_16 ready white outline while item rollout disabled
+PASS TestParcel_17 ready white outline while item rollout disabled
+PASS TestParcel_18 ready white outline while item rollout disabled
+PASS TestParcel_19 ready white outline while item rollout disabled
+PASS TestParcel_20 ready white outline while item rollout disabled
+PASS TestParcel_21 ready white outline while item rollout disabled
+PASS TestParcel_22 ready white outline while item rollout disabled
+PASS TestParcel_23 ready white outline while item rollout disabled
+PASS TestParcel_24 ready white outline while item rollout disabled
+PASS TestParcel_25 ready white outline while item rollout disabled
+PASS TestParcel_26 ready white outline while item rollout disabled
+PASS TestParcel_27 ready white outline while item rollout disabled
+PASS TestParcel_28 ready white outline while item rollout disabled
+PASS TestParcel_29 ready white outline while item rollout disabled
+PASS TestParcel_30 ready white outline while item rollout disabled
+PASS pickup hint
+PASS absolute bounded bob, no accumulated vertical drift
+PASS bubble and enlarged box
+PASS out of range has no outline
+PASS unavailable has no outline
+PASS stun blocks pickup
+PASS solid occlusion blocks pickup
+PASS bubble/trigger does not block box selection
+PASS look away clears outline
+PASS E collects box and bubble together
+PASS collected box cannot be collected twice
+PASS pickup grants one random household item without enabling staged attacks

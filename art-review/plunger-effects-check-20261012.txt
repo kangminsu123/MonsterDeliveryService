@@ -1,0 +1,69 @@
+PASS startup equips only slot 1 plunger with unlimited uses
+PASS active catalog contains nine items and no trampoline
+PASS first-person suction side faces the opponent
+PASS held plunger introduces no invisible collision or extra hands
+PASS real click winds up without an instant pull or premature charge consumption
+PASS throw cancels player capture and blocks capture during action
+PASS windup visibly draws the handle back
+PASS repeated clicks during windup cannot duplicate a throw
+PASS launch makes one world model and hides held copy without spending a charge
+PASS flight renders in the world camera without becoming a pickup or blocking itself
+PASS outbound flight moves at 36 metres per second
+PASS suction cup leads the flight
+PASS slot switching waits until the thrown item returns
+PASS return flight moves at 44 metres per second
+PASS flight finishes and leaves no thrown model
+PASS turning and moving do not redirect outbound throw and returned item follows current hand
+PASS catch restores exact equipped pose
+PASS actual outbound hit starts controlled pull and resets nearly-complete capture
+PASS native rival controller physically moves toward player after plunger impact
+PASS flight finishes and leaves no thrown model
+PASS hit rival arrives 1.6 metres in front without overlapping player body
+PASS return flight does not apply a second pull or consume any charge
+PASS retreating target has not been hit before moving
+PASS flight finishes and leaves no thrown model
+PASS rival moving away after launch is caught and brought all the way to player front
+PASS native rival actively walks away before the throw
+PASS native walking rival is brought all the way to 1.6 metre front gap: travelled 7.52 metres
+PASS flight finishes and leaves no thrown model
+PASS off-crosshair nearby rival is not automatically targeted
+PASS flight finishes and leaves no thrown model
+PASS fourteen metre hit ends at the same 1.6 metre front gap
+PASS flight finishes and leaves no thrown model
+PASS rival beyond fifteen metre throw range is not pulled
+PASS flight finishes and leaves no thrown model
+PASS wall blocks rival hit but unlimited plunger still returns without spending a throw
+PASS flight finishes and leaves no thrown model
+PASS close three metre hit also stops at player front
+PASS distant rival is attached before moving player
+PASS flight finishes and leaves no thrown model
+PASS moving and turning player still receives victim at current front position
+PASS wall test starts after actual attachment
+PASS flight finishes and leaves no thrown model
+PASS pull stops at inserted wall and never teleports victim through it
+PASS flight finishes and leaves no thrown model
+PASS single-use shield blocks attachment without dragging victim
+PASS flight finishes and leaves no thrown model
+PASS repeat-hit resistance reduces pull speed but victim still reaches front
+PASS hit directly above player still starts attachment despite zero horizontal offset
+PASS flight finishes and leaves no thrown model
+PASS elevated attached victim also arrives in front
+PASS stun during windup cancels pending launch without consuming a charge
+PASS G during windup deletes item and cancels throw
+PASS G during flight removes world model and prevents any later hit
+PASS unlimited plunger can launch even with a zero legacy charge counter
+PASS flight finishes and leaves no thrown model
+PASS return never removes unlimited plunger
+PASS flight finishes and leaves no thrown model
+PASS flight finishes and leaves no thrown model
+PASS flight finishes and leaves no thrown model
+PASS flight finishes and leaves no thrown model
+PASS flight finishes and leaves no thrown model
+PASS more than three consecutive throws keep item equipped and unlimited
+PASS third-person suction side faces away from wearer
+PASS third-person uses the same single world flight model
+PASS flight finishes and leaves no thrown model
+PASS third-person catch restores plunger to physical right arm
+PASS a new knockback cleanly replaces the prior pull
+PASS pulled player cannot resist using backward movement, jump or dash
+PASS shared player movement also reaches source front without overlapping

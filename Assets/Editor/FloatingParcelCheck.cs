@@ -17,6 +17,7 @@ public static class FloatingParcelCheck
     {
         if (!EditorApplication.isPlaying) throw new Exception("Run in Play Mode.");
         var game = UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>(); var type = game.GetType();
+        var pool = UnityEngine.Object.FindAnyObjectByType<ParcelSpawnPool>(); var savedSlots = pool.CaptureSlots();
         object Get(string n) => type.GetField(n, Flags).GetValue(game);
         void Set(string n, object v) => type.GetField(n, Flags).SetValue(game, v);
         void Call(string n) => type.GetMethod(n, Flags).Invoke(game, null);
@@ -41,10 +42,10 @@ public static class FloatingParcelCheck
         try
         {
             game.thirdPersonPreview = false; // Preserve the existing first-person input regression check.
-            Set("playerItems", new DeliveryItemState()); Set("started", true); Set("finished", false);
+            Set("playerItems", new DeliveryItemState()); Set("NetworkScreens", false); Set("started", true); Set("finished", false);
             Set("mapEditMode", false); Set("mapExploreMode", true); Set("itemPlaytestEnabled", false);
             Array.Clear(inventory, 0, inventory.Length); Array.Clear(ammo, 0, ammo.Length); Array.Clear(seconds, 0, seconds.Length);
-            Check(parcels.Length == 10, "10 active floating parcels");
+            Check(parcels.Length == 30, "30 active floating parcels");
             foreach (var p in parcels)
             {
                 var target = p.GetComponent<InteractionTarget>();
@@ -81,7 +82,7 @@ public static class FloatingParcelCheck
             Call("Update");
             Check(!box.gameObject.activeSelf && !interaction.available && !interaction.IsHighlighted, "E collects box and bubble together");
             Check(!box.TryCollect(), "collected box cannot be collected twice");
-            Check(inventory.Count(w => w != WeaponKind.None) == 1 && inventory.All(w => (int)w >= 0 && (int)w <= 10) && !(bool)Get("itemPlaytestEnabled"),
+            Check(inventory.Count(w => w != WeaponKind.None) == 1 && inventory.All(w => (int)w >= 0 && (int)w <= (int)WeaponKind.FountainPen) && !(bool)Get("itemPlaytestEnabled"),
                 "pickup grants one random household item without enabling staged attacks");
             File.WriteAllLines("art-review/floating-parcel-interaction-20261006.txt", report);
             Debug.Log("FLOATING_PARCEL_INTERACTION_OK: " + report.Count + " checks passed, including actual E input and white outlines; state restored.");
@@ -97,6 +98,7 @@ public static class FloatingParcelCheck
                 parcels[i].GetComponent<InteractionTarget>().SetFocus(false, false);
                 parcels[i].floating.localPosition = localPositions[i]; parcels[i].floating.localRotation = localRotations[i];
             }
+            pool.ApplySnapshot(savedSlots);
             for (int i = 0; i < fields.Length; i++) fields[i].SetValue(game, values[i]);
             Array.Copy(savedInventory, inventory, inventory.Length); Array.Copy(savedAmmo, ammo, ammo.Length); Array.Copy(savedSeconds, seconds, seconds.Length);
             player.enabled = false; player.transform.SetPositionAndRotation(pp, pr); player.enabled = true;
@@ -118,7 +120,7 @@ public static class FloatingParcelCheck
         var type = game.GetType(); var player = (CharacterController)type.GetField("player", Flags).GetValue(game);
         player.enabled = false; player.transform.position = box.transform.position + Vector3.back * 1.8f + Vector3.up;
         player.transform.rotation = Quaternion.identity; player.enabled = true;
-        var cam = Camera.main; cam.transform.position = player.transform.position + Vector3.up * 1.6f;
+        var cam = Camera.main; type.GetMethod("PositionCamera", Flags).Invoke(game, null);
         cam.transform.LookAt(box.floating.position);
         type.GetField("lookPitch", Flags).SetValue(game, Mathf.DeltaAngle(0, cam.transform.eulerAngles.x));
         Physics.SyncTransforms(); type.GetMethod("UpdateInteraction", Flags).Invoke(game, null);

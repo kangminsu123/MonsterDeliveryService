@@ -1,0 +1,55 @@
+FOUNTAIN_PEN: 54 checks passed
+PASS nine-item catalog retains ID nine and names the new item FountainPen
+PASS startup retains current toy hammer test gear before explicitly equipping the fountain pen
+PASS fountain pen is usable with other staged items gated
+PASS HUD uses the fountain pen name
+PASS generic hit packet blocks every effect atomically without item-kind branches
+PASS same generic hit applies all effects after the one shield charge is spent
+PASS stun immunity and ineffective hits do not consume protection
+PASS explicit floor-hazard bypass preserves tape slow rules
+PASS expired shield permits incoming effects without a defensive pop
+PASS native gold-nib pen model has no held colliders
+PASS inventory has the actual pen model icon
+PASS first-person pen appears on the held camera
+PASS real click throws the pen at 48m/s with no gravity and a 35m range
+PASS gold nib leads the straight projectile
+PASS opponents see the physical pen and short ink trail
+PASS throw cancels own capture and retains unlimited test inventory
+PASS cooldown prevents duplicate throws
+PASS hand releases the model during the throw
+PASS switching slots leaves the thrown pen in flight
+PASS projectile terminates on collision or range
+PASS actual swept flight directly inks the rival for four seconds
+PASS real hit produces a large 48-droplet burst and visible stains on the opponent
+PASS ink shader renders with no new gameplay colliders
+PASS stains follow the struck floating torso instead of staying on the ground
+PASS repeat hit refreshes one reusable actor effect without accumulating stains
+PASS ink only obstructs vision without knockback, stun, or capture interruption
+PASS impact leaves no old ground ink cloud
+PASS projectile terminates on collision or range
+PASS real pen impact consumes rival protection once without ink or capture cancellation
+PASS blocked rival hit shows the protective pop and no ink marks
+PASS projectile terminates on collision or range
+PASS the next real pen hit inks the rival after protection has popped
+PASS projectile terminates on collision or range
+PASS thin solid cover blocks a fast pen without consuming the protected target shield
+PASS cover between camera and nib stops launch before the pen can spawn through a wall
+PASS projectile terminates on collision or range
+PASS misses expire at range without a return flight or nearby area debuff
+PASS projectile terminates on collision or range
+PASS a moving target entering the real flight path can be hit
+PASS projectile terminates on collision or range
+PASS opponent-origin pen is blocked by the player shield before screen ink or capture changes
+PASS projectile terminates on collision or range
+PASS opponent-origin projectile inks the player while ignoring its shooter
+PASS unshielded ink preserves movement and current capture
+PASS own first-person hit hides world stains while keeping screen ink
+PASS repeat hit refreshes four seconds without stacking durations
+PASS organic ink texture blocks the center and leaves transparent outer edges
+PASS projectile terminates on collision or range
+PASS native map shield-hit capture is a real blocked projectile
+PASS projectile terminates on collision or range
+PASS impact ripples finish quickly while ink marks remain for the vision obstruction
+PASS opponent marks disappear when four-second ink obstruction ends
+PASS third-person pen follows the actual robot hand
+PASS vision obstruction naturally expires after four seconds

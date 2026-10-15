@@ -1,0 +1,37 @@
+TOY_HAMMER: 36 checks passed
+PASS toy hammer replaces megaphone ID three without changing the nine-item catalog
+PASS startup selects ice cream in slot two
+PASS HUD and parcel use the toy hammer name
+PASS ribbed toy hammer model is visible and adds no held collision geometry
+PASS inventory uses a rendered hammer icon
+PASS first-person striking faces point toward the owner and opponent rather than sideways
+PASS left click starts a windup without an instant stun
+PASS swing interrupts own capture and occupies the hand for its animation
+PASS hammer remains unlimited and has a reuse cooldown
+PASS cooldown/active swing prevent duplicate attacks
+PASS nearby enemy receives 1.2 seconds of stun at the hit frame
+PASS stun cancels target capture without knockback, damage or death
+PASS first-person model visibly swings through impact
+PASS dizzy rings and orbiting dots follow the floating head without hitboxes
+PASS one swing resolves exactly one hit
+PASS existing bot movement stops while stunned
+PASS swing returns to its saved hand pose
+PASS dizzy feedback hides when stun ends
+PASS two-second stun immunity rejects the hit without spending aircap
+PASS common aircap pipeline blocks the first hammer hit without capture loss or dizzy VFX
+PASS next hammer hit works after aircap has been consumed
+PASS increased 3.5-metre reach hits an enemy beyond the former 2.5-metre sweep
+PASS distant enemy is outside the increased melee reach
+PASS enemy behind the attacker is not struck
+PASS hammer head width counts a graze against the full visible body capsule
+PASS enemy outside the hammer width is not struck
+PASS thin solid wall stops a swing before an enemy
+PASS only the nearest enemy is hit once
+PASS third-person striking faces also align with the owner-to-opponent direction
+PASS third-person camera distance does not shorten the hammer's melee reach
+PASS being stunned during windup cancels the pending strike
+PASS G deletes hammer and cancels its windup
+PASS forced item change cancels a stale hammer strike
+PASS native map swing actually stuns the nearby opponent
+PASS third-person hammer swing follows the actual robot hand
+PASS the shared incoming stun also blocks local movement actions and capture

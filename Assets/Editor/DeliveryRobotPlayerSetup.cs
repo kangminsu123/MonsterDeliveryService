@@ -126,14 +126,24 @@ public static class DeliveryRobotPlayerSetup
             var visual = root.AddComponent<DeliveryRobotVisual>();
             visual.model = model.transform;
             float bottom = Points(visual).Min(v => v.y);
-            root.transform.localPosition = Vector3.up * (-1 + .25f - bottom);
+            root.transform.localPosition = Vector3.up * (-1 + DeliveryRobotVisual.HoverClearance - bottom);
+            var eyePoints = new List<Vector3>();
+            foreach (var eye in model.GetComponentsInChildren<SkinnedMeshRenderer>().Where(r => r.name.StartsWith("HERO_Eye_")))
+            {
+                var mesh = new Mesh();
+                try { eye.BakeMesh(mesh); eyePoints.AddRange(mesh.vertices.Select(v => root.transform.InverseTransformPoint(eye.transform.TransformPoint(v)))); }
+                finally { UnityEngine.Object.DestroyImmediate(mesh); }
+            }
+            if (eyePoints.Count == 0) throw new Exception("Robot eye geometry is missing.");
+            visual.eyeLocalPosition = new Vector3(eyePoints.Average(v => v.x),
+                (eyePoints.Min(v => v.y) + eyePoints.Max(v => v.y)) * .5f, eyePoints.Max(v => v.z) + .01f);
             Directory.CreateDirectory("Assets/Resources/Characters");
             AssetDatabase.Refresh();
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             if (!prefab) throw new Exception("Saving the robot player prefab failed.");
             AssetDatabase.SaveAssets();
             Selection.activeObject = prefab;
-            Debug.Log("ROBOT_PREFAB_OK: 25cm clearance above a standing/crouching controller bottom; Resources/Characters/DeliveryRobotPlayer.");
+            Debug.Log("ROBOT_PREFAB_OK: 100cm hover clearance and stable eye-level first-person anchor; Resources/Characters/DeliveryRobotPlayer.");
         }
         finally
         {
@@ -165,8 +175,8 @@ public static class DeliveryRobotPlayerSetup
             Check(visual && visual.model, "real Player owns the robot visual prefab");
             Check(player.GetComponentsInChildren<Collider>().Length == 1 && !player.GetComponent<Renderer>(),
                 "only the original movement CharacterController remains; no capsule mesh or model colliders");
-            Check(Mathf.Approximately(player.height, 2) && Mathf.Approximately(player.radius, .45f),
-                "standing movement capsule keeps height 2m and radius .45m");
+            Check(Mathf.Approximately(player.height, 1.4f) && Mathf.Approximately(player.radius, .55f) &&
+                Mathf.Approximately(player.center.y, .7f), "standing capsule fits the robot body and leaves the lower hover gap empty");
             var skins = visual.GetComponentsInChildren<SkinnedMeshRenderer>();
             Check(skins.Length == 22 && skins.All(r => r.sharedMesh && r.bones.All(b => b)),
                 "22 imported skinned parts retain their rig");
@@ -179,9 +189,9 @@ public static class DeliveryRobotPlayerSetup
             float topBobBottom = Points(visual).Min(v => v.y);
             animator.Play("IDLE", 0, .75f); animator.Update(0);
             float bottomBobBottom = Points(visual).Min(v => v.y);
-            float foot = player.transform.position.y + player.center.y - player.height * .5f;
-            Check(Mathf.Abs(bottomBobBottom - foot - .22f) < .005f && Mathf.Abs(topBobBottom - foot - .28f) < .005f,
-                "visual hovers 22–28cm above the controller bottom throughout the bob");
+            float foot = player.transform.position.y - DeliveryRobotVisual.HoverClearance;
+            Check(Mathf.Abs(bottomBobBottom - foot - .97f) < .005f && Mathf.Abs(topBobBottom - foot - 1.03f) < .005f,
+                "visual hovers 97–103cm above the controller bottom throughout the bob");
             Check(player.transform.position == rootPosition && Camera.main.transform.position == cameraPosition,
                 "hover does not move the collision controller or first-person camera");
             animator.Play("IDLE", 0, 0); animator.Update(0);
@@ -327,7 +337,7 @@ public static class DeliveryRobotPlayerSetup
                     animator.Play(name, 0, i/16f); animator.Update(0);
                     minClearance = Mathf.Min(minClearance, Points(visual).Min(v => v.y) - (player.transform.position.y - 1));
                 }
-                Check(minClearance > .20f, name + " keeps skin floating above controller feet (min " + minClearance.ToString("F3") + "m)");
+                Check(minClearance > .95f, name + " keeps skin floating above controller feet (min " + minClearance.ToString("F3") + "m)");
             }
             var text = "ROBOT_ANIMATION_OK: " + report.Count + " checks\n" + string.Join("\n", report);
             File.WriteAllText("art-review/delivery-robot-animations-20261007.txt", text);
@@ -440,8 +450,8 @@ public static class DeliveryRobotPlayerSetup
             Call("UpdateInteraction"); Call("TryPickup");
             Check(!target.activeSelf && !interaction.available, "third-person ready target uses the existing parcel pickup dispatch");
             game.thirdPersonPreview = false; Call("PositionCamera");
-            Check(Vector3.Distance(camera.transform.position, player.transform.position + Vector3.up * 1.6f) < .001f,
-                "disabling preview restores the existing first-person camera position");
+            Check(Vector3.Distance(camera.transform.position, visual.EyePosition) < .001f,
+                "disabling preview restores the stable eye-front first-person position");
             File.WriteAllLines("art-review/third-person-preview-20261007.txt", report);
             Debug.Log("THIRD_PERSON_OK: " + report.Count + " checks passed.");
         }
@@ -451,6 +461,7 @@ public static class DeliveryRobotPlayerSetup
             if (target) UnityEngine.Object.DestroyImmediate(target);
             if (wall) UnityEngine.Object.DestroyImmediate(wall);
             game.thirdPersonPreview = thirdPerson;
+            player.GetComponentInChildren<DeliveryRobotVisual>().SetFirstPerson(!thirdPerson);
             Set("lookPitch", pitch); Set("focusedTarget", focused); Set("interactionReady", ready);
             player.enabled = false; player.transform.SetPositionAndRotation(pp, pr); player.enabled = true;
             camera.transform.SetPositionAndRotation(cp, cr);
@@ -505,7 +516,8 @@ public static class DeliveryRobotPlayerSetup
         // Review multiple poses in one frame without reusing cached skin matrices.
         var skins = player.GetComponentsInChildren<SkinnedMeshRenderer>();
         var oldRecalculate = skins.Select(r => r.forceMatrixRecalculationPerRender).ToArray();
-        foreach (var skin in skins) skin.forceMatrixRecalculationPerRender = true;
+        var oldShadows = skins.Select(r => r.shadowCastingMode).ToArray();
+        foreach (var skin in skins) { skin.forceMatrixRecalculationPerRender = true; skin.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; }
         var cameraObject = new GameObject("Robot Player Review") { hideFlags = HideFlags.HideAndDontSave };
         var target = new RenderTexture(1200, 1200, 24) { antiAliasing = 4 };
         var oldActive = RenderTexture.active;
@@ -525,7 +537,7 @@ public static class DeliveryRobotPlayerSetup
         }
         finally
         {
-            for (int i=0; i<skins.Length; i++) skins[i].forceMatrixRecalculationPerRender = oldRecalculate[i];
+            for (int i=0; i<skins.Length; i++) { skins[i].forceMatrixRecalculationPerRender = oldRecalculate[i]; skins[i].shadowCastingMode = oldShadows[i]; }
             RenderTexture.active = oldActive;
             if (image) UnityEngine.Object.DestroyImmediate(image);
             UnityEngine.Object.DestroyImmediate(cameraObject);

@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-16",
+  "word_pages": 3,
+  "renderer": "render_docx.py unavailable: LibreOffice absent; hidden Word COM read-only PDF export + bundled Poppler fallback",
+  "visual_review": "All 3 final page PNGs reviewed at 1400px. Korean text, all 4 captures, captions, tables and footer fit; no blank pages or clipping.",
+  "renderer_attempt_log": "document-renderer-attempt.log",
+  "code_diff_note": "git diff --check reports Unity serializer trailing spaces in SampleScene.unity and one extra blank EOF line in the existing ParcelLootCheck.cs test. No functional issue; broad historical working changes preserved.",
+  "game_validation": "Editor 51/19/48/43 PASS; final EXE 1v1 host17/client5, 2v2 host18/each client5 PASS; same-PC multi-process only.",
+  "build_diagnostics": "Build succeeded; existing UnityPipeline Unsafe DLL diagnostic 1 and Minimap obsolete API warnings 2 remain recorded in build-diagnostics.json.",
+  "historical_captures": "Original 20261006 ground/roof art-review images restored from pre-task backups. Fresh 20261016 copies preserved in images/."
+}

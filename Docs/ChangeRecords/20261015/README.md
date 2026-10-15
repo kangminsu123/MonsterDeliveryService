@@ -1,0 +1,242 @@
+# 아이템과 멀티플레이 변경 기록
+
+작성 날짜: 2026-10-15
+
+최신 사례02: 1대1/2대2 메뉴·실제 연결·결과·자동 옷색·Windows 실행 패키지를 추가했다. 사례01의 온라인 미구현 문장은 그 아이템 작업 당시 범위다.
+
+관련 요청: R01, R02, R03, R04, R05
+
+분류: 요구 변경 / 새 아이템
+
+상태: 구현 및 실행 검증 완료
+
+## 문제와 기대 동작
+
+초기 외형은 Cube 기반이라 얼음이 네모나게 보였다. 비플레이어 표면 충돌은 시각 흔적 없이 종료되었다. 사용자는 뾰족한 얼음과 벽·바닥 흔적을 추가 요청했다. 초기 요청에서는 사용자는 기존 선풍기 자리에 투척형 아이스크림을 요청했다. 이전 선풍기는 목록과 모델 및 기본 밀기 로직이 있었지만 사용 효과는 보류되어 있었다. 이번 변경은 결함 수정이 아니라 새 아이템으로의 요구 변경이다. 수정 전 화면은 별도로 촬영하지 않았으며 이전 상태는 코드와 기존 문서로 확인했다.
+
+## 후속 피드백 R04와 R05
+
+초기 Cube 기반 외형을 6면 다면체와 12개 뾰족한 결정으로 교체했다. 표면 무연출은 딸기색 흔적으로 바꿨고, 3초 유지 후 1초 페이드를 적용했다. 이전 만년필 기본값은 그대로다.
+
+## 원인
+
+기존 ID5는 미활성 선풍기였으며, 요청한 투척과 빙결은 없었다. 기존 공통 기절 처리를 재사용해 동작을 추가했다.
+
+## 사용한 방법
+
+중심 다면체와 주변 12개 결정은 양 끝이 뾰족한 육각 메시 하나를 공유한다. 표면 흔적은 기존 SurfaceInkMark에 색상과 유지·페이드 시간만 선택 인자로 추가해 재사용했다. 기존 만년필의 기본 검정색과 1초 유지 및 1초 페이드는 유지한다. 아이템 ID5를 유지한 채 IceCream으로 교체하고 택배 획득과 HUD 및 재생성 빌더를 연결했다. 기존 Rigidbody와 BrawlShot의 고속 이동 스윕 및 첫 충돌 1회 처리를 재사용했다. 딸기와 바닐라 콘 모델은 Unity 네이티브 메시와 재질로 만들고 같은 모델을 슬롯 아이콘으로 렌더했다.
+
+적중은 DeliveryItemHit(stunSeconds:1) → ApplyItemHit → ReceiveHit 공통 경로를 사용한다. Applied 결과에서만 빙결 표시 시간을 기록하므로 에어캡은 한 번 막고 터지며 면역 중에는 보호막을 소비하지 않는다. 기절 종료 뒤 2초 면역을 공유한다. 빙결 중 점령 진행을 초기화하고 아이템 사용과 이동을 막으며 로봇 Animator를 잠시 멈춘다.
+
+## 해결 결과
+
+후속 피드백을 반영해 사각 얼음을 끝이 뾰족한 결정으로 바꾸고 벽과 바닥 충돌에 딸기색 흔적을 추가했다. 무선 선풍기를 아이스크림으로 교체했다. 좌클릭으로 던져 직접 맞히면 상대가 1초 동안 얼어 이동과 행동 및 점령을 할 수 없다. 현재 탐색 테스트는 2번 아이스크림을 선택해 시작한다.
+
+상대의 떠 있는 몸통을 투명한 푸른 육각 다면체와 뾰족한 결정이 감싼다. 본인은 화면 가장자리의 서리와 빙결 남은 시간을 본다. 빙결 동안 뿅망치의 노란 기절 고리는 숨긴다. 효과는 1초 후 사라지고 애니메이션과 행동이 복구된다. 표시용 얼음에는 충돌체를 추가하지 않았다.
+
+| 항목 | 최종 구현 |
+
+|---|---|
+
+| 표면 흔적 | 딸기색 / 3초 유지 + 1초 페이드 / 효과 없음 |
+
+| 카탈로그 | 9종 유지 / ID5 선풍기 → 아이스크림 |
+
+| 투척 | 18m/s 전방 + 3m/s 상승 / 중력 적용 |
+
+| 적중과 제한 | 반경 0.18m / 첫 충돌 1회 / 3초 안전 삭제 |
+
+| 상태 | 직접 1초 빙결 / 종료 뒤 2초 기절 면역 |
+
+| 사용 | 재사용 0.6초 / 테스트 무제한 / G 영구 폐기 |
+
+| 시작 장비 | 1 뚫어뻥 / 2 아이스크림 선택 / 3 에어캡 |
+
+## 실제 화면
+
+![초기 사각 얼음 2026년 10월 15일 첫 구현](images/20261015_icecream_opponent.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 초기 사각 얼음 2026년 10월 15일 첫 구현를 확인했다.
+
+![후속 수정 뾰족한 다면체와 12개 결정](images/20261015_icecream_spiky_opponent.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 후속 수정 뾰족한 다면체와 12개 결정를 확인했다.
+
+![후속 수정 본인 화면의 뾰족한 서리](images/20261015_icecream_spiky_local.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 후속 수정 본인 화면의 뾰족한 서리를 확인했다.
+
+![실제 맵 울타리의 아이스크림 흔적](images/20261015_icecream_surface_wall.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 실제 맵 울타리의 아이스크림 흔적를 확인했다.
+
+![실제 바닥의 아이스크림 흔적](images/20261015_icecream_surface_floor.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 실제 바닥의 아이스크림 흔적를 확인했다.
+
+![3초 유지 뒤 서서히 사라지는 흔적](images/20261015_icecream_surface_wall_fade.png)
+
+2026-10-15 실제 Game View 검수용 상태 재현. 3초 유지 뒤 서서히 사라지는 흔적를 확인했다.
+
+## 확인 근거
+
+검사는 Unity 6000.5.10f1의 SampleScene 로컬 Play Mode에서 2026-10-15 실행했다. 검증 도구는 격리 위치에서 실제 물리 비행을 실행하며, 아래 화면은 실제 맵에 검수 상태를 설정한 재현 캡처다. 정지 화면으로 1초 정확도를 주장하지 않으며 시간 해제는 별도 검사 로그로 확인했다. 온라인 동기화와 봇의 아이스크림 자동 사용은 이번 범위에 포함하지 않는다.
+
+- 아이스크림과 표면 흔적: `Tools/Gameplay/IceCream/Verify Effects` — 50개 통과. [실행 로그](evidence/ice-cream-check.txt).
+
+- 만년필 표면 회귀 검사: `Tools/Gameplay/Fountain Pen/Verify Surface Ink` — 26개 통과. [실행 로그](evidence/surface-ink-check-20261013.txt).
+
+## 재시도와 환경
+
+이번 후속 아이스크림 50개와 만년필 표면 회귀 26개는 통과했다. 화면 서리가 사각형으로 보이던 보간 계산도 보정해 뾰족한 끝이 나타나도록 한 뒤 재검사·재촬영했다. 아래는 첫 구현 때의 검수 이력이다. 초기 아이스크림 32개 검사는 통과했다. 첫 캡처는 검수 중 비활성화한 HUD와 남아 있던 보호막 표시 때문에 부적절하여 HUD를 켜고 보호막 상태를 갱신한 뒤 재촬영했다. 뿅망치 회귀 검사는 처음에 애니메이션 포즈 확인 시점 지연으로 실패했다. 타격 판정은 실제 시간 흐름으로 확인하고 시각 포즈만 타격 후 0.19초로 고정해 재검사한 결과 36개가 통과했다.
+
+재컴파일 오류는 없었다. 기존 Unity 구형 검색 API의 경고는 기능 오류와 구분해 기록했다. 앞선 뿅망치 36개와 택배 48개 통과는 첫 구현 때의 기록이며 이번 후속 검사는 아이스크림 50개와 만년필 표면 26개다. 검사군 수는 고유 사례 수로 합산하지 않는다.
+
+## 수정 파일
+
+- `Assets/Gameplay/SurfaceInkMark.cs`
+
+- `Assets/Gameplay/MonsterDeliveryPrototype.cs`
+
+- `Assets/Gameplay/DeliveryItemState.cs`
+
+- `Assets/Gameplay/IceCreamCombat.cs`
+
+- `Assets/Gameplay/IceCreamFreezeEffect.cs`
+
+- `Assets/Gameplay/ToyHammerCombat.cs`
+
+- `Assets/Gameplay/MonsterDeliveryHUD.cs`
+
+- `Assets/Gameplay/ExplorationRival.cs`
+
+- `Assets/Editor/IceCreamSetup.cs`
+
+- `Assets/Editor/IceCreamEffectsCheck.cs`
+
+- `Assets/Editor/DeliveryHeldItemSetup.cs`
+
+- `Assets/Editor/InGameUISetup.cs`
+
+## 산출물
+
+[Word 보고서](ChangeReport_20261015.docx) · [화면 열람본](index.html) · [요청 대조표](requests.csv)
+
+편집 원문과 생성기는 source 폴더, 코드 SHA256과 캡처 날짜 및 로그는 evidence 폴더에 보존했다. 기존 ItemTroubleshooting_20261015 보고서는 그대로 유지했다.
+
+## 후속 문서 검수
+
+초기3쪽 보고서는 source/ChangeReport_before_spikes.docx에 보존했다. 후속4쪽은 Word 읽기 전용 PDF 출력과 Poppler로 전 페이지를 이미지화하여 확인했다. 기본 렌더러는 LibreOffice 부재로 실패해 대체했으며 [검수 근거](evidence/report_quality_review.json)와 로그에 기록했다. 첫 구현 검수와 후속 실행 검수를 구분하고, 초기 화면 및 새 화면을 모두 보존했다.
+
+
+## 사례 02 1대1과 2대2 멀티플레이 및 Windows 패키징
+
+작성 날짜 2026-10-15 · 관련 요청 R06~R12 · 요구 변경 · 구현 및 개발 환경 실행 검증 완료
+
+### 문제와 기대 동작
+
+기존 SampleScene은 1인 탐색과 NPC 시연 중심이었다. 참가자를 연결하는 세션, 팀 점수 및 경기 전후 화면이 없었다. 요청에 따라 처음 2대2를 연결한 뒤 1대1 모드와 Windows 패키징을 추가했다. 과거 4인 개인전의 30초 인원 축소 제안은 이번 2대2와 1대1에 자동 적용하지 않았다.
+
+### 사용한 방법
+
+NGO 2.13.3과 Unity Transport를 사용한다. 호스트가 참가 슬롯·팀·옷색·이동·공격·획득·점령 및 종료를 판정하고, 클라이언트는 입력을 전송한다. 20Hz 스냅샷은 캐릭터 위치와 아이템·상태·투사체·우체통·택배·시간·결과를 전달한다. 기존 부유 이동, CharacterController 충돌, 공통 피격/에어캡 방어와 아이템 이펙트를 재사용했다. 옷색과 팀 색을 구분해 우체통은 A 파랑/B 주황, 캐릭터는 개별 색과 이름 위 팀 표시를 쓴다.
+
+### 해결 결과
+
+기존 섬 맵과 아이템을 재사용해 1대1 2명 및 2대2 4명 방을 추가했다. 메인 메뉴에서 경기 방식을 고르면 정원이 모인 뒤 3초 후 시작한다. 옷색은 방장이 중복 없이 무작위로 배정하며 선택 화면은 없다. Windows 개발 빌드의 실제 EXE 2개와 4개를 각각 연결해 경기와 결과 동기화를 확인했다.
+
+| 항목 | 최종 구현 |
+
+|---|---|
+
+| 경기 방식 | 1대1 정원 2명 / 2대2 정원 4명 |
+
+| 시작과 종료 | 정원 충족 후 3초 / 기본 180초 / 점령 수 비교·동점 무승부 |
+
+| 옷과 팀 | 6색 중 참가자별 중복 없는 무작위 / 별도 색 선택 없음 |
+
+| 개발 입장 | 방 만들기 → MD 코드 또는 같은 PC 127.0.0.1로 참가 |
+
+| 개발 도구 | F2 아이템 지급 / 방장 경기 초기화 / 2대2 2명 이상 강제 시작 |
+
+| 결과 | 팀 점수·참가자 / 방장 한 판 더 / 메인 메뉴 |
+
+### 실제 화면
+
+![1대1과 2대2 선택이 추가된 최종 메인 메뉴](images/20261015_network-menu-final.png)
+
+2026-10-15 실제 Game View. 1대1과 2대2 선택이 추가된 최종 메인 메뉴 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![2대2 네 명 입장과 중복 없는 옷색](images/20261015_network-4-player-lobby.png)
+
+2026-10-15 실제 Game View. 2대2 네 명 입장과 중복 없는 옷색 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![2대2 팀 점수와 결과 화면](images/20261015_network-results.png)
+
+2026-10-15 실제 Game View. 2대2 팀 점수와 결과 화면 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![1대1 두 명 입장과 자동 시작](images/20261015_1v1_network-2-player-lobby.png)
+
+2026-10-15 실제 Game View. 1대1 두 명 입장과 자동 시작 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![1대1 점수와 결과 화면](images/20261015_1v1_network-results.png)
+
+2026-10-15 실제 Game View. 1대1 점수와 결과 화면 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![네트워크 경기의 이름과 팀 표시 및 HUD](images/20261015_network-gameplay.png)
+
+2026-10-15 실제 Game View. 네트워크 경기의 이름과 팀 표시 및 HUD 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+![실제 클라이언트 투척으로 호스트가 빙결된 장면](images/20261015_network-client-ice-hit.png)
+
+2026-10-15 실제 Game View. 실제 클라이언트 투척으로 호스트가 빙결된 장면 자동 검사 세션이며 입력·시간 일부를 검수용으로 설정했다.
+
+### 확인 근거
+
+2026-10-15 Unity 6000.5.10f1 SampleScene에서 에디터 호스트+실행 파일을 검수하고, 최종 배포 폴더의 동일 EXE들로 재검증했다. 1대1 호스트 13개/클라이언트 3개, 2대2 호스트 14개/각 클라이언트 3개 통과. 재경기 대기방 복귀·연결 정리·방 재개설·메뉴 복귀 4개도 별도로 통과했다. 중복된 검사군이므로 합계를 고유 사례 수로 쓰지 않는다. 화면은 실제 네트워크 세션 캡처이며, 자동 검증은 입력을 주입하고 점령 시간을 앞당기며 경기 종료도 약 8초 후 강제로 진행했다. 일반 플레이 제한 시간은 180초다.
+
+- 메뉴: Tools/Gameplay/Network/Verify Four Players, Verify Two Players, Verify Room Lifecycle.
+
+- 최종 실행 파일: -delivery-host [-delivery-mode 1v1] / -delivery-join 127.0.0.1 / -delivery-proof.
+
+- 로그: [1대1](evidence/network/packaged-1v1/host-checks.txt), [2대2](evidence/network/packaged-2v2/host-checks.txt), [수명 주기](evidence/network/lifecycle-checks.txt).
+
+첫 NGO 2.7.0은 Unity 6000.5 EntityId API와 호환되지 않아 컴파일에 실패했다. 2.13.3으로 교체 후 컴파일을 통과했다. 첫 에디터 검증은 일시정지 상태에서 접속이 진행되지 않아 시간 초과했으며 실패 자료를 보존했다. 재생 상태를 복원한 실제 프로세스 시험은 통과했다. 첫 샌드박스 내 EXE 실행은 시작하지 못해 로그가 없었고, 승인된 숨김 프로세스 실행으로 전환했다. 자동 승인 사용량 한도로 한 번의 재생 종료 호출이 미실행됐지만 이후 Editor가 idle임을 확인하고 정상 도구 호출로 계속했다.
+
+### 빌드와 제한
+
+Windows x64 Mono Development Build, LZ4 압축, 기본 창 1280×720 및 크기 조절 가능. 최종 Build Succeeded, 약 263.31MB, 23.34초. 빌드 보고에는 기존 com.unity.pipeline의 CodeAnalysis Unsafe DLL 경로 예외 1개, 미컴파일 후처리 안내와 기존 Minimap 검색 API 경고 2개가 기록됐다. 이를 무오류 빌드로 표현하지 않는다. 새 게임 스크립트 컴파일과 최종 EXE의 두 모드 실제 실행은 통과했다.
+
+현재는 같은 PC 또는 같은 LAN의 직접 IPv4 개발 방이다. MD 방 코드는 IP와 UDP 포트 7777을 인코딩한 주소이며 공개 서버 검색이나 Relay 코드는 아니다. 외부 인터넷 매칭·Relay/NAT 우회·계정·호스트 이전은 미구현이며 다른 물리 PC/LAN과 WAN 품질은 이번에 실측하지 않았다. 20Hz 위치 보정은 예측/보간 없이 적용하므로 지연이 큰 환경에서는 움직임이 거칠 수 있다. 9종 사용 경로는 연결했으며 이번 네트워크 실측 공격은 아이스크림/에어캡 공통 피격 중심이다. 기존 아이템별 로컬 검수 이력과 구분한다.
+
+### 수정 파일
+
+- Assets/Gameplay/DeliveryNetwork.cs
+
+- Assets/Gameplay/DeliveryNetworkGameplay.cs
+
+- Assets/Gameplay/DeliveryNetworkUI.cs
+
+- Assets/Gameplay/DeliveryNetworkProof.cs
+
+- Assets/Editor/DeliveryNetworkCheck.cs
+
+- Assets/Gameplay/MonsterDeliveryPrototype.cs
+
+- Assets/Gameplay/MonsterDeliveryHUD.cs
+
+- Assets/Gameplay/DeliveryMinimap.cs
+
+- Assets/Gameplay/ExplorationRival.cs
+
+- Assets/Gameplay/IceCreamCombat.cs
+
+- Assets/Gameplay/SlimeCombat.cs
+
+- Assets/Gameplay/FountainPenCombat.cs
+
+- Packages/manifest.json
+
+- Packages/packages-lock.json
+
+- ProjectSettings/ProjectSettings.asset

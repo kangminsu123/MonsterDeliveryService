@@ -1,0 +1,17 @@
+{
+  "Assets/Gameplay/DeliveryNetwork.cs": "f146e88eff2003ccb528116dc14ca92b7a8506e6aa9c2566e2403638ed9afa40",
+  "Assets/Gameplay/DeliveryNetworkGameplay.cs": "5e37eceeced299e6b36e8836c014ffff8413987f5ce885ff996b3ada22ff37a3",
+  "Assets/Gameplay/DeliveryNetworkUI.cs": "2771bb81e70ee7d23319bd8ffde8f02798e831d9674cf74d44e75ac3e2c20672",
+  "Assets/Gameplay/DeliveryNetworkProof.cs": "31fdc733e44a0e9aa6e7c21deb9b5b4864253713eaf0af6206d1cf093ddc8ff5",
+  "Assets/Editor/DeliveryNetworkCheck.cs": "f853a03ffce587423e2eaaa736885300c9d6381b70e1ab9bc1cf06e5086cbc04",
+  "Assets/Gameplay/MonsterDeliveryPrototype.cs": "525ca9b80875ac423149f576577c036e65dfdbe856c7df89dc1f70eb4c9e70a6",
+  "Assets/Gameplay/MonsterDeliveryHUD.cs": "09cd5abfb63f2dc22d714622eb92ade8a2c03b7422e6ae24162fe3600926735b",
+  "Assets/Gameplay/DeliveryMinimap.cs": "9a746748c6ed87761a44eb2100aefeaa6ddaf4abcc1db68806f2531dfa26b16c",
+  "Assets/Gameplay/ExplorationRival.cs": "34573a4342736fc77f2ba3ffca448db23c3fb618232c6d69b943db9f03519bd9",
+  "Assets/Gameplay/IceCreamCombat.cs": "e298cf000af0bd5f0364ece5452333fe03a02259b11a05adefe9c59f57fe4eeb",
+  "Assets/Gameplay/SlimeCombat.cs": "83d0029a4da7aa63729c1619c98c517c3a1d6449fe232d1a9261f6893a0167d4",
+  "Assets/Gameplay/FountainPenCombat.cs": "3377cef071f9f44ed926d9b14b51ec058edfc5a5a379abcfc30e89096be64931",
+  "Packages/manifest.json": "9b496664de41ff485b8a5dd89ba1fb6c6a8d49b10abb11d73074948ebdb815e6",
+  "Packages/packages-lock.json": "f271c2ccce639488fc37474be05759307964055b42417cc0b1857fe165697f35",
+  "ProjectSettings/ProjectSettings.asset": "3f5bf39f52b4d2eec93547a77fed710bdd002a530ce5ccd048c928ca2c0e90c6"
+}

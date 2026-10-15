@@ -81,28 +81,28 @@ void OnGUI()
         var oldColor = GUI.color; var oldMatrix = GUI.matrix;
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * scale);
         float width = Screen.width / scale;
-        var panel = new Rect(width - 388, 28, 350, 414);
-        var image = new Rect(panel.x + 16, panel.y + 50, 318, 318);
+        var panel = new Rect(width - 318, 28, 280, 332);
+        var image = new Rect(panel.x + 13, panel.y + 40, 254, 254);
         try
         {
             GUI.color = Color.white;
             DeliveryUIArt.Image(panel, "minimap_panel");
-            DeliveryUIArt.Text(new Rect(panel.x + 22, panel.y + 9, 226, 36), "미니맵", 24, Color.white);
-            DeliveryUIArt.Text(new Rect(panel.x + 240, panel.y + 9, 88, 36), "N ↑", 23, Color.white, TextAnchor.MiddleRight);
-            GUI.DrawTexture(image, map, ScaleMode.StretchToFill, true, 0, Color.white, 0, 12);
+            DeliveryUIArt.Text(new Rect(panel.x + 18, panel.y + 7, 181, 29), "미니맵", 19, Color.white);
+            DeliveryUIArt.Text(new Rect(panel.x + 192, panel.y + 7, 70, 29), "N ↑", 18, Color.white, TextAnchor.MiddleRight);
+            GUI.DrawTexture(image, map, ScaleMode.StretchToFill, true, 0, Color.white, 0, 10);
             foreach (var box in mailboxes) if (box)
             {
                 int index = System.Array.IndexOf(mailboxes, box);
-                DrawMarker(image, MapPosition(box.transform.position), mailboxIcon, game.GetMailboxMapColor(index), 22);
+                DrawMarker(image, MapPosition(box.transform.position), mailboxIcon, game.GetMailboxMapColor(index), 18);
             }
             var point = MapPosition(player.position);
             var center = new Vector2(image.x + point.x * image.width, image.y + point.y * image.height);
             var mapMatrix = GUI.matrix;
             GUIUtility.RotateAroundPivot(player.eulerAngles.y, center);
-            DrawMarker(image, point, playerIcon, game.LocalPlayerColor, 28);
+            DrawMarker(image, point, playerIcon, game.LocalPlayerColor, 22);
             GUI.matrix = mapMatrix; GUI.color = Color.white;
-            DeliveryUIArt.Image(new Rect(panel.x + 22, image.yMax + 10, 23, 23), "map_mailbox", game.LocalPlayerColor);
-            DeliveryUIArt.Text(new Rect(panel.x + 54, image.yMax + 6, 280, 32), "내 점령  ·  흰색 미점령", 18, Color.white);
+            DeliveryUIArt.Image(new Rect(panel.x + 18, image.yMax + 8, 18, 18), "map_mailbox", game.LocalMailboxColor);
+            DeliveryUIArt.Text(new Rect(panel.x + 43, image.yMax + 5, 224, 26), game.MapOwnershipLegend, 14, Color.white);
         }
         finally { GUI.color = oldColor; GUI.matrix = oldMatrix; }
     }

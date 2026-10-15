@@ -1,0 +1,13 @@
+{
+  "Assets/Gameplay/ParcelSpawnPool.cs": "7b3976c5a227c494d04cfa29a3b47c6ccbc0c155d64d263e51a3a5fb807d5dcb",
+  "Assets/Gameplay/FloatingParcel.cs": "f6a363a97749990d4874b68aadaf14ffbf1d84cd4140f60230e2852072fe84d4",
+  "Assets/Gameplay/MonsterDeliveryPrototype.cs": "59b4ad283694e26893a6a20ec9485b98e74dc8429c60615e5f01cc1c9b930113",
+  "Assets/Gameplay/DeliveryNetwork.cs": "0d80ebea2b9e5ba1555016e76ebfe4c35853b40fcd9931751879bfdfab05937b",
+  "Assets/Gameplay/DeliveryNetworkProof.cs": "12ad4c1e746520339151d184da4ae32ffa532e0905d1fb7fde53f1e0fa100f5a",
+  "Assets/Editor/ParcelSpawnSetup.cs": "8ad9eeac07a9c728d780fd0f2477f5f42803cc691a131d6dbd19f8720d51fa5c",
+  "Assets/Editor/ParcelSpawnCheck.cs": "cfd3daaf7c6d7a643e0de5d04775da112db097ba1af1b62fbe6103bb4d3a6c6a",
+  "Assets/Editor/TestParcelDrops.cs": "a167481e18eb8dada02ec445576546d6ffa84f0e006cadb8ed9a7afad99c5424",
+  "Assets/Editor/ParcelLootCheck.cs": "d921df63d83022db64af2c8fcf9664422f853d8d3f0a4ee17a55b256c0872399",
+  "Assets/Editor/FloatingParcelCheck.cs": "69f96a5be51b37ca0c493fc3b8034142a0e7231b989c0e5a363d28a5ed7b976a",
+  "Assets/Scenes/SampleScene.unity": "a00fd2fd6e6b714c8eec6b1c3440d559d77d2554e3f5c90eadb5a09c54bf6206"
+}

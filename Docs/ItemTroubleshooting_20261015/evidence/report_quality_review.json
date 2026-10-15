@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-15",
+  "requests": 20,
+  "detailed_cases": 13,
+  "original_captures": 25,
+  "fresh_captures": 21,
+  "historical_captures": 4,
+  "check_groups": 7,
+  "final_result": "All seven Unity verification groups passed",
+  "docx_sha256": "d946c7f35a62239a3e32ad63a3cfdf6d206a66f8ecacd6859fad89b9aecda398",
+  "rendered_pages": 17,
+  "visual_review": "All 17 final page PNGs opened and inspected",
+  "renderer": "Microsoft Word native PDF export followed by bundled Poppler at 125 DPI",
+  "packaged_renderer_limitation": "render_docx.py attempted; LibreOffice soffice.exe unavailable",
+  "notes": [
+    "Initial Toy Hammer native-map check failed in the ongoing Play session. A fresh Play session passed all 36 checks.",
+    "Bubble Wrap camera was obstructed in an idle-session capture. Restarted Play and recaptured a clear view.",
+    "Screenshots use legacy source filenames; capture_date records the actual recapture date.",
+    "No gameplay source changes were made for report creation."
+  ]
+}

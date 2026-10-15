@@ -8,6 +8,7 @@ public sealed partial class MonsterDeliveryPrototype
     {
         get
         {
+            if (NetPlaying) { int remaining = Mathf.CeilToInt(Mathf.Max(0,netRoundUntil-Time.time)); return (remaining/60).ToString("D2")+":"+(remaining%60).ToString("D2"); }
             if (mapExploreMode) return "자유 탐색";
             int seconds = Mathf.CeilToInt(Mathf.Max(0, roundSeconds - (Time.time - startedAt)));
             return (seconds / 60).ToString("D2") + ":" + (seconds % 60).ToString("D2");
@@ -21,7 +22,7 @@ public sealed partial class MonsterDeliveryPrototype
             if (!focusedTarget) return "";
             if ((focusedTarget.GetComponent<FloatingParcel>() || focusedTarget.GetComponent<PickupKind>()) && !HasEmptySlot()) return "G로 선택 아이템 버리기";
 
-for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObject && owner[i] == 0) return "점령 완료";
+for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObject && MailboxOwnedByUs(i)) return "점령 완료";
             return interactionReady ? focusedTarget.actionHint : "가까이 이동하거나 행동 가능 상태를 기다리세요";
         }
     }
@@ -35,23 +36,35 @@ for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObjec
         GUI.color = Color.white;
         try
         {
-            DeliveryUIArt.Image(new Rect(38, 28, 310, 124), "score_panel");
-            DeliveryUIArt.Image(new Rect(50, 38, 100, 102), "mailbox_icon");
-            DeliveryUIArt.Text(new Rect(158, 40, 168, 30), "점령", 26, Color.white);
-            DeliveryUIArt.Text(new Rect(156, 69, 70, 70), Score(0).ToString(), Score(0) < 10 ? 64 : 48, colors[0]);
-            DeliveryUIArt.Text(new Rect(224, 86, 108, 48), "/ " + HouseCount, 40, Color.white);
+            DrawRunningShoesScreen(w, h);
+            DrawBubbleWrapScreen(w, h);
+            DrawFountainInkScreen(w, h);
+            DrawSlimeScreen(w, h);
+            DrawIceCreamScreen(w, h);
+            DrawStunScreen(w, h);
+            DeliveryUIArt.Image(new Rect(38, 28, 248, 99), "score_panel");
+            DeliveryUIArt.Image(new Rect(48, 36, 80, 82), "mailbox_icon");
+            DeliveryUIArt.Text(new Rect(134, 38, 134, 24), NetPlaying ? "우리 팀" : "점령", 21, Color.white);
+            DeliveryUIArt.Text(new Rect(132, 61, 56, 56), (NetPlaying ? TeamScore(netPlayers[netOwn].team) : Score(0)).ToString(), Score(0) < 10 ? 51 : 38, NetPlaying ? LocalMailboxColor : colors[0]);
+            DeliveryUIArt.Text(new Rect(187, 74, 86, 38), "/ " + HouseCount, 32, Color.white);
             DeliveryUIArt.Image(new Rect(w * .5f - 110, 28, 220, 72), "timer_panel");
-            DeliveryUIArt.Text(new Rect(w * .5f - 106, 30, 212, mapExploreMode ? 46 : 62), HudClock, mapExploreMode ? 28 : 48, Color.white, TextAnchor.MiddleCenter);
-            if (mapExploreMode) DeliveryUIArt.Text(new Rect(w * .5f - 110, 75, 220, 22), "시간 제한 없음", 14, new Color(.75f, .79f, .85f), TextAnchor.MiddleCenter);
-            int participantCount = player && player.gameObject.activeInHierarchy ? 1 : 0;
+            DeliveryUIArt.Text(new Rect(w * .5f - 106, 30, 212, mapExploreMode && !NetPlaying ? 46 : 62), HudClock, mapExploreMode && !NetPlaying ? 28 : 48, Color.white, TextAnchor.MiddleCenter);
+            if (mapExploreMode && !NetPlaying) DeliveryUIArt.Text(new Rect(w * .5f - 110, 75, 220, 22), "시간 제한 없음", 14, new Color(.75f, .79f, .85f), TextAnchor.MiddleCenter);
+            if (NetPlaying) {DrawNetTeamHud(w);DrawNetLabels(scale);}
+            else
+            {
+            int participantCount = 0;
             for (int i = 0; i < bots.Length; i++) if (bots[i] && bots[i].activeInHierarchy) participantCount++;
             int badgeIndex = 0;
-            for (int id = 0; id <= BotCount; id++)
+            for (int id = 1; id <= BotCount; id++)
             {
-                if (id == 0 ? !player || !player.gameObject.activeInHierarchy : !bots[id - 1] || !bots[id - 1].activeInHierarchy) continue;
-                var rect = new Rect(w * .5f - (participantCount * 110 - 10) * .5f + badgeIndex++ * 110, 116, 100, 50);
-                DeliveryUIArt.Image(rect, id == 0 ? "badge_active" : "badge_panel", colors[id]);
-                DeliveryUIArt.Text(rect, (id == 0 ? "나" : "P" + (id + 1)) + "  " + Score(id), 26, id == 0 ? new Color(.06f, .07f, .08f) : Color.white, TextAnchor.MiddleCenter);
+                if (!bots[id - 1] || !bots[id - 1].activeInHierarchy) continue;
+                var rect = new Rect(w * .5f - (participantCount * 156 - 10) * .5f + badgeIndex++ * 156, 116, 146, 50);
+                DeliveryUIArt.Image(rect, "badge_panel", colors[id]);
+                DeliveryUIArt.Text(new Rect(rect.x + 8, rect.y, 48, 50), "P" + (id + 1), 24, Color.white, TextAnchor.MiddleCenter);
+                DeliveryUIArt.Image(new Rect(rect.x + 62, rect.y + 13, 24, 24), "map_mailbox", colors[id]);
+                DeliveryUIArt.Text(new Rect(rect.x + 92, rect.y, 46, 50), Score(id).ToString(), 26, Color.white, TextAnchor.MiddleCenter);
+            }
             }
             DeliveryUIArt.Image(new Rect(38, h - 176, 124, 124), "portrait_panel");
             GUI.DrawTexture(new Rect(44, h - 170, 112, 112), DeliveryUIArt.Texture("robot_portrait"), ScaleMode.StretchToFill, true, 0, Color.white, 0, 24);
@@ -76,6 +89,11 @@ for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObjec
                 DeliveryUIArt.Text(new Rect(w - 248, h - 135, 48, 42), "G", 24, Color.white, TextAnchor.MiddleCenter);
                 DeliveryUIArt.Text(new Rect(w - 190, h - 137, 160, 46), "아이템 버리기", 21, Color.white, TextAnchor.MiddleCenter);
             }
+            if (Selected == WeaponKind.BoxingGloves || Selected == WeaponKind.Plunger || Selected == WeaponKind.RunningShoes || Selected == WeaponKind.BubbleWrap || Selected == WeaponKind.FountainPen || Selected == WeaponKind.Slime || Selected == WeaponKind.ToyHammer || Selected == WeaponKind.IceCream)
+            {
+                DeliveryUIArt.Image(new Rect(w - 264, h - 206, 244, 56), "control_panel");
+                DeliveryUIArt.Text(new Rect(w - 258, h - 201, 232, 46), Selected == WeaponKind.IceCream ? "좌클릭 · 투척" : Selected == WeaponKind.ToyHammer ? "좌클릭 · 휘두르기" : Selected == WeaponKind.Slime ? "좌클릭 · 슬라임 투척" : Selected == WeaponKind.FountainPen ? "좌클릭 · 만년필 투척" : Selected == WeaponKind.BubbleWrap ? "좌클릭 · 보호막" : Selected == WeaponKind.RunningShoes ? "좌클릭 · 속도 강화" : Selected == WeaponKind.Plunger ? "좌클릭 · 던지기" : "좌클릭 · 밀치기", 22, Color.white, TextAnchor.MiddleCenter);
+            }
 
 DeliveryUIArt.Image(new Rect(w * .5f - 20, h * .5f - 20, 40, 40), "crosshair");
             if (focusedTarget)
@@ -93,7 +111,7 @@ DeliveryUIArt.Image(new Rect(w * .5f - 20, h * .5f - 20, 40, 40), "crosshair");
                 }
                 else DeliveryUIArt.Text(new Rect(panel.x + 94, panel.y + 53, 246, 61), HudInteractionHint, 19, new Color(.77f, .81f, .87f));
                 if (!parcel) DeliveryUIArt.Bar(new Rect(panel.x + 20, panel.y + 121, 320, 18), HudCaptureProgress, colors[0]);
-                string progress = parcel && !HasEmptySlot() ? "슬롯 가득 참" : captureTarget >= 0 ? "점령 중 " + Mathf.FloorToInt(HudCaptureProgress * 100) + "%" : HudInteractionHint == "점령 완료" ? "내 우체통" : interactionReady ? (parcel ? "눌러서 줍기" : "3초 동안 유지해 점령") : "상호작용 대기";
+                string progress = parcel && !HasEmptySlot() ? "슬롯 가득 참" : captureTarget >= 0 ? "점령 중 " + Mathf.FloorToInt(HudCaptureProgress * 100) + "%" : HudInteractionHint == "점령 완료" ? "내 우체통" : interactionReady ? (parcel ? "눌러서 줍기" : CaptureSeconds.ToString("0.#") + "초 동안 유지해 점령") : "상호작용 대기";
                 DeliveryUIArt.Text(new Rect(panel.x + 20, panel.y + (parcel ? 115 : 141), 320, 30), progress, 21, Color.white, TextAnchor.MiddleCenter);
             }
             for (int slot = 0; slot < SlotCount; slot++)
@@ -107,20 +125,20 @@ DeliveryUIArt.Image(new Rect(w * .5f - 20, h * .5f - 20, 40, 40), "crosshair");
                 DeliveryUIArt.Text(key, (slot + 1).ToString(), 22, selected ? new Color(.06f, .07f, .08f) : Color.white, TextAnchor.MiddleCenter);
                 if (inventory[slot] == WeaponKind.None)
                 {
-                    DeliveryUIArt.Image(new Rect(rect.x + 60, rect.y + 48, 40, 44), "parcel_icon", new Color(1, 1, 1, .25f));
+                    DeliveryUIArt.Image(new Rect(rect.x + 60, rect.y + 38, 40, 44), "parcel_icon", new Color(1, 1, 1, .25f));
                     }
                 else
                 {
-                    DeliveryUIArt.Image(new Rect(rect.x + 52, rect.y + 34, 56, 56), "item_" + inventory[slot]);
-                    DeliveryUIArt.Text(new Rect(rect.x + 8, rect.y + 89, 144, 20), ItemName(inventory[slot]), 14, Color.white, TextAnchor.MiddleCenter);
-                    string remaining = inventory[slot] == WeaponKind.CordlessFan ? weaponSeconds[slot].ToString("0.0") + "초" : weaponAmmo[slot] + "회";
-                    DeliveryUIArt.Text(new Rect(rect.x + 10, rect.y + 110, 140, 16), remaining, 14, selected ? colors[0] : new Color(.75f, .79f, .85f), TextAnchor.MiddleCenter);
+                    DeliveryUIArt.Image(new Rect(rect.x + 52, rect.y + 24, 56, 56), "item_" + inventory[slot]);
+                    DeliveryUIArt.Text(new Rect(rect.x + 8, rect.y + 79, 144, 20), ItemName(inventory[slot]), 14, Color.white, TextAnchor.MiddleCenter);
+                    string remaining = ItemRemainingText(slot);
+                    DeliveryUIArt.Text(new Rect(rect.x + 10, rect.y + 100, 140, 16), remaining, 14, selected ? colors[0] : new Color(.75f, .79f, .85f), TextAnchor.MiddleCenter);
                 }
             }
             if (playerItems.visionBlockedUntil > Time.time)
                 DeliveryUIArt.Text(new Rect(w * .5f - 150, h * .5f - 80, 300, 36), "잉크 · 시야 차단", 22, Color.white, TextAnchor.MiddleCenter);
             else if (playerItems.Stunned(Time.time))
-                DeliveryUIArt.Text(new Rect(w * .5f - 150, h * .5f - 80, 300, 36), "기절 · 잠시 행동 불가", 22, Color.white, TextAnchor.MiddleCenter);
+                DeliveryUIArt.Text(new Rect(w * .5f - 150, h * .5f - 80, 300, 36), playerItems.Frozen(Time.time) ? "빙결 · 잠시 행동 불가" : "기절 · 잠시 행동 불가", 22, Color.white, TextAnchor.MiddleCenter);
         }
         finally { GUI.matrix = oldMatrix; GUI.color = oldColor; }
     }

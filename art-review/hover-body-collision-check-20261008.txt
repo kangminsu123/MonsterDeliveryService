@@ -1,0 +1,15 @@
+PASS real unpaused frame available
+PASS ground sensor maintains 1m hover without a ground-touching collider
+PASS body capsule starts at visual base and ends about 1.4m above it
+PASS horizontal ray through lower 50cm gap does not hit player
+PASS horizontal ray through robot body hits player
+PASS red rival also has no lower collision extension
+PASS real walking passes a 50cm obstacle beneath the robot without horizontal blocking
+PASS real walking is blocked by an obstacle at body height
+PASS wall does not alter hover altitude
+PASS one movement call retains horizontal velocity and WALK animation
+PASS Space jump leaves sensed ground
+PASS holding Space does not restart the jump while rising inside the ground-sensor range
+PASS gravity lands back at 1m hover altitude
+PASS crouching keeps the lower collision gap empty
+PASS leaving a platform falls under gravity instead of hovering without ground

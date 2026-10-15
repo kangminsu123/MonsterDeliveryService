@@ -54,9 +54,15 @@ Crosshair(); MinimapIcons();
     {
         if (EditorApplication.isPlaying) throw new Exception("Import in Edit Mode.");
         Directory.CreateDirectory(Folder);
-        for (int i = 1; i <= 10; i++)
+        for (int i = 1; i <= (int)WeaponKind.FountainPen; i++)
         {
-            var source = Directory.GetFiles("Assets/Art/DeliveryItemConcepts", (i + 1).ToString("D2") + "_*.png").Single();
+            if (i == (int)WeaponKind.FountainPen) { FountainPenSetup.Build(); continue; }
+            if (i == (int)WeaponKind.IceCream) { IceCreamSetup.Build(); continue; }
+            if (i == (int)WeaponKind.Slime) { SlimeSetup.Build(); continue; }
+            if (i == (int)WeaponKind.ToyHammer) { ToyHammerSetup.Build(); continue; }
+            var source = i == (int)WeaponKind.BoxingGloves ? "Assets/Art/DeliveryItemConcepts/boxing_glove_single_v1.png" :
+                i == (int)WeaponKind.WorkGloves ? "Assets/Art/DeliveryItemConcepts/work_glove_single_v1.png" :
+                Directory.GetFiles("Assets/Art/DeliveryItemConcepts", (i + 1).ToString("D2") + "_*.png").Single();
             var path = Folder + "/item_" + (WeaponKind)i + ".png";
             File.Copy(source, path, true);
             AssetDatabase.ImportAsset(path);
@@ -67,7 +73,7 @@ Crosshair(); MinimapIcons();
             importer.npotScale = TextureImporterNPOTScale.None; importer.filterMode = FilterMode.Bilinear;
             importer.SaveAndReimport();
         }
-        Debug.Log("ITEM_ICONS_IMPORTED: reused all 10 original concept PNGs.");
+        Debug.Log("ITEM_ICONS_IMPORTED: nine PNGs including the single boxing/work gloves.");
     }
 
 

@@ -1,0 +1,25 @@
+{
+    "own": 0,
+    "players": 4,
+    "uniqueColors": true,
+    "teamsBalanced": true,
+    "sawLobby": true,
+    "sawPlaying": true,
+    "sawFrozen": true,
+    "sawOwnership": true,
+    "sawResults": true,
+    "remoteInput": true,
+    "checks": [
+        "PASS four clients receive unique random coat colours",
+        "PASS four clients split into two teams of two",
+        "PASS room code round trips endpoint",
+        "PASS invalid room code is rejected",
+        "PASS real client input reaches authoritative host",
+        "PASS client-origin ice cream physically freezes the host",
+        "PASS team mate direct attacks do not spend aircap or freeze",
+        "PASS opponent attack consumes aircap without freeze",
+        "PASS authoritative gaze capture awards a team mailbox",
+        "PASS team ownership persists to results",
+        "PASS result scores match server mailbox ownership"
+    ]
+}

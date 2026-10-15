@@ -1,0 +1,15 @@
+PASS collision capsule covers the hovering robot body only
+PASS local player and red rival share the increased hover offset
+PASS IDLE evaluated mesh clearance 0.970–1.030m
+PASS WALK evaluated mesh clearance 0.961–1.001m
+PASS IDLE_ARMED evaluated mesh clearance 0.970–1.030m
+PASS WALK_ARMED evaluated mesh clearance 0.961–1.001m
+PASS camera matches actual eye center height and sits 1cm in front of eye surfaces
+PASS first-person viewpoint is below the hat
+PASS idle hover does not bob the first-person camera
+PASS local model cannot cover the first-person view; rival remains visible and local shadows remain
+PASS crouching lowers the eye camera by 60cm
+PASS wall pulls eye camera inside the capsule before clipping
+PASS eye-front crosshair ray reaches nearby interaction target
+PASS first-person interaction ray ignores own capsule
+PASS third-person review restores visible local robot

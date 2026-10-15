@@ -1,0 +1,33 @@
+ICE_CREAM: 32 checks passed
+PASS ice cream replaces fan at ID5; catalog stays at nine items
+PASS HUD displays ice cream name
+PASS strawberry cone is a reusable collider-free held model
+PASS inventory sprite is rendered from ice cream model
+PASS native use launches gravity projectile at 18m/s even with rollout gate false
+PASS thrown model has frost trail and swept physical collision
+PASS throw cancels own capture and retains unlimited inventory
+PASS cooldown prevents duplicate throws on repeated input
+PASS held cone leaves the hand during throw
+PASS slot change keeps already thrown ice cream alive
+PASS projectile terminates on actual collision or safety lifetime
+PASS real ballistic hit freezes target for one second
+PASS freeze cancels rival capture without damage or knockback
+PASS visible blue ice shell and crystals render without extra hitboxes
+PASS freeze also pauses floating robot animation
+PASS ice freeze replaces yellow hammer dizziness feedback
+PASS one-second timer expires and animation/actions resume
+PASS shared two-second stun immunity ignores repeat freeze without spending aircap
+PASS projectile terminates on actual collision or safety lifetime
+PASS actual projectile spends aircap once with no freeze or capture loss
+PASS projectile terminates on actual collision or safety lifetime
+PASS next actual projectile freezes after aircap is consumed
+PASS projectile terminates on actual collision or safety lifetime
+PASS thin wall blocks real projectile before target
+PASS close wall prevents spawning through cover
+PASS projectile terminates on actual collision or safety lifetime
+PASS miss has no homing, return, or freezing floor area
+PASS projectile terminates on actual collision or safety lifetime
+PASS opponent-origin actual throw freezes local player and resets capture
+PASS frozen player cannot use an item
+PASS native map opponent capture records a live freeze
+PASS native local capture records frost overlay and countdown

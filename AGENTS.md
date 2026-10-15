@@ -5,6 +5,7 @@ This is the Unity project used by the virtual game-development team.
 - Unity version: 6000.5.10f1
 - Project path: `C:\Users\user\Documents\Codex\MonsterDeliveryService`
 - Read `GAME_DESIGN.md`, `TEAM_STATUS.md`, `NEXT_SESSION.txt`, and `ART_REVIEW.md` before changing the project.
+- Before making changes, read and follow [the change recording guide](Docs/CHANGE_RECORDING_GUIDE.md). Document each user-requested change with the problem, cause, method, result, actual captures when relevant, and verification evidence before handoff; keep the request mapping and dated report files current without waiting for another documentation request.
 - Save reviewable visual concepts as PNG, JPG, or WEBP in `art-review/`.
 - Do not claim a Unity change is complete until it has been checked in the Editor or its limitation is recorded.
 - Keep the current task small, testable, and documented in `NEXT_SESSION.txt` before handoff.

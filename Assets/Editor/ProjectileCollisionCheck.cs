@@ -52,7 +52,7 @@ public static class ProjectileCollisionCheck
                         throw new Exception("No solid surface in shot path: " + collider.name);
                     cam.transform.SetPositionAndRotation(origin, Quaternion.LookRotation(direction));
                     var before = UnityEngine.Object.FindObjectsByType<BrawlShot>();
-                    fire.Invoke(game, new object[] { direction, 180f, WeaponKind.PackingTape });
+                    fire.Invoke(game, new object[] { direction, 180f, WeaponKind.Slime });
                     var shot = UnityEngine.Object.FindObjectsByType<BrawlShot>().FirstOrDefault(s => !before.Contains(s));
                     bool crossed = shot != null && Vector3.Dot(shot.transform.position - first.point, direction) > .15f;
                     // Explicit PhysX steps also run when the Editor Game View is unfocused.
@@ -76,7 +76,7 @@ public static class ProjectileCollisionCheck
             {
                 trigger.transform.position = new Vector3(0, 150, 4); var triggerCollider = trigger.AddComponent<BoxCollider>(); triggerCollider.isTrigger = true;
                 Physics.SyncTransforms(); cam.transform.SetPositionAndRotation(new Vector3(0, 150, 0), Quaternion.identity);
-                var before = UnityEngine.Object.FindObjectsByType<BrawlShot>(); fire.Invoke(game, new object[] { Vector3.forward, 120f, WeaponKind.PrinterInk });
+                var before = UnityEngine.Object.FindObjectsByType<BrawlShot>(); fire.Invoke(game, new object[] { Vector3.forward, 120f, WeaponKind.FountainPen });
                 var shot = UnityEngine.Object.FindObjectsByType<BrawlShot>().First(s => !before.Contains(s));
                 for (int step = 0; step < 5; step++) { typeof(BrawlShot).GetMethod("FixedUpdate", flags)?.Invoke(shot, null); Physics.Simulate(Time.fixedDeltaTime); await Task.Delay(10); }
                 bool passed = shot != null && shot.gameObject.activeSelf && shot.transform.position.z > 6;

@@ -1,0 +1,35 @@
+PASS exploration remains active without a match timer
+PASS exactly one active local test opponent
+PASS opponent uses the delivery robot prefab
+PASS opponent color is red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS hat and vest material receives opponent red
+PASS colored hat/vest material slots exist
+PASS baked native navigation loaded from Resources
+PASS spawn is on a walkable surface
+PASS complete route to mailbox 1
+PASS complete route to mailbox 2
+PASS complete route to mailbox 3
+PASS complete route to mailbox 4
+PASS complete route to mailbox 5
+PASS complete route to mailbox 6
+PASS complete route to mailbox 7
+PASS complete route to mailbox 8
+PASS complete route to mailbox 9
+PASS complete route to mailbox 10
+PASS fresh session leaves at least two capturable mailboxes
+PASS opponent naturally travels through the actual level
+PASS WALK while moving and IDLE while capturing
+PASS opponent naturally captures two distinct mailboxes
+PASS minimap reads red ownership
+PASS captured beacon renders opponent red
+PASS captured beacon renders opponent red
+PASS mailbox body colors remain unchanged
+PASS test opponent does not enable item attacks or grant player equipment

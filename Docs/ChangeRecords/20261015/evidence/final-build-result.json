@@ -1,0 +1,25 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"success\":true,\"message\":\"Build Succeeded.\",\"data\":{\"job_id\":\"build-cb8437caee\",\"result\":\"succeeded\",\"platform\":\"StandaloneWindows64\",\"output_path\":\"C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_Windows/MonsterDeliveryService.exe\",\"started_at\":\"2026-10-15T13:35:10.7826874Z\",\"duration_seconds\":23.341257499999998,\"completed_at\":\"2026-10-15T13:35:34.1239449Z\",\"total_size_mb\":263.31,\"errors\":1,\"warnings\":3}}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "message": "Build Succeeded.",
+    "data": {
+      "job_id": "build-cb8437caee",
+      "result": "succeeded",
+      "platform": "StandaloneWindows64",
+      "output_path": "C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_Windows/MonsterDeliveryService.exe",
+      "started_at": "2026-10-15T13:35:10.7826874Z",
+      "duration_seconds": 23.341257499999998,
+      "completed_at": "2026-10-15T13:35:34.1239449Z",
+      "total_size_mb": 263.31,
+      "errors": 1,
+      "warnings": 3
+    }
+  },
+  "isError": false
+}

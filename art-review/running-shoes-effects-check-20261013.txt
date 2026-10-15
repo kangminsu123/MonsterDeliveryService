@@ -1,0 +1,29 @@
+PASS catalog has nine items plus empty hands
+PASS selecting running shoes displays no held shoe model
+PASS selection alone does not activate the buff
+PASS real left-click use grants exactly five seconds at +50 percent speed
+PASS use cancels capture and keeps unlimited item in its slot
+PASS cooldown prevents immediate reactivation
+PASS reuse refreshes five seconds without stacking speed
+PASS first person activates screen wind and hides own world particles
+PASS opponent use activates its world wind particles
+PASS opponent wind begins at the floating lower torso rather than below the body
+PASS booster uses sky blue rather than green cyan
+PASS soft screen glow surrounds all four edges while the centre remains clear
+PASS screen glow has a strong beat, softer second beat and rest
+PASS all particle velocity axes use the same curve mode without Unity warnings
+PASS world particles use the supported additive wind shader
+PASS opponent wind actually emits visible particles
+PASS opponent has +50 percent speed and fine wind accents across a broad radius
+PASS three layered curved wind ribbons wrap the floating body with glow and thin cores
+PASS wind ribbons rotate in actual play frames instead of staying as static rings
+PASS moving opponent leaves two short body-height slipstreams
+PASS third person shows own wind without adding shoes
+PASS switching to first person hides only own world effect
+PASS switching slots preserves the active player and opponent buffs
+PASS discard removes the item while the already activated buff finishes normally
+PASS slow and running shoes multiply instead of overwriting each other
+PASS expiry restores speed and stops and clears opponent particles
+PASS expiry clears slipstreams and hides every wind ribbon
+PASS screen wind fades out after expiry
+PASS round finish suppresses player screen effect and opponent wind

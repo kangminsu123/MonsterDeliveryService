@@ -1,0 +1,52 @@
+PASS startup provides plunger in 1, empty 2 and 3, selects 1
+PASS other household effects remain staged
+PASS real left click starts unlimited glove animation before impact without consuming ammo
+PASS repeat click during cooldown cannot duplicate attacks or hand alternation
+PASS windup has no early hit
+PASS first click extends only right glove forward
+PASS left glove stays in guard during right punch
+PASS stronger impact pushes and lifts rival while cancelling its capture without self-blocking
+PASS one swing resolves impact only once
+PASS native controller is displaced even when rival has no capture target
+PASS animation returns to original guard
+PASS second click extends left glove while right glove stays in guard
+PASS left glove recovers and following click alternates back to right
+PASS third-person arm animation keeps glove attached to its physical arm
+PASS third-person right punch leaves left arm in guard
+PASS third-person arm returns to armed animation after push
+PASS third-person following click uses only physical left arm
+PASS wall blocks impact without consuming unlimited gloves
+PASS extended range hits rival at 4.5 metres from player
+PASS target beyond 5 metres from camera is not hit
+PASS side target outside crosshair ray is not hit
+PASS nearby rival inside old cone is not hit or interrupted when crosshair misses its body
+PASS crosshair touching the side of the rival collision body still hits
+PASS crosshair above rival body does not hit
+PASS crosshair in empty hover gap does not hit
+PASS aiming away during windup cancels impact on previously aimed rival
+PASS hit uses crosshair at impact rather than the earlier click direction
+PASS unlimited gloves stay equipped throughout the action
+PASS recovery retains gloves and HUD shows unlimited instead of an ammo count
+PASS more than three attacks never exhaust or remove gloves
+PASS discard cancels pending impact without spawning a pickup
+PASS stun cancels windup while retaining unlimited gloves
+PASS unrequested item effects remain disabled
+PASS test rival actively approaches player before knockback
+PASS approaching rival travels about 3x farther: 5.40m -> 16.20m
+PASS capture remains blocked for the entire knockback even beyond the old 0.35 second timer
+PASS rival naturally continues an almost-complete mailbox capture before hit
+PASS real glove hit resets rival capture timer and blocks capture during knockback
+PASS rival returning after knockback starts capture from zero rather than restoring progress
+PASS restarted rival capture still needs the full 3 seconds
+PASS rival can capture normally after completing a fresh 3 second attempt
+PASS selected work gloves automatically halve capture time to 1.5 seconds
+PASS HUD progress uses halved duration and retains unspent gloves
+PASS capture cannot complete before 1.5 seconds
+PASS releasing E resets capture without spending work gloves
+PASS successful 1.5 second capture retains unlimited work gloves
+PASS repeated captures keep work gloves and the 1.5 second bonus
+PASS switching away removes the work glove benefit
+PASS received knockback cancels progress but retains gloves
+PASS holding E while knocked back cannot continue player capture or restore HUD progress
+PASS backward input, jump and Shift cannot resist knockback or spend dash stamina during it
+PASS discarding work gloves restores normal 3 second capture

@@ -1,0 +1,44 @@
+[
+  {
+    "path": "images\\20261015_icecream_opponent.png",
+    "caption": "초기 사각 얼음 2026년 10월 15일 첫 구현",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "52d2f7e9e18fe4d326f77bc5f62161319a2234a0d08da850dfbfc08d2bb06469"
+  },
+  {
+    "path": "images\\20261015_icecream_spiky_opponent.png",
+    "caption": "후속 수정 뾰족한 다면체와 12개 결정",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "c58687bfc398e21d24c3ea9ef69e405e71ada46a7424cea45709aa88ea51262d"
+  },
+  {
+    "path": "images\\20261015_icecream_spiky_local.png",
+    "caption": "후속 수정 본인 화면의 뾰족한 서리",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "7799e1942145240381209e8dbcdfd090de8b0ec8e4fbe5b4e3bb98e4d49c6615"
+  },
+  {
+    "path": "images\\20261015_icecream_surface_wall.png",
+    "caption": "실제 맵 울타리의 아이스크림 흔적",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "1a54a91ed17f7fe7536fb0e2cf26861694e9b2b62af85d26fa73384f4926d62f"
+  },
+  {
+    "path": "images\\20261015_icecream_surface_floor.png",
+    "caption": "실제 바닥의 아이스크림 흔적",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "4a81dfb252ab3a9657f8419f037fc494b768ea79ca5c4b4666c092dd1760390c"
+  },
+  {
+    "path": "images\\20261015_icecream_surface_wall_fade.png",
+    "caption": "3초 유지 뒤 서서히 사라지는 흔적",
+    "capture_date": "2026-10-15",
+    "reproduction": true,
+    "sha256": "ffa07eea26c0bd054cefe326f3c98b8011f51fc4f729af86a048b7c1e51f30d2"
+  }
+]

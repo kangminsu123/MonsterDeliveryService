@@ -1,0 +1,54 @@
+SLIME: 53 checks passed
+PASS slime replaces tape ID four in the nine-item catalog
+PASS startup retains current toy hammer test gear before explicitly equipping slime
+PASS HUD/parcel name is slime
+PASS wet green held model contains geometry and no colliders
+PASS slime has a native rendered inventory icon
+PASS selected slime has a visible first-person model
+PASS left click launches a visible physical projectile with gravity
+PASS flying slime remains visible
+PASS throw cooldown applies and unlimited test inventory is retained
+PASS cooldown prevents a duplicate projectile
+PASS slime-width near cover prevents spawning through a wall beside the centre aim line
+PASS slime has no arbitrary forty-metre flight limit
+PASS near-vertical throw remains visible in the air after three seconds
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS high throw descends and creates its pool only after real ground contact
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS angled throw travels over forty metres and still lands with a puddle
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS a high pole impact leaves visible sticky slime on the struck object without another hitbox
+PASS pole impact more than four metres above the ground still creates the floor slow area
+PASS pole slime remains visible after the short impact burst ends
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS a missed slime falling below the playable map is cleaned up
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS real projectile hits rival and applies three seconds of 40 percent slow
+PASS slow does not stun or cancel capture
+PASS slow visibly coats floating torso with animated drips
+PASS slow VFX do not add hitboxes
+PASS direct impact leaves a ground-aligned puddle below the hovering body
+PASS floor refresh never shortens the stronger direct-hit duration
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS common shield pipeline blocks direct slime and consumes exactly one shield
+PASS blocked slime does not reapply slow through an immediate puddle
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS opponent-source physical slime projectile also slows the local player
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS thin wall stops the projectile before the rival
+PASS wall impact splashes down onto nearby ground
+PASS three-metre ground hazard slows an inside actor without spending a shield
+PASS outside the three-metre pool is not slowed
+PASS another floor above the puddle is not affected
+PASS solid cover separates the ground slow area
+PASS thrower can also be slowed by standing in the goo
+PASS own torso goo is hidden in first person to keep the view clear
+PASS ground slow clears shortly after leaving the puddle
+PASS five-second puddle expires and removes render mesh and hazard state
+PASS authored street lamp exposes a real projectile collision surface
+PASS thrown slime ends on actual impact or below the map and never returns
+PASS real map lamp collision retains both a green impact splat and a ground puddle
+PASS expired/cleared slow hides opponent goo
+PASS third-person slime follows the robot hand
+PASS switching to aircap removes the held slime model
+PASS discard permanently clears the slime slot and held model

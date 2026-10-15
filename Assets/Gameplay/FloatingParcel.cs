@@ -4,6 +4,7 @@ using UnityEngine;
 public sealed class FloatingParcel : MonoBehaviour
 {
     public Transform floating;
+    [System.NonSerialized] public ParcelSpawnPool spawnPool;
     public const float HoverHeight = 1.1f, BobAmplitude = .12f;
 
     void Update() => Animate(Time.time);
@@ -18,9 +19,11 @@ public sealed class FloatingParcel : MonoBehaviour
     public bool TryCollect()
     {
         var target = GetComponent<InteractionTarget>();
+        if (spawnPool && !spawnPool.CanCollect) return false;
         if (!isActiveAndEnabled || !target || !target.available) return false;
         target.available = false; target.SetFocus(false, false);
         gameObject.SetActive(false);
+        if (spawnPool) spawnPool.Collected(this);
         return true;
     }
 }

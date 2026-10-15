@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-15",
+  "revision": "R04/R05 follow-up",
+  "docx_pages": 4,
+  "render_method": "Word read-only PDF export and bundled Poppler",
+  "primary_renderer": "render_docx.py attempted; LibreOffice soffice.exe absent; see renderer_followup.log",
+  "pages_reviewed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "result": "Korean glyphs, table widths, captions, image framing, before/after labels and all pages checked; no clipped content or empty spill page",
+  "captures": "6 current native Game View captures inspected; initial captures preserved",
+  "tests": {
+    "IceCream": 50,
+    "SurfaceInk": 26
+  },
+  "console": "fresh Play returned zero errors and warnings"
+}

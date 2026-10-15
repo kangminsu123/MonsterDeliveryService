@@ -1,0 +1,177 @@
+{
+  "running_before": {
+    "file": "images/running_before_20261013.png",
+    "source": "art-review/running-shoes-opponent-20261013.png",
+    "status": "historical",
+    "capture_date": "2026-10-13",
+    "sha256": "73c42146623a2585c3736386fd6c8029046def2fe98bfa430d18504e48668962"
+  },
+  "running_world": {
+    "file": "images/running_world_20261015.png",
+    "source": "art-review/running-shoes-opponent-ribbons-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "4a43385c21e8104ee7773da721f6809859cb81c986e96893ac26251206371559"
+  },
+  "running_screen": {
+    "file": "images/running_screen_20261015.png",
+    "source": "art-review/running-shoes-first-person-refined-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "41ff5f8a1d42c69f22cd9f0b3c3eb1970fe5ab0727799b9a0c583838c2498a74"
+  },
+  "bubble_before": {
+    "file": "images/bubble_before_20261013.png",
+    "source": "art-review/bubble-wrap-opponent-20261013.png",
+    "status": "historical",
+    "capture_date": "2026-10-13",
+    "sha256": "166e77a15e8dadfe7aa94a72b9316ce9ddc6646aba6bc0232c89eee87f13b83c"
+  },
+  "bubble_world": {
+    "file": "images/bubble_world_20261015.png",
+    "source": "art-review/bubble-wrap-opponent-fizz-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "16751301edcd84765f60888c612ac39295934148d30f0d942fdf510a46acdf46"
+  },
+  "bubble_screen": {
+    "file": "images/bubble_screen_20261015.png",
+    "source": "art-review/bubble-wrap-first-person-fizz-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "6fa85d80aa30235670e93056c86daa7d91ebd1c294ee4e3e60ccc0ca295293c9"
+  },
+  "bubble_pop": {
+    "file": "images/bubble_pop_20261015.png",
+    "source": "art-review/bubble-wrap-opponent-pop-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "3fff10eb97163f47e02c7e0306e63d8d947269bff0e24ed8e7db8120991c62b8"
+  },
+  "pen_held": {
+    "file": "images/pen_held_20261015.png",
+    "source": "art-review/fountain-pen-held-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "a5f3bd98da09c878a266797f65dc71a47d538ca1856ec069215f81792bcf503d"
+  },
+  "pen_ink": {
+    "file": "images/pen_ink_20261015.png",
+    "source": "art-review/fountain-pen-ink-hit-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "7a3804cbb44a5ab350f7b10ae2dd716472936b29d79616614dcb9b1f5b75ccde"
+  },
+  "pen_burst": {
+    "file": "images/pen_burst_20261015.png",
+    "source": "art-review/fountain-pen-opponent-burst-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "3dcab001b7eb54b8e0ed9a510d5bb3aef0422fa27ef4ec452f5375f58461c898"
+  },
+  "pen_stain": {
+    "file": "images/pen_stain_20261015.png",
+    "source": "art-review/fountain-pen-opponent-stains-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "445717e7e295528498ac8561d2aa78bfee4008b07cd3d2b61294478724be66d8"
+  },
+  "pen_block": {
+    "file": "images/pen_block_20261015.png",
+    "source": "art-review/fountain-pen-aircap-block-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "6e285f356be230ad4b5b2fd045a2e20c0c778e703c07d5d6871e4c85f7d24b39"
+  },
+  "surface_hold": {
+    "file": "images/surface_hold_20261015.png",
+    "source": "art-review/fountain-pen-wall-ink-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "d3adc75284129680d765b23486cf39a3a1550aef6085102fabc0296e76d58260"
+  },
+  "surface_fade": {
+    "file": "images/surface_fade_20261015.png",
+    "source": "art-review/fountain-pen-wall-ink-fade-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "6ad522a7af5d6fd2b4fab928e6d6defecab3e6a280417f8517a4184bcd108ed0"
+  },
+  "surface_ground": {
+    "file": "images/surface_ground_20261015.png",
+    "source": "art-review/fountain-pen-ground-ink-20261013.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "289490d7eba5f97e8637033ab328496c47c6ad1a38b1cbfa3bf61e136806330c"
+  },
+  "plunger": {
+    "file": "images/plunger_20261015.png",
+    "source": "art-review/plunger-hit-return-20261012.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "1e493095088a5062e4f61fdb8b815a572398d3cc0d94a9bd5ce4aa9f417f9f5a"
+  },
+  "slime_screen": {
+    "file": "images/slime_screen_20261015.png",
+    "source": "art-review/slime-screen-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "66b371dcb18d95293a7d15146790bfc9af87d3ee971f80f97edd777160275f27"
+  },
+  "slime_world": {
+    "file": "images/slime_world_20261015.png",
+    "source": "art-review/slime-opponent-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "32ae23cb4a6cae73ca133d4539746d953d3d003fd7a9b94adffb10d545ae797a"
+  },
+  "slime_lamp": {
+    "file": "images/slime_lamp_20261015.png",
+    "source": "art-review/slime-lamp-fixed-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "d2d290f151e9d9e6717b428c06563935593893733c646d40f1ff41bb3674b84e"
+  },
+  "hammer_hit": {
+    "file": "images/hammer_hit_20261015.png",
+    "source": "art-review/toy-hammer-hit-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "1266cd518fab9fc9b547ab583c1b6b30a81c46538d4a1ec5a552d23d354938cf"
+  },
+  "hammer_third": {
+    "file": "images/hammer_third_20261015.png",
+    "source": "art-review/toy-hammer-third-person-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "16fd07703eb0152881b333da160b905202e980122457a006c7351643b11b1e10"
+  },
+  "hammer_hud": {
+    "file": "images/hammer_hud_20261015.png",
+    "source": "art-review/toy-hammer-held-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "eb892232ee8d390618995d9d512707765590606121c5585385578ba984500a61"
+  },
+  "hammer_screen": {
+    "file": "images/hammer_screen_20261015.png",
+    "source": "art-review/toy-hammer-stunned-screen-20261014.png",
+    "status": "fresh",
+    "capture_date": "2026-10-15",
+    "sha256": "e056ae0aac9952cd203e6076b8ae868e5534600e6cee2ab5da158a3e8dda369c"
+  },
+  "glove": {
+    "file": "images/glove_20261009.png",
+    "source": "art-review/glove-push-third-person-20261009.png",
+    "status": "historical",
+    "capture_date": "2026-10-09",
+    "sha256": "8aa37b443db1fb4a30038d86a9245b1537bf5499f5305a2079787471720c3051"
+  },
+  "workglove": {
+    "file": "images/workglove_20261009.png",
+    "source": "art-review/work-glove-capture-hud-20261009.png",
+    "status": "historical",
+    "capture_date": "2026-10-09",
+    "sha256": "535a1ea75ae21bf73878e3014d38331dda8fac8c95e25eddca1fd5f1d9401e88"
+  }
+}

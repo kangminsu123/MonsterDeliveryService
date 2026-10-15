@@ -1,0 +1,91 @@
+{
+  "motion": [
+    {
+      "action": "IDLE_ARMED",
+      "frames": [
+        1,
+        13,
+        25,
+        37,
+        49
+      ],
+      "mesh_loop_seam_m": 0.0,
+      "visible_motion_m": 0.030000210263093775
+    },
+    {
+      "action": "WALK_ARMED",
+      "frames": [
+        1,
+        13,
+        25,
+        37,
+        49
+      ],
+      "mesh_loop_seam_m": 0.0,
+      "visible_motion_m": 0.020000457399882317
+    }
+  ],
+  "exports": [
+    {
+      "item": "BoxingGloves",
+      "bytes": 85212,
+      "meshes": 2,
+      "triangles": 3040
+    },
+    {
+      "item": "Plunger",
+      "bytes": 212668,
+      "meshes": 1,
+      "triangles": 10268
+    },
+    {
+      "item": "Megaphone",
+      "bytes": 76540,
+      "meshes": 1,
+      "triangles": 2780
+    },
+    {
+      "item": "PackingTape",
+      "bytes": 141100,
+      "meshes": 1,
+      "triangles": 6572
+    },
+    {
+      "item": "CordlessFan",
+      "bytes": 299660,
+      "meshes": 1,
+      "triangles": 14128
+    },
+    {
+      "item": "RunningShoes",
+      "bytes": 134764,
+      "meshes": 1,
+      "triangles": 5572
+    },
+    {
+      "item": "BubbleWrap",
+      "bytes": 422908,
+      "meshes": 1,
+      "triangles": 22048
+    },
+    {
+      "item": "WorkGloves",
+      "bytes": 119212,
+      "meshes": 2,
+      "triangles": 4936
+    },
+    {
+      "item": "PrinterInk",
+      "bytes": 92908,
+      "meshes": 1,
+      "triangles": 3760
+    },
+    {
+      "item": "MiniTrampoline",
+      "bytes": 335052,
+      "meshes": 1,
+      "triangles": 15460
+    }
+  ],
+  "source_meshes_preserved": true
+}

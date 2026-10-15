@@ -1,0 +1,72 @@
+{
+  "20261015_1v1_network-2-player-lobby.png": {
+    "sha256": "5003929e0aba89442de38ce6a1e8cb9826cea49a07e2ff777ecb89632b081a38",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_1v1_network-client-ice-hit.png": {
+    "sha256": "0612b3424bffc1d471d9e3d9a1c13eedddfe706d1b36f67cb9a8fb3cbe210683",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_1v1_network-gameplay.png": {
+    "sha256": "ccc8e8d2bd047d21436e2bbf6c7bffc4afc19ae3fddcb1d9e426a58a012a1aae",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_1v1_network-lobby.png": {
+    "sha256": "d66c5d7b5f0c6bf324948406144c79a04897d6b9b9f8c6265ac73de452bcf7d3",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_1v1_network-main-menu.png": {
+    "sha256": "d5fcf131997e54201c2576a792b8ef6eec803571301d0943cff9f19a95da92bc",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_1v1_network-results.png": {
+    "sha256": "4fa0b4dc89601edc3ede1a10ac014d6698c95067df5cdd0f780dddfb3ecd3b03",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-4-player-lobby.png": {
+    "sha256": "02e1be16e3b416a56c01231cce1427dc70f5e6f654ea64cbd86154ad1f4360ed",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-client-ice-hit.png": {
+    "sha256": "d50bce399b19515174ee35634b81e16fda0b5242d153665d17df278fd07f25c6",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-four-player-lobby.png": {
+    "sha256": "111a16a22e86560abeb872f70303286a07268664e7effb6ca23fc017fbfc40ca",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-gameplay.png": {
+    "sha256": "7e36fc1cb2d07aba5dc09c9cc4110523279b173bf97cf0653b2d094f185bb2a7",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-lobby.png": {
+    "sha256": "39a03bcacc1d46b7d3d1b526140d93a626655f7797e799eb0b3044f66b40c94d",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-main-menu.png": {
+    "sha256": "33923c3bf1f9df7416c6b84c770a72386a34d1e3e008eca1bac46cd3bb00d91a",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-menu-final.png": {
+    "sha256": "fef996f325d1468ae62de6815d7bbf731f84877216ad32c5cfed07f7cdf0708d",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  },
+  "20261015_network-results.png": {
+    "sha256": "011cada72f853cd6bc83ef057d06fa578b3e84f5b728c2ad4680cfadab5792c8",
+    "capture_date": "2026-10-15",
+    "source": "Actual Unity Game View network proof, configured input and shortened match end"
+  }
+}

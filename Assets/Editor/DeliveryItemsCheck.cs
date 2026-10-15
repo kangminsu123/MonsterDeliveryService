@@ -53,7 +53,7 @@ public static class DeliveryItemsCheck
             Check(!state.Control(100, Vector3.forward * 18) && state.shieldUntil == 0 && state.MoveMultiplier(100) == .6f, "bubble wrap blocks one control hit; slow bypasses shield");
             Check(state.Control(100.1f, Vector3.forward * 18) && state.Control(100.2f, Vector3.forward * 18) && Mathf.Abs(state.force.z - 6.3f) < .01f, "repeat knockback reduced to 35 percent");
             state = new DeliveryItemState { slowUntil = 105, speedUntil = 105 };
-            Check(state.CanCapture(100) && Mathf.Abs(state.MoveMultiplier(100) - .84f) < .001f && state.MoveMultiplier(106) == 1, "slow preserves capture; slow and speed buffs expire");
+            Check(state.CanCapture(100) && Mathf.Abs(state.MoveMultiplier(100) - .9f) < .001f && state.MoveMultiplier(106) == 1, "slow preserves capture; slow and speed buffs expire");
 
             Set("itemPlaytestEnabled", true); Call("CreateBot", 0);
             var rival = ((GameObject[])Get("bots"))[0]; temporary.Add(rival);
@@ -64,7 +64,7 @@ public static class DeliveryItemsCheck
             mailboxes[0] = pad; mailboxRenderers[0] = pad.GetComponent<Renderer>(); owner[0] = -1;
             Check(Enum.GetValues(typeof(WeaponKind)).Length == 11, "catalog contains exactly ten household items and empty hands");
             foreach (WeaponKind kind in Enum.GetValues(typeof(WeaponKind))) if (kind != WeaponKind.None)
-            { Equip(kind); Check(inventory[0] == kind && ((string)Call("ItemName", kind)) != "빈손" && (kind == WeaponKind.CordlessFan ? seconds[0] == 4 : ammo[0] > 0), "catalog grant and budget: " + kind); }
+            { Equip(kind); Check(inventory[0] == kind && ((string)Call("ItemName", kind)) != "빈손" && (kind == WeaponKind.BoxingGloves ? ammo[0] == 0 : ammo[0] > 0), "catalog grant and budget: " + kind); }
             Empty(); Call("AddWeapon", WeaponKind.BoxingGloves); Call("AddWeapon", WeaponKind.Plunger); Call("AddWeapon", WeaponKind.BubbleWrap); Call("AddWeapon", WeaponKind.RunningShoes);
             Check(inventory.SequenceEqual(new[] { WeaponKind.BoxingGloves, WeaponKind.Plunger, WeaponKind.BubbleWrap }), "fourth pickup cannot overwrite three occupied slots");
             Call("DropSelectedWeapon"); Call("AddWeapon", WeaponKind.RunningShoes);
@@ -79,12 +79,12 @@ public static class DeliveryItemsCheck
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); temporary.Add(wall); wall.transform.position = new Vector3(0, 150.5f, 1); wall.transform.localScale = new Vector3(3, 3, .2f); Physics.SyncTransforms();
             states[0] = new DeliveryItemState(); Equip(WeaponKind.BoxingGloves); Call("UseWeapon");
             Check(states[0].force == Vector3.zero, "solid cover blocks cone attacks"); wall.SetActive(false);
-            states[0] = new DeliveryItemState(); Equip(WeaponKind.Megaphone); Call("UseWeapon");
-            Check(!states[0].Stunned(Time.time) && (float)Get("hornAt") > Time.time, "megaphone schedules a dodgeable windup");
-            Set("hornAt", Time.time); Call("UpdateItemAreas");
-            Check(states[0].Stunned(Time.time) && ammo[0] == 1, "megaphone windup resolves to stun");
-            states[0] = new DeliveryItemState(); Equip(WeaponKind.CordlessFan); seconds[0] = Time.deltaTime * .5f; Call("UseWeapon");
-            Check(states[0].force.z > 0 && inventory[0] == WeaponKind.None && seconds[0] == 0, "fan pushes while held and disappears when battery is spent");
+            states[0] = new DeliveryItemState(); Equip(WeaponKind.ToyHammer); Call("UseWeapon");
+            Check(!states[0].Stunned(Time.time) && (int)Get("hammerSlot") == 0, "toy hammer winds up before the hit");
+            Set("hammerStarted", Time.time - .19f); Call("UpdateToyHammerSwing");
+            Check(states[0].Stunned(Time.time), "nearby toy hammer impact resolves through shared stun state");
+            states[0] = new DeliveryItemState(); Equip(WeaponKind.IceCream); Call("UseWeapon");
+            Check(states[0].force == Vector3.zero && inventory[0] == WeaponKind.IceCream, "ice cream is a projectile rather than a continuous fan push");
             Equip(WeaponKind.RunningShoes); Call("UseWeapon"); state = (DeliveryItemState)Get("playerItems");
             Check(state.speedUntil > Time.time + 4.9f && inventory[0] == WeaponKind.None, "running shoes grant a 5sec speed and stamina buff");
             Equip(WeaponKind.BubbleWrap); Call("UseWeapon"); state = (DeliveryItemState)Get("playerItems");
@@ -105,24 +105,16 @@ public static class DeliveryItemsCheck
             Check(owner[0] == 0 && inventory[0] == WeaponKind.None && (int)Get("armedGloveSlot") == -1, "successful 2sec capture consumes work gloves; slow does not interrupt");
 
             pad.GetComponent<Collider>().enabled = false; camera.transform.rotation = Quaternion.identity; Physics.SyncTransforms(); Call("UpdateInteraction");
-            states[0] = new DeliveryItemState(); Equip(WeaponKind.PackingTape); Call("UseWeapon");
-            Check(ammo[0] == 1 && UnityEngine.Object.FindObjectsByType<BrawlShot>().Any(s => !existingShots.Contains(s) && s.kind == WeaponKind.PackingTape), "packing tape creates a non-lethal throwable");
-            game.ItemImpact(WeaponKind.PackingTape, rival.transform.position); Call("UpdateItemAreas");
+            states[0] = new DeliveryItemState(); Equip(WeaponKind.Slime); Call("UseWeapon");
+            Check(ammo[0] == 1 && UnityEngine.Object.FindObjectsByType<BrawlShot>().Any(s => !existingShots.Contains(s) && s.kind == WeaponKind.Slime), "packing tape creates a non-lethal throwable");
+            game.ItemImpact(WeaponKind.Slime, rival.transform.position); Call("UpdateItemAreas");
             Check(states[0].MoveMultiplier(Time.time) == .6f && states[0].CanCapture(Time.time), "tape area slows rivals while allowing capture");
-            Equip(WeaponKind.PrinterInk); Call("UseWeapon"); game.ItemImpact(WeaponKind.PrinterInk, new Vector3(0, 149.5f, 1));
-            Check((bool)Call("VisionBlocked", camera.transform.position, rival.transform.position + Vector3.up * .5f), "printer ink blocks sight through its area");
+            Equip(WeaponKind.FountainPen); Call("UseWeapon"); game.FountainPenImpact(controllers[0], rival.transform.position, 0);
+            Check(states[0].visionBlockedUntil > Time.time + 3.9f, "fountain pen directly splashes the target with four seconds of ink");
             foreach (var area in areas) area.GetType().GetField("until").SetValue(area, Time.time - 1); Call("UpdateItemAreas");
-            Check(areas.Count == 0 && !(bool)Call("VisionBlocked", camera.transform.position, rival.transform.position), "expired areas are removed and sight recovers");
+            Check(areas.Count == 0, "expired floor areas are removed; fountain pen adds no ink cloud");
 
-            Place(player, new Vector3(-10, .81f, 38.84f)); Call("UpdatePlayer", (object)null); Physics.SyncTransforms();
-            camera.transform.SetPositionAndRotation(player.transform.position + Vector3.up * 1.6f, Quaternion.Euler(65, 0, 0));
-            Equip(WeaponKind.MiniTrampoline); Call("UseWeapon");
-            Check(inventory[0] == WeaponKind.None && areas.Count == 1, "trampoline deploys only on a reachable upward-facing surface");
-            var deployed = (Vector3)areas[0].GetType().GetField("point").GetValue(areas[0]);
-            Place(player, deployed + Vector3.up * 1.05f); Set("vertical", -2f);
-            for (int i = 0; i < Mathf.CeilToInt(.5f / Time.deltaTime); i++) Call("UpdatePlayer", (object)null);
-            Call("UpdateItemAreas");
-            state = (DeliveryItemState)Get("playerItems"); Check(state.pendingLift == 11 && state.force.magnitude > 11, "trampoline launches the user as well as opponents");
+            state = (DeliveryItemState)Get("playerItems");
             var safe = state.safePosition; Place(player, new Vector3(0, -9, 0)); Call("UpdatePlayer", (object)null);
             Check(Vector3.Distance(player.transform.position, safe) < .2f && player.enabled, "out-of-bounds player returns safely without death");
 

@@ -1,0 +1,10 @@
+{
+  "result": "Succeeded",
+  "job": "build-af3ebf3045",
+  "platform": "Windows64",
+  "size_mb": 263.32,
+  "duration_seconds": 23.3965846,
+  "errors": 1,
+  "warnings": 2,
+  "date": "2026-10-16"
+}

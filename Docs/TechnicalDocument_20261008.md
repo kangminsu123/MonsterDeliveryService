@@ -1,34 +1,39 @@
 # Monster Delivery Service 기술 문서
 
-기준일: 2026-10-08 · Unity 6000.5.10f1 · SampleScene · Built-in Render Pipeline
+기준일: 2026-10-14 · Unity 6000.5.10f1 · SampleScene · Built-in Render Pipeline
 
 이 문서는 현재 코드와 Unity Editor 검증 결과를 기준으로 작성했다. 10월 6일 기술 문서와 발표 자료는 당시 구현의 기록이며, 현재 동작은 이 문서와 GAME_DESIGN.md를 따른다.
 
 ## 1. 현재 구현 범위
 
-게임은 생활용품으로 상대의 위치·행동을 방해하며 주택가 우체통을 점령하는 개인전이다. 체력·피해·처치·사망·사망 리스폰은 제거했고 모든 슬롯이 빈 상태로 시작한다.
+게임은 생활용품으로 상대의 위치·행동을 방해하며 주택가 우체통을 점령하는 개인전이다. 체력·피해·처치·사망·사망 리스폰은 제거했다. 2026-10-15 현재 탐색 테스트는1번 압축 뚫어뻥/2번 아이스크림/3번 에어캡(무제한)으로 시작하고2번을 장착한다.
 
-현재 SampleScene은 섬 맵 탐색 모드다. 1인칭 이동, 대쉬, 우체통 점령, 전체 섬 미니맵, 부유 택배의 랜덤 아이템 획득, 3칸 슬롯 선택과 영구 폐기를 직접 테스트할 수 있다. 온라인 멀티플레이와 입장 전 색 선택 화면은 아직 없다. 상단 참가자는 현재 로컬 플레이어와 실제 활성화된 봇을 기준으로 표시하며, 탐색 모드에서는 혼자만 표시한다.
+현재 SampleScene은 섬 맵 탐색 모드다. 1인칭 이동, 대쉬, 우체통 점령, 전체 섬 미니맵, 부유 택배의 랜덤 아이템 획득, 3칸 슬롯 선택과 영구 폐기를 직접 테스트할 수 있다. 온라인 멀티플레이와 입장 전 색 선택 화면은 아직 없다. 빨간 조끼·모자 로봇 P2 한 명이 임시 복싱 글러브를 양팔에 장착하고 맵을 이동하며 우체통을 점령한다. 상단 배지는 실제 활성 상대만 이름/우체통 아이콘/점령수로 표시하고 본인 배지는 숨긴다.
 
-아이템 공격·상태 이상·투척·영역 효과 코드는 준비되어 있지만 일반 플레이에서는 itemPlaytestEnabled=false로 사용을 막는다. 이 제한과 별도로 택배 획득 및 G 폐기는 활성화되어 있다. 손에 든 아이템 3D 모델도 아직 표시하지 않는다.
+복싱 글러브·작업용 장갑·뚫어뻥·러닝화·에어캡·만년필·슬라임·뿅망치·아이스크림 9종 효과를 활성화했다. 아이스크림은 선풍기 ID5를 대체하며 itemPlaytestEnabled=false에서도 사용 가능하다. 트램펄린은 종류·획득·사용에서 제거했다. 이 제한과 별도로 택배 획득 및 G 폐기는 활성화되어 있다. 선택 아이템의 3D 모델 7종을 1인칭에 표시한다. 장착 시 추가 손을 생성하지 않는다. 에어캡·런닝화는 효과 전용으로 손 모델을 표시하지 않는다. 장착 표시 구현과 검수는 Docs/HeldItems_20261008.md를 따른다.
 
 ## 2. 코드와 에셋 구조
 
 | 책임 | 위치 | 구현 |
 |---|---|---|
 | 게임 상태·이동·점령·인벤토리 | Assets/Gameplay/MonsterDeliveryPrototype.cs | Input System, CharacterController, 3칸 배열, 점령 소유자 배열 |
+| 부유 이동·몸통 충돌 | Assets/Gameplay/HoverMovement.cs | 몸통 캡슐, 하향 지면 감지, 중력/착지와1m 부유 높이 |
 | 인게임 표시 | Assets/Gameplay/MonsterDeliveryHUD.cs | 기존 MonoBehaviour의 partial 파일, OnGUI로 패널·텍스트·슬롯 렌더 |
 | 미니맵 | Assets/Gameplay/DeliveryMinimap.cs | 시작 시 512px 지도 생성, 실시간 소유권·플레이어 방향 표시 |
 | 공통 상호작용 | Assets/Gameplay/InteractionTarget.cs | 사용 가능 판정에 따른 흰 메시 테두리, MaterialPropertyBlock |
 | 부유 택배 | Assets/Gameplay/FloatingParcel.cs | 상하 부유·회전, 모델/보호막 일괄 수집 |
 | 캐릭터 표시 | Assets/Gameplay/DeliveryRobotVisual.cs | 플레이어색 재질과 Animator 상태 연결 |
+| 장착 표시 | Assets/Gameplay/HeldItemPresentation.cs · DeliveryHeldItem.cs | 선택 캐시, 1인칭 전용 아이템 카메라, 3인칭 뼈 부착 |
+| 만년필 투척·화면 잉크 | Assets/Gameplay/FountainPenCombat.cs · MonsterDeliveryPrototype.BrawlShot | 네이티브 Rigidbody/연속 충돌+SweepTest, 공유 슬롯·보라색 TrailRenderer/입자, 캐시한 불규칙 투명 텍스처를 OnGUI 렌더 |
+| 탐색용 상대 길찾기 | Assets/Gameplay/ExplorationRival.cs | 베이크된 NavMesh 경로, 기존 CharacterController 이동/3초 점령 |
+| 길찾기 베이크 | Assets/Editor/ExplorationRivalNavigation.cs | 실제 정적 충돌체와 임시 읽기 가능한 메시로 Navigation 에셋 생성 |
 | 비살상 상태 | Assets/Gameplay/DeliveryItemState.cs | 기절·슬로우·강화·넉백/당기기 상태 |
 | 우체통 에셋·배치 | Assets/Editor/DeliveryPropsPlacement.cs | FBX 재질 연결, 높이 조정 메시, 집 앞 10개 배치 |
 | 택배 테스트 배치 | Assets/Editor/TestParcelDrops.cs | 허용 지면과 접근 가능한 평면 옥상에 10개 랜덤 배치 |
 | 캐릭터 임포트 | Assets/Editor/DeliveryRobotPlayerSetup.cs | FBX·Generic Animator·플레이어 프리팹 구성 |
 | UI 이미지 제작 | Assets/Editor/InGameUISetup.cs | 패널 PNG 생성, 모델 아이콘 렌더, 기존 상품 이미지 임포트 |
 
-플레이어 프리팹은 Assets/Resources/Characters/DeliveryRobotPlayer.prefab, UI 이미지는 Assets/Resources/UI/InGame, 미니맵 셰이더는 Assets/Resources/MinimapFlat.shader에 있다. 기존 Unity 기능을 재사용했으며 이 작업을 위해 UI 패키지나 새로운 외부 런타임 의존성을 추가하지 않았다.
+플레이어 프리팹은 Assets/Resources/Characters/DeliveryRobotPlayer.prefab, UI 이미지는 Assets/Resources/UI/InGame, 미니맵 셰이더는 Assets/Resources/MinimapFlat.shader에 있다. 상대 길찾기는 Resources/Navigation/ExplorationIsland.asset을 로드한다. Edit Mode의 Tools/Gameplay/Rebuild Exploration Navigation으로 재베이크한다. 부유 택배는 길찾기 표면에서 제외한다. 설치된 Unity AI Navigation/네이티브 기능을 재사용했고 새로운 외부 의존성을 추가하지 않았다.
 
 ## 3. 조작과 상호작용
 
@@ -58,27 +63,26 @@
 획득 경로는 UpdateInteraction → TryPickup → FloatingParcel.TryCollect → AddWeapon이다.
 
 1. 빈 슬롯과 거리·시선·행동 가능 상태를 확인한다.
-2. 유효한 E 입력에서 10종 중 하나를 동일 확률로 뽑는다. Random.Range(1, 11)은 None을 제외한다.
-3. 첫 빈 슬롯에 넣고 사용 횟수 또는 선풍기 배터리를 초기화한다. 새 슬롯을 자동 선택한다.
+2. 유효한 E 입력에서9종 중 하나를 동일 확률로 뽑는다. Random.Range(1, (int)WeaponKind.PrinterInk + 1)은 None과 제거된 트램펄린을 제외한다.
+3. 첫 빈 슬롯에 넣고 사용 횟수를 초기화한다(현재 테스트는 무제한). 새 슬롯을 자동 선택한다.
 4. 상자와 보호막을 비활성화하고 재수집을 막는다.
 5. HUD는 실제 슬롯 데이터를 읽어 기존 상품 이미지, 이름, 남은 사용량을 표시한다.
 
 3칸이 가득 차면 기존 칸을 덮어쓰거나 상자를 소비하지 않는다. 흰 테두리와 수집 가능 상태를 끄고 “G로 선택 아이템 버리기”를 안내한다. 1·2·3으로 선택한 뒤 G를 누르면 해당 슬롯의 아이템·사용량·연결된 장갑 준비 상태만 삭제한다. 월드에 버린 아이템을 생성하지 않으며 다시 줍는 기능은 없다. 빈 슬롯이 생기면 택배 수집이 다시 가능하다.
 
-아래 효과는 준비된 로직/기획이다. 현재 활성화된 플레이는 획득·표시·선택·폐기까지다.
+2026-10-15 코드 대조 기준, 현재 목록 9종의 효과를 모두 탐색 플레이에서 사용한다. 무선 선풍기는 아이스크림(ID5)으로 교체했다.
 
-| 생활용품 | 코드 종류 | 초기 사용량 | 준비된 효과 |
-|---|---|---|---|
-| 복싱 글러브 | BoxingGloves | 3회 | 전방 상대 넉백·띄우기 |
-| 압축 뚫어뻥 | Plunger | 3회 | 상대를 사용자 쪽으로 당기기 |
-| 휴대용 확성기 | Megaphone | 2회 | 준비 후 전방 기절 |
-| 포장용 테이프 | PackingTape | 2회 | 착지 지점 슬로우 영역 |
-| 무선 선풍기 | CordlessFan | 4초 | 유지 입력으로 상대 밀기 |
-| 러닝화 | RunningShoes | 1회 | 이동 속도 강화 |
-| 에어캡 | BubbleWrap | 1회 | 기절/넉백/당기기 1회 방어 |
-| 작업용 장갑 | WorkGloves | 점령 성공 1회 | 다음 점령 3초 → 2초 |
-| 프린터 잉크 | PrinterInk | 2회 | 공격 시야 차단 영역 |
-| 미니 트램펄린 | MiniTrampoline | 1회 | 누구나 이용하는 발사 장치 |
+| 생활용품 | 코드 종류 | 테스트 사용량 | 구현 효과 / 보류 로직 | 현재 구현 상태 |
+|---|---|---|---|---|
+| 복싱 글러브 | BoxingGloves | 무제한(테스트) | 중앙 조준선 직접 적중·5m·가장 가까운 상대1명, 교대 한손 넉백·띄우기, 이동 거리3배 | 활성 · 모델/아이콘/사용 동작/효과 연결 |
+| 압축 뚫어뻥 | Plunger | 무제한(테스트) | 준비0.12초·최대15m·비행36/복귀44m/s, 적중 상대를 내 앞 약1.6m까지 제어 이동/점령 중단/벽 차단 | 활성 · 모델/아이콘/사용 동작/효과 연결 |
+| 뿅망치 | ToyHammer(ID3) | 무제한(테스트) | 근접3.5m/머리 반경.32m,0.18초 뒤1명·1.2초 기절/벽·방어·면역 | 활성 · 모델/아이콘/사용 동작/효과 연결 |
+| 슬라임 | Slime(ID4) | 무제한(테스트) | 중력 투척·직접3초/지면5초·이속40% 감소 | 활성 · 모델/아이콘/사용 동작/효과 연결 |
+| 아이스크림 | IceCream(ID5) | 무제한(테스트) | 18m/s 중력 투척/직접 1초 빙결/종료 후 2초 기절 면역/재사용 0.6초 | 활성 · 모델/아이콘/투척/얼음·서리 연결 |
+| 러닝화 | RunningShoes | 무제한(테스트) |5초 이동 속도+50%/회전 바람 띠·잔상 | 활성 · 효과 전용, 손 모델 없음 |
+| 에어캡 | BubbleWrap | 무제한(테스트) |8초 기절/넉백/당기기/잉크1회 방어/본인 화면·상대 기포 보호막·터짐 | 활성 · 효과 전용, 손 모델 없음 |
+| 작업용 장갑 | WorkGloves | 무제한(테스트) | 착용 중 점령3초 →1.5초 | 활성 · 선택 착용 중 자동 적용 |
+| 만년필 | FountainPen(ID9) | 무제한(테스트) | 48m/s 직선 투척/35m/복귀 없음, 직접 맞은 대상 화면 잉크4초 | 활성 · 모델/아이콘/사용 동작/효과 연결 |
 
 세부 수치·충돌·상태 중첩 규칙은 GAME_DESIGN.md와 10월 6일 기술 문서를 참고한다.
 
@@ -95,13 +99,15 @@ Blender에서 만든 간단한 부유 배달 로봇을 FBX로 가져와 런타�
 | IDLE_ARMED | 아이템 선택 후 정지 | 양팔 앞으로, 양손을 가운데로 약 12도 모음 |
 | WALK_ARMED | 아이템 선택 후 이동 | 양팔 모은 자세, 부유·전방 기울기 유지 |
 
-2초 루프를 Generic Animator로 재생한다. 빈 슬롯 선택·G 폐기·소진 후에는 이동 여부에 따라 WALK/IDLE로 복귀한다. 부유는 뼈 애니메이션으로 처리하고 코드 부유와 루트 모션을 중복 적용하지 않는다. 스킨 최하단은 컨트롤러 바닥에서 약 21~28cm 위를 유지한다. 1인칭에서는 검수용 3인칭과 보이는 범위가 다르다.
+2초 루프를 Generic Animator로 재생한다. 빈 슬롯 선택·G 폐기·소진 후에는 이동 여부에 따라 WALK/IDLE로 복귀한다. 부유는 뼈 애니메이션으로 처리하고 코드 부유와 루트 모션을 중복 적용하지 않는다. 공유 플레이어 프리팹의 부유 높이를 50cm에서 1m로 두 배 높여 본인과 빨간 상대 모두 약 1m 떠 있다. 실제 스킨 최하단은 IDLE/IDLE_ARMED 97~103cm, WALK/WALK_ARMED 96.1~100.1cm를 유지한다. 이동 콜라이더는 몸통에 맞춘 높이1.4m/반지름0.55m 캡슐이며 중심은 루트 위0.7m다. 캐릭터 아래 약1m의 빈 공간에는 콜라이더가 없다. HoverMovement의 하향 Raycast가 지면을 확인하고 하강 시 부유 높이로 보정한다. 감지선은 충돌체가 아니며, 지면이 없으면 기존 중력으로 떨어진다. 점프·안전지점 복구·트램펄린 접지 판정도 같은 감지를 사용한다. C 입력 시 캡슐은1.1m/중심0.55m로 줄어도 아래 빈 공간을 포함하지 않는다.
+
+1인칭 카메라는 기존 컨트롤러 중심 위 1.6m에서 모델의 양쪽 눈 중심 높이/표면 앞 1cm로 수정했다. Create Player Prefab에서 눈 스킨을 평가해 eyeLocalPosition을 저장하며, 애니메이션 뼈에 종속시키지 않아 부유 중 카메라는 흔들리지 않는다. 평지 정지 기준 플레이어 루트 위 약 89.6cm/앞쪽 42.8cm다. 부유 높이를 바꾸면 공유 프리팹의 눈 앵커 위치도 함께 올라간다. Near Clip은 5cm, 눈 위치까지 SphereCast로 벽 가림을 보정한다. 본인 모델은 1인칭에서 ShadowsOnly로 표시해 화면을 가리지 않고 그림자는 유지한다. 상대와 검수용 3인칭은 모델을 그대로 표시한다. 상호작용 조준선은 두 시점 모두 자기 콜라이더를 제외한다.
 
 ## 6. 인게임 UI와 미니맵
 
 반투명 짙은 패널과 둥근 테두리를 사용한다. 점령 수, 상단 모드/시간과 참가자별 점수, 중앙 조준점과 상호작용 안내, 하단 로봇 프로필/스태미나/대쉬 안내, 중앙 하단 3개 슬롯, 오른쪽 위 미니맵을 배치했다.
 
-텍스트와 수치는 이미지에 굽지 않고 실제 게임 상태에서 그린다. 탐색은 “자유 탐색”, 일반 경기는 남은 시간을 MM:SS로 표시한다. 참가자 카드는 실제 활성 참가자 수만 표시한다. 택배 안내에는 점령 게이지가 없으며 우체통만 점령 진행바를 표시한다. 대쉬 안내는 항상 “대쉬”, 비용은 “50”이다.
+텍스트와 수치는 이미지에 굽지 않고 실제 게임 상태에서 그린다. 탐색은 “자유 탐색”, 일반 경기는 남은 시간을 MM:SS로 표시한다. 상단 참가자 카드는 실제 활성 상대만 표시하며 우체통 아이콘을 숫자 왼쪽에 그린다. 본인의 상단 배지는 숨기고 왼쪽 점령 카드는 유지한다. 택배 안내에는 점령 게이지가 없으며 우체통만 점령 진행바를 표시한다. 대쉬 안내는 항상 “대쉬”, 비용은 “50”이다. 슬롯 이미지·이름·사용량은10px상향해 하단12px여백을 확보했다.
 
 슬롯은 이미지·이름·횟수/배터리를 표시하며 선택 테두리와 숫자 색으로 선택 상태를 알린다. “선택”과 “비어 있음” 문구는 제거했다. 실제 상품 이미지 10개는 기존 원본에서 복사해 item_종류.png로 연결했다. UI PNG는 패널/아이콘 20개와 상품 이미지 10개, 총 30개다. Resources 경로로 플레이어 빌드에서도 읽도록 구성했다. PNG 알파와 Sprite 임포트, mipmap 없음 설정을 검증했다. 상품 이미지 임포트 최대 크기는 256이다.
 
@@ -116,6 +122,7 @@ Blender에서 만든 간단한 부유 배달 로봇을 FBX로 가져와 런타�
 | 검사 | 결과 | 저장 보고서 |
 |---|---|---|
 | 최신 랜덤 파밍·G 폐기 | 39 PASS | art-review/parcel-random-loot-check-20261008.txt |
+| 빨간 테스트 참가자·길찾기·자연 점령 | 35 PASS, 실제 자연 점령2곳 | art-review/exploration-rival-check-20261008.txt |
 | 최신 UI 리소스·시간·안내 | 15 PASS, PNG 30개 | art-review/ingame-ui-check-20261008.txt |
 | 1인칭·실제 Shift 대쉬 입력 | 20 PASS | art-review/dash-firstperson-check-20261008.txt |
 | 전체 밝은 미니맵·소유권 | 25 PASS | art-review/minimap-flat-check-20261008.txt |
@@ -140,9 +147,173 @@ Play 중 스크립트를 다시 컴파일하면 비직렬화 런타임 배열이
 ## 8. 남은 작업과 유지보수
 
 - 입장 전 색 선택 UI를 SetPlayerColor에 연결한다.
-- 생활용품 3D 모델·장착/사용 연출·효과음과 잉크 구름 렌더를 제작한 뒤 공격 기능의 실제 노출 범위를 결정한다.
+- 장착 모델7종과 효과 전용2종을 노출했다. 선풍기 효과만 보류한다. 만년필은 바닥 구름을 만들지 않는다.
 - 봇 아이템 파밍/사용 AI, 실제 온라인 참가자와 소유권·상태 이상 동기화를 구현한다.
 - 상자 개봉 연출과 택배 재생성 규칙을 별도 설계한다. 현재 10개는 저장된 테스트 배치다.
 - 목표 기기의 Profiler/Frame Debugger 측정과 플레이어 빌드 검증을 수행한다. 현재 FPS·GPU 비용 수치는 측정하지 않았다.
 
 규칙을 바꾸면 GAME_DESIGN.md, 표시를 바꾸면 ART_REVIEW.md와 실제 화면, 다음 작업은 TEAM_STATUS.md/NEXT_SESSION.txt에 반영한다. 사용량·랜덤 획득·폐기 동작은 ParcelLootCheck, UI 구조는 InGameUICheck, 이동은 PlayerBasicsCheck의 기대값을 함께 갱신한다.
+
+두 장갑 효과 활성화 (2026-10-09 최신):
+- 복싱 글러브 좌클릭은 양손을 당겼다 앞으로 밀고 되돌리는 Unity 절차 애니메이션(0.42초)이다. 1인칭 메시와 3인칭 팔뼈에 적용하고 기존 FBX/Blender 클립은 유지한다. 0.16초 타격 시점에 전방3m 원뿔/장애물 검사 후 넉백18·수직6을 기존 DeliveryItemState/CharacterController에 전달하며 상대 점령을 끊는다. 재사용0.6초, 빗나가도1회 소비, 마지막 충전은 복귀 후 제거한다. G/기절 중단 시 예약 타격을 취소한다.
+- 작업용 장갑은 선택해 착용한 동안 별도 좌클릭 없이 E 점령3→1.5초(절반)로 단축하고 성공 시1회 소모한다. 중단 시 보존하고 다른 슬롯/폐기 시 효과 해제한다. HUD 안내와 게이지는 실제 CaptureSeconds를 사용한다.
+- 글러브만 공격 게이트를 통과하고 다른8종 효과는 보류한다. 공격이 본인 캡슐에 막히지 않도록 가림 검사에서 본인을 제외한다. 목표 우체통이 없는 NPC도 외력을 처리한다. 추가 손/팔 생성, 체력/죽음 없음.
+- Tools/Gameplay/Gloves/Verify Effects 28개 통과: 실제 클릭/수량/지연타격/한번만 적용/원뿔·3m·벽/실제 상대 이동/점령 중단/마지막 충전 연출/중단 취소/팔뼈 부착·복귀/1.5초·게이지·장갑 소비·중단 보존. 초기 3인칭 테스트 쿨다운 공유를 고친 뒤 최종 통과했다.
+- 증거: art-review/glove-effects-check-20261009.txt, glove-push-impact-20261009.png, glove-push-third-person-20261009.png, work-glove-capture-hud-20261009.png(격리한 테스트 바닥·상대·우체통). 실제 맵 새 Play: glove-effects-ready-20261009.png. 기본1인칭/임시 시작 두 장갑 상태, Console 오류0. 커밋/푸시 없음.
+
+글러브 사거리·한손 교대와 점령 초기화 확인 (2026-10-09 최신):
+- 글러브 타격 사거리3→5m. 클릭마다 오른손→왼손→오른손으로 교대하고 반대 손은 대기 자세를 유지한다. 1인칭은 카메라 공간의 실제 손 위치, 3인칭은 몸 기준 실제 팔 위치로 좌우를 판정해 FBX 이름의 좌우 반전을 피한다. 기존 공격 시간/횟수/넉백/벽 차단 규칙 유지.
+- 기존 ApplyControl 점령 초기화 경로를 추가 검증했다. 상대가2.7초 진행한 상태에서 실제 글러브 타격을 받으면 botCaptureStarted=0, 넉백 중 점령 불가. 복귀 후0부터 새3초를 채워야 완료된다. 본인도 밀쳐지면 E를 누르고 있어도 게이지가0이며 점령이 이어지지 않는다.
+- Tools/Gameplay/Gloves/Verify Effects 최종40개 통과. 사거리4.5m 타격/5m 밖 실패/벽/좌우 각각 단독 동작/양팔 부착/점령 중단·복귀·새 완료/작업용 장갑1.5초 검증 포함. 중간 검증의0.16초 경계 부동소수점 오차를 피하도록 타격 테스트를0.161초로 보정한 뒤 최종 통과했다.
+- art-review/glove-effects-check-20261009.txt 최신 결과40개로 갱신. 실제 한손 화면 glove-alternate-right-20261009.png, glove-alternate-left-20261009.png(격리 테스트 장면). 새 Play에서1번 글러브/2번 작업용 장갑/3번 빈칸으로 복원, native Capture Ready로 glove-effects-ready-20261009.png 확인. Console 오류0. 커밋/푸시 없음.
+
+글러브 무제한 테스트 (2026-10-09 최신):
+- 복싱 글러브는 사용 횟수 차감과 소진 후 제거를 해제하고, ItemRemainingText를 공유해 인게임 슬롯/텍스트에 무제한으로 표시한다. 시작 지급과 랜덤 획득 글러브 모두 적용. G로 직접 버릴 수 있으며 작업용 장갑은 성공1회 소비 규칙을 유지한다.
+- Tools/Gameplay/Gloves/Verify Effects 최종41개 통과. 반복8회 사용 후에도 장착/아이템 유지, 타격·교대·점령 중단·쿨다운·폐기·장갑1.5초를 확인했다. art-review/glove-effects-check-20261009.txt 최신 결과 갱신. 새 Play native Capture Ready의 glove-effects-ready-20261009.png에서 무제한 표시 확인. 최종 Console 오류0, 커밋/푸시 없음.
+
+글러브 넉백 거리3배 및 접근 이동 상쇄 수정 (2026-10-09 최신):
+- 글러브 수평 속도18→18√3(약31.18), 수직6→6√3(약10.39). 감속30/중력20에서 이동 거리와 상승량이 속도의 제곱에 비례하므로 속도를√3배로 조정했다. TakeForce는 프레임 중 평균 속도를 반환해 프레임 간격에 따른 거리 오차를 제거한다.
+- 공유 KnockedBack 상태로 외력이 남는 동안 NPC 접근 이동과 본인 이동·대쉬·점프를 막고, CanCapture도 전체 넉백 동안 차단한다. 점령 진행 초기화와 재시작, 사거리5m·교대 한손·무제한 사용·기존 연속타격 저항은 유지한다.
+- 실제 CharacterController로 다가오던 상대를 비교: 기준5.40m→강화16.20m(3배). Tools/Gameplay/Gloves/Verify Effects 최종45개 통과, 입력으로 넉백 상쇄/대쉬 소비 방지 및 기존 두 장갑 효과 포함. 최신 결과 art-review/glove-effects-check-20261009.txt. 새 Play native Capture Ready의 glove-effects-ready-20261009.png에서 실제 맵·시작 장비 확인, Console 오류0. 커밋/푸시 없음.
+
+글러브 조준선 직접 적중으로 변경 (2026-10-12 최신):
+- GloveCombat.HitGloveTarget에서 0.16초 타격 순간의 화면 중앙 ViewportPointToRay를 사용한다. 기존 InteractionRayHit를 재사용해 본인 캡슐/트리거를 제외하고 가장 가까운 충돌체만 검사한다. 카메라 기준5m, 상대 CharacterController에 직접 닿아야 한 명에게만 넉백 적용. 넓은 원뿔 판정은 글러브에서 제거했다.
+- 조준선 옆 상대/몸 위/빈 부유 공간은 빗나가며 점령도 끊지 않는다. 벽·물체 뒤는 차단한다. 클릭 후 시선을 돌리면 타격 순간 조준으로 결정한다. 넉백3배(5.40→16.20m), 한손 교대, 무제한, 작업용 장갑1.5초는 유지한다.
+- Tools/Gameplay/Gloves/Verify Effects 네이티브 Play51개 통과. 신규6개는 옆 빗나감·몸 가장자리 적중·위/아래 빗나감·동작 중 조준 이탈/진입. art-review/glove-effects-check-20261009.txt 최신 결과 갱신. 새 Play 기본1인칭/1번 글러브·2번 작업용 장갑 상태로 복원하고 native Capture Ready의 glove-effects-ready-20261009.png 확인. 최종 Console 오류0. 커밋/푸시 없음.
+
+트램펄린 제거·뚫어뻥 왕복 투척 (2026-10-12 최신):
+- 활성 WeaponKind에서 마지막 항목 트램펄린을 제거했다. 나머지 ID1~9 유지. 랜덤 획득9종 동일 확률, AddWeapon은 폐기된10번 거부. 테스트 택배는10개 그대로다. UI 가져오기/장착 프리팹 생성은9종/표시7종으로 갱신했다. 기존 원본 그림/FBX는 과거 제작 자료로 보존한다.
+- 탐색 시작 지급을1번 압축 뚫어뻥3회/2·3번 빈칸, 1번 선택으로 교체했다. 파밍 글러브·작업용 장갑 효과는 유지하고 나머지6종 효과는 보류한다.
+- PlungerCombat.cs: 준비0.12초에 손을 당겼다가 실제 월드 모델로 투척한다. 흡착컵이 진행 방향을 향하고, 중앙 조준선의9m 목표점까지 속도18로 날아가며 매 프레임 경로 레이로 첫 충돌을 검사한다. 상대에게 맞으면 사용자 쪽 힘14/상승2를 ApplyControl로 전달해 점령을 끊는다. 벽에 맞거나 끝점에 도달하면 속도22로 현재 손 위치에 돌아온다. 출발 시1회 소모, 복귀 중 추가 타격 없음. 마지막 사용은 복귀한 뒤 제거한다. 비행 중 숫자키·재사용을 제한하고 G는 비행 모델도 제거한다. 준비 중 기절/대쉬 취소는 횟수 보존. 장착 모델 숨김과 월드 모델1개로 중복 표시를 피하고 추가 손은 생성하지 않는다. HUD 좌클릭·던지기 연결.
+- 네이티브 Play 검증: Plunger/Verify Throw35개, Test Parcels/Verify Random Loot38개(200회에서9종 모두 획득, 폐기된10번 거부), Gloves/Verify Effects51개 통과. art-review/plunger-effects-check-20261012.txt, parcel-random-loot-check-20261008.txt, glove-effects-check-20261009.txt 최신 결과.
+- 화면: plunger-outbound-20261012.png, plunger-hit-return-20261012.png는 격리 테스트 장면이며 game.enabled=false라 메인 HUD가 숨겨져 있다. 실제 맵 새 Play는 Plunger/Capture Ready의 plunger-ready-20261012.png에서 뚫어뻥3회/빈칸/빈칸/던지기 안내를 확인했다. 최종 Console 오류0, 기본1인칭 Play 상태로 테스트 준비. 커밋/푸시 없음.
+
+뚫어뻥 움직이는 상대 적중 수정·15m·속도2배 (2026-10-12 최신):
+- 이동한 상대가 안 당겨지는 문제를 기존 코드에서 재현했다. 발사 시 조준선의 첫 표면을 plungerEnd로 저장해서, 상대가 뒤로 이동하면 이전 표면에서 뚫어뻥이 돌아왔다. 해당 정지점 고정을 제거하고 발사 방향의 최대15m 끝점으로 설정했다. 실제 비행 경로의 현재 충돌에서만 복귀/당기기를 적용한다. 자동 추적이나 넓은 범위 타격은 추가하지 않았다.
+- 사거리9→15m, 투척18→36m/s, 복귀22→44m/s(각2배). 발사 모델 생성 다음 프레임부터 이동하며, 왕복 중 첫 충돌1회·점령 중단·3회 소모·G 삭제·마지막 복귀 뒤 제거는 유지한다.
+- Tools/Gameplay/Plunger/Verify Throw44개 통과. 발사 후 상대가8→9.5m 이동한 재현 사례와 실제 NPC가 뒤로 걷는 사례를 검사했다. 실제 걷는 상대가 적중 후3.27m 당겨졌다. 14m 상대 적중/15m 밖 상대 실패/벽 차단/이동 속도36·44 실측/1·3인칭/소모·중단·복귀 포함. 최신 art-review/plunger-effects-check-20261012.txt.
+- 새 Play native Plunger/Capture Ready의 plunger-ready-20261012.png 확인. 기본1인칭/1번 뚫어뻥3회/2·3번 빈칸 유지, 최종 Console 오류0. 커밋/푸시 없음.
+
+뚫어뻥 적중 상대를 내 앞까지 끌어오기 (2026-10-12 최신):
+- 기존 감속 넉백3.27m 방식 대신 위치 목표를 따라가는 제어 이동을 추가했다. 적중 시 BeginPlungerPull이 방어 판정을 통과한 상대의 점령을 초기화하고, source=본인 Transform/standOff=두 캡슐 반경 합+0.5m(현재1.6m)/speed44/최대2초 상태를 설정한다. 본인이 이동하거나 회전하면 도착 지점도 갱신한다. 연속타격 저항은 속도35%를 적용하고 도착 위치는 줄이지 않는다.
+- MovePulledActor를 본인/NPC 이동에 공유했다. CharacterController와 기존 MoveHoverActor를 사용해 몸 충돌·지면 부유를 유지하고 순간이동하지 않는다. 도착 또는 진행을 막는 충돌에서 종료하고0.15초 잠깐 이동/점령을 막는다. 다른 넉백은 이전 끌어오기를 교체하며 안전지점 복귀에서도 상태를 해제한다. ApplyControl은 성공 여부를 반환해 에어캡에 막힌 상대를 강제로 끌지 않는다.
+- 사거리15m, 투척36/복귀44m/s, 시작 뚫어뻥3회, 9종 랜덤 획득은 유지한다. 새 상태는 아이템 적중 뒤 적용되며 복귀 중 재타격은 없다.
+- Plunger/Verify Throw63개 통과: 3m/4m/14m 적중이 동일한 앞1.6m에서 종료, 몸 겹침 없음, 실제 걷는 상대 전체 거리 끌어오기, 본인 이동·회전 추종, 적중 후 새 벽 삽입 시 통과 안 함, 방어1회·연속저항·다른 넉백 교체·본인 역방향/점프/대쉬 입력 차단 및 수평 위치가 같은 높은 상대 부착/도착 포함. Gloves/Verify Effects51개 재검증 통과. art-review/plunger-effects-check-20261012.txt와 glove-effects-check-20261009.txt 최신 결과.
+- plunger-hit-return-20261012.png는 격리한 적중/끌어오기 장면. 실제 맵 새 Play native Plunger/Capture Ready의 plunger-ready-20261012.png에서 기본1인칭/뚫어뻥3회/빈칸2개 확인. 최종 Console 오류0. 커밋/푸시 없음.
+
+모든 아이템 무제한 테스트 설정 (2026-10-12 최신):
+- MonsterDeliveryPrototype의 static readonly UnlimitedItems=true로9종 모두 횟수·배터리 감소와 소진 자동 삭제를 막는다. 공통 Consume, 선풍기 유지 사용, 뚫어뻥 출발/복귀 경로를 적용했다. ItemRemainingText를 공유하는 HUD/슬롯은 모두 무제한 표시다. 내부 기존 기획 카운터는 보존하며 false로 바꾸면 이번 변경 이전 소모 설정으로 돌아간다.
+- 효과 지속 시간·쿨다운·왕복 동작·15m/36·44/앞1.6m 끌어오기·3칸 제한·G 영구 삭제는 유지한다. 작업용 장갑으로 성공해도 장갑이 남아 다음 점령에도1.5초가 적용된다. 시작은1번 뚫어뻥 무제한/2·3번 빈칸이다. 다른6종 효과 활성화 보류는 그대로다.
+- 네이티브 Play: Random Loot48개(9종12회 Consume 후 보존/무제한 문자열, 선풍기700회 사용 배터리 유지), Plunger69개(기존0회 카운터에서도6회 연속 투척·복귀 후 보존), Gloves52개(반복 점령 후 장갑/보너스 유지) 통과. art-review/parcel-random-loot-check-20261008.txt, plunger-effects-check-20261012.txt, glove-effects-check-20261009.txt 최신 결과.
+- 새 Play native Plunger/Capture Ready의 plunger-ready-20261012.png에서 실제 맵/뚫어뻥 무제한 표시 확인. 기본1인칭 및 G삭제 유지. 최종 Console 오류0, 커밋/푸시 없음.
+
+## 만년필 변경 (2026-10-13)
+
+PrinterInk의 직렬화 ID9는 그대로 두고 enum/랜덤 획득/이름/아이콘/장착 프리팹을 FountainPen으로 교체했다. 기존 프린터 에셋은 이전 자료와 장착 자세 템플릿으로 보존한다. Assets/Editor/FountainPenSetup.cs의 Build Model 메뉴에서 기존 검정/금색 재질, Unity 기본 메시, 펜촉 메시와 실제 모델 아이콘을 생성한다. 외부 의존성 없음.
+
+발사 시 손끝에서 조준선35m 지점으로 펜촉이 향한다. 카메라에서 펜촉까지 가림 검사 후48m/s/무중력 Rigidbody를 생성한다. 첫 충돌에서 삭제하며 CharacterController의 실제 대상에만 visionBlockedUntil=현재+4초를 기록한다. 쏜 사람 제외, 범위35m 또는3초 수명에 삭제, 슬롯 변경/폐기로 이미 발사한 투사체는 회수하지 않는다. 테이프는2026-10-14 슬라임으로 교체했다(아래 최신 기록).
+
+피격자는 검보라색 불규칙 얼룩과 작은 방울로 화면 중앙이 가려지고0.16초 확산/마지막0.65초 페이드로 복구한다. HUD는 읽을 수 있으며 이동/점령/타격은 유지한다. 에어캡은 공통 피격 경로에서 만년필 잉크도1회 방어한다. 물리적인 잉크 구름/공격 시야 벽은 제거했다. 테스트 상대 AI의 만년필 자동 사용과 온라인 전송은 추가하지 않았다. 로컬 상대 발사는 실제 투사체의 sourceId1→player 충돌로 검증한다.
+
+Editor의 Tools/Gameplay/Fountain Pen/Verify Effects는 실제 프레임 물리 비행, 직접 적중/이동 표적/얇은 벽/근접 가림/빗나감/슬롯 전환/상대 발사/4초 복구와 모델·아이콘을 검증한다. 최신 결과는 art-review/fountain-pen-check-20261013.txt. 과거 일반 아이템 검사에는 당시 시작 장비/소모 규칙 가정이 남아 있어 현재 만년필 집중 검사를 기준으로 한다.
+### 만년필 상대 적중 표시 추가 (2026-10-13)
+
+FountainPenImpact의 실제 대상에서만 대상당 FountainInkHit 한 개를 생성/재사용한다. Native ParticleSystem48개(검보라 잉크/보라 테두리), 짧게 확산하는 LineRenderer2개, Collider를 제거한 Quad7개로 잉크 자국을 표시한다. 캐시한 화면 잉크 알파 텍스처를 새 FountainInk 셰이더에서 재사용하며 MaterialPropertyBlock으로 자국의 색/페이드만 갱신한다. 셰이더는 일반 알파 블렌드와 깊이 검사로 벽 뒤 표시를 막는다.
+
+자국 루트는 CharacterController.center(Y+.7)에 붙여 이동을 따라가고 카메라 방향으로 그린다. visionBlockedUntil을 그대로 표시 수명으로 사용해4초/마지막.65초 페이드, 반복 적중 갱신/라운드 종료를 함께 처리한다. 첫1인칭 본인 월드 자국은 숨긴다. 게임 파괴 시 효과/공유 재질/텍스처를 정리한다. MaterialPropertyBlock은 Unity 생성 제한 때문에 MonoBehaviour 필드 초기화가 아니라 Initialize에서 만든다.
+
+Fountain Pen/Verify Effects40개 최종 통과, 실제 맵 투사체 적중 burst/stains Game View를 확인했다. 최신 결과 art-review/fountain-pen-check-20261013.txt.
+## 공통 아이템 피격 파이프라인 (2026-10-13 최신)
+
+만년필 잉크가 방어를 우회하던 직접 상태 기록을 제거했다. 모든 현재 공격 상태는 아래 경로를 사용한다.
+
+1. 개별 공격은 실제 적중 대상을 판정하고 DeliveryItemHit로 힘/기절/슬로우/잉크 시간을 전달한다. 방어 가능한 공격이 기본이며 바닥 슬라임만 shieldable=false를 명시한다.
+2. MonsterDeliveryPrototype.ApplyItemHit(targetId, hit)가 플레이/대상 유효성을 검사하고 DeliveryItemState.ReceiveHit로 전달한다.
+3. ReceiveHit는 면역 등으로 무효인 공격을 Ignored로 종료한다. 유효 공격에 보호막이 있으면 효과 적용 전 한 번 소모하고 Blocked를 반환한다. 그 외에는 효과 전체를 적용하고 Applied를 반환한다. WeaponKind 분기는 없다.
+4. Blocked는 공통 에어캡 팝·안내만 표시한다. Applied의 제어 효과는 점령/대쉬를 취소한다. 개별 공격의 피격 연출·당기기 후속은 Applied일 때만 실행한다.
+
+새 아이템은 방어 조건을 직접 쓰거나 타이머를 직접 기록하지 말고 다음처럼 전달한다.
+
+```csharp
+var hit = new DeliveryItemHit(inkSeconds: 4); // default shieldable=true
+if (ApplyItemHit(targetId, hit) != DeliveryHitResult.Applied) return;
+// Show the successful hit effect here.
+```
+
+힘+기절 등 복합 공격도 한 DeliveryItemHit에 같이 전달하면 한 번의 방어가 모두 막는다. 현재 지원하는 효과를 사용하는 새 아이템은 같은 API로 방어·면역·점령 규칙을 적용받는다. 새 상태 종류를 추가할 때도 payload/ReceiveHit 한 곳을 확장한다. 기존 Control/ApplyControl은 공통 경로를 사용하는 호환 어댑터다. 자기 강화(러닝화/에어캡)는 들어오는 공격이 아니므로 기존 발동 경로를 유지한다.
+
+Fountain Pen54개/에어캡32개 최종 통과. 실제 본인·상대 보호막의 첫 만년필 방어/팝/잉크 미적용, 두 번째 적중, 복합 효과 일괄 방어, 테이프 우회, 면역과 만료를 검증했다. 결과 art-review/fountain-pen-check-20261013.txt 및 bubble-wrap-effects-check-20261013.txt.
+## 비플레이어 표면 잉크 (2026-10-13)
+
+BrawlShot의 첫 실제 SweepTest/Collision 적중에서 point/collider/normal을 전달한다. 근접 가림도 동일 정보로 처리한다. FountainPenImpact는 캐릭터에 대해 공통 ApplyItemHit와 기존 피격 연출을 사용하고, 캐릭터가 아닌 표면에만 SurfaceInkMark를 생성한다. 기존3인자 호출도 선택적 normal 매개변수로 호환한다.
+
+SurfaceInkMark는 충돌 표면의17x17 격자를 collider.Raycast로 한 번 맞추고 맞은 점으로만 삼각형을 만들며, 얇은 소품은 크기를 최대3번 줄여 맞춘다. 자식 부착 전에 기록한 표면 법선/위치를 사용하고 부모 부착 후 역변환해 비균일 크기에서도 실제 표면 좌표를 유지한다. 추가 Collider 없음. 표면+12mm로 기존 도로 차선 렌더(+8mm)의 깊이 겹침을 피한다.
+
+화면 잉크 알파 텍스처와 FountainInk 셰이더를 재사용한다. 새 _EdgeColor는 기본 보라색이라 기존 상대 연출은 유지하며 표면 재질에서만 검정을 지정한다. MaterialPropertyBlock의 불투명도는 처음1초1, 이후1초 smooth fade다. 총2초에 오브젝트와 생성 메시를 제거하고 게임 종료 시 공유 재질/남은 자국도 정리한다. 환경 자국은 상태 이상/방어 횟수에 영향을 주지 않는다.
+
+Tools/Gameplay/Fountain Pen/Verify Surface Ink26개 및 기존 Verify Effects54개 통과. 실제 맵 담장/도로 렌더 확인. 최신 검수 자료는 art-review/surface-ink-check-20261013.txt와 fountain-pen-wall-ink/ground-ink PNG들이다.
+## 뚫어뻥 컵 크기 명중 판정 (2026-10-14)
+
+PlungerCombat의 루트 중심선 Raycast를 흡착컵 범위 검사로 교체했다. 비행 모델 메시의 bounds8개 모서리를 루트로 변환해 앞면local-Y 위치와 XZ 반경을 읽는다. 현재 컵 지름.282m/앞면localY약-.344m, 판정 반경.141+여유.02=.161m다. 메시 정점 읽기 권한이나 추가 Collider/패키지가 필요하지 않다.
+
+환경은 컵 시작 OverlapSphere와 전체 이동 구간 SphereCastAll로 검사한다. 상대는 CharacterController.bounds의 실제 몸 크기에 cupRadius를 더한 수직 캡슐과 경로를 교차시킨다. 원통과 두 반구의 최초 진입을 비교하고 시작 겹침도0거리로 처리한다. 이 방식은 관찰된 컨트롤러 쿼리 프록시 축소(표시 반경.55/ClosestPoint 관찰약.44) 때문에 실제 몸 가장자리 적중을 놓치는 것을 방지한다. 고체와 상대의 첫 접촉 중 가장 가까운1회만 사용하고 같은 거리의 벽이 우선한다. 카메라→출발 흡착면도 검사해 근접 표면 뒤로 출발하지 않는다.
+
+명중 뒤의 에어캡·저항·점령 취소는 기존 공통 ApplyItemHit/ReceiveHit로 처리한다. 피격 범위 보정은 무기 모델의 크기/이속/왕복 속도/당기기 목적지를 바꾸지 않는다. Plunger/Verify Throw92개 최종 통과, art-review/plunger-cup-volume-check-20261014.txt 참조.
+## 슬라임 교체 및 감속 표시 (2026-10-14)
+
+Slime(ID4)이 PackingTape를 대체한다. 기존 테이프 원본은 보존하고 랜덤 획득/이름/장착/아이콘/enum 참조만 교체했다. SlimeSetup.Build는 실제 네이티브 Sphere 모델·연두색 젤/하이라이트 재질과 투명256px 아이콘을 저장한다. Generic held/icon 재생성 메뉴에서도 SlimeSetup을 호출한다. Standard 재질은 Emission 키워드뿐 아니라 BakedEmissive/FixupEmissiveFlag도 지정해야 실제 Play에서 어둡게 보이지 않는다.
+
+SlimeCombat은 기존 BrawlShot의 Rigidbody/ContinuousDynamic/SweepTest/첫 충돌 처리를 공유한다.18m/s+상향3m/s 중력 곡선, 생성 위치까지 반경.23m 가림, 실제 충돌까지 비행(슬라임3초/40m 임의 삭제 제거), 맵 아래Y<-20 정리, 복귀 없음. 직접 타격은 DeliveryItemHit(slowSeconds:3) → ApplyItemHit로 전달하며 Applied일 때만 젤 튐/코팅/바닥을 생성한다. Blocked는 기존 에어캡 팝만 재생한다. 바닥은 반경3m/5초로 UpdateItemAreas에서 실제 높이·수평 범위·벽 가림 검사 후 slowSeconds:.3/shieldable:false로 갱신한다. DeliveryItemState.ReceiveHit는 Max(기존 slowUntil, 새 종료 시간)으로 긴 직접 감속을 바닥이 줄이지 않게 한다. 감속40%, 부스터와 곱하며 점령/기절 상태는 바꾸지 않는다.
+
+SlimeSlowEffect는 몸통6개 코팅+아래로 늘어나며 떨어지는10개 젤 방울을 부모에 붙인다. 본인1인칭에서는 몸 VFX를 숨기고 DrawSlimeScreen에서 네 가장자리 초록색 흘러내림/이속-40% 알림을 표시한다. SlimePuddle은 지면 높이를 샘플링한640개 외곽/내부 정점 메시와 SlimePool 셰이더의 움직이는 물결/부드러운 경계,12개 팽창 기포를 사용한다. 마지막.5초 페이드, 수명 끝 메시/재질과 영역을 정리한다. VFX에는 Collider를 남기지 않는다. 새 의존성 없음.
+
+Tools/Gameplay/Slime/Verify Effects53개 통과(공중·가로등 재현 포함). 실제 본인/상대 발사, 직접 감속/방어, 무제한/재사용/근접 가림/얇은 벽, 바닥 내부·외부·다른 층·벽 가림·사용자·이탈·만료, 떠 있는 몸 추적/1·3인칭/슬롯 전환/G와 native Game View 검수. 만년필·공통 피격54개도 현재 시작 장비로 재검증 통과. Console 오류·경고0. 결과 art-review/slime-check-20261014.txt, 화면 slime-held/opponent/screen-20261014.png. 온라인 동기화/봇 슬라임 자동 사용은 기존 후속 범위다.
+
+### 높은 충돌과 긴 비행 수정 (2026-10-14)
+
+슬라임은 BrawlShot.Start의3초 삭제 대상에서 제외하고 LaunchSlime의40m 제한을 제거했다. 중력 비행 중간에는 삭제하지 않으며 실제 충돌 또는 맵 아래Y<-20에서만 정리한다. 만년필의 기존 수명/사거리 규칙은 그대로다. AddSlimePuddle은 하향4m 제한을 없애 실제 아래 지면을 찾는다. 비플레이어 충돌에는 기존 젤 프리팹을 법선 방향으로 납작하게 붙인5초 SlimeSurfaceSplat을 남겨 높은 곳에서도 충돌 결과가 계속 보인다. ClearSlimePuddles/DestroySlimeFX가 표면 자국도 정리한다. 검사53개 및 만년필54개 통과, 오류·경고0. 실제 가로등 검수 slime-lamp-fixed-20261014.png.
+
+## 뿅망치 근접 기절 (2026-10-14)
+
+확성기(Megaphone/ID3)를 뿅망치(ToyHammer)로 교체했다. 숫자 ID와9종 카탈로그/균등 랜덤 획득은 유지하며, 이전 확성기 모델은 장착 자세 템플릿으로 보존한다. 시작 장비는1번 뚫어뻥/2번 뿅망치/3번 에어캡,2번 선택/무제한이다. ToyHammerSetup.Build는 빨간 주름 머리·노란 손잡이·파란 그립의 네이티브 모델,1·3인칭 장착 자세와 투명256px 모델 아이콘을 저장한다. 장착/아이콘 일괄 재생성도 이 빌더를 호출하며 새 FBX를 찾지 않는다.
+
+ToyHammerCombat은0.18초 준비/0.48초 동작/0.75초 재사용으로 동작한다. 실제 타격 때 시선 전방3.5m를 반경.32m로 쓸며 가장 가까운 상대 한 명만1.2초 기절시킨다. 기존 PlungerPathHit를 radius 인자 SweepItemPath로 일반화해 재사용한다. 환경 시작 겹침/구 스윕/실제 몸 전체 캡슐/같은 거리의 고체 우선 정책과 뚫어뻥 원래 반경 계산은 유지한다. 3인칭 근접 판정 시작점은 카메라 뒤가 아닌 캐릭터 눈이다. 준비 중 기절·대쉬·폐기·강제 슬롯 변경은 타격을 취소한다. 스윙 중 일반 슬롯 변경을 잠그며 G는 가능하다. 1인칭은 장착 자세에 준비→내리치기→복귀를 더하고3인칭은 실제 오른팔/손 뼈와 장착 모델을 움직인다.
+
+기절은 DeliveryItemHit(stunSeconds:1.2) → ApplyItemHit → ReceiveHit 공통 경로만 사용한다. 점령 취소/이동·행동 차단/에어캡1회 방어/기절 뒤2초 면역을 재사용하며 피해·넉백은 없다. 면역 중에는 보호막도 소비하지 않는다. hornAt 광역 기절 경로는 제거했다. DeliveryStunEffect는 아이템 종류 대신 공통 Stunned 상태를 따라 머리 위Y+1.45m에서 노란 고리2개/회전 점4개를 표시한다. 본인1인칭에서는 몸 효과를 숨기고 남은 기절 시간을 OnGUI에 표시한다. 장식 Collider/새 의존성 없음.
+
+Tools/Gameplay/Toy Hammer/Verify Effects36개 최종 통과: 실제 좌클릭/준비·타격·복귀/점령·NPC 이동 차단/일회 적중/근접·몸 스침·벽·뒤쪽·가장 가까운 한 명/면역·에어캡/준비 취소·G·슬롯·1/3인칭/실제 맵/모델·아이콘. 공유 판정을 쓰는 Plunger/Verify Throw92개도 재검증 통과. Console 오류·경고0. 결과 art-review/toy-hammer-check-20261014.txt, 네이티브 화면 toy-hammer-held/hit/third-person/stunned-screen-20261014.png. 봇 자동 사용과 온라인 동기화는 기존 후속 범위다.
+
+뿅망치 방향/범위 조정(2026-10-14): ToyHammerSetup의 HammerHead 자식에 머리 부품을 묶고Y축90도 회전해 양쪽 타격면을 앞뒤로 맞췄다. 1·3인칭 장착/휘두르기는 유지한다. HammerRange는2.5→3.5m(+40%)로 확대했으며 나머지 판정/기절/방어 규칙은 유지한다. 실제 모델 아이콘 재렌더, Verify Effects36개/Console 오류0.
+
+
+표시 조정(2026-10-14): MonsterDeliveryHUD 점령 패널310x124→248x99, DeliveryMinimap 패널350x414→280x332/지도318→254. 기존 해상도 대응 배율/가장자리 앵커/지도512px와 좌표 데이터는 유지하고 내부 글자·아이콘·범례도 약80%로 조정했다. ToyHammerSetup의 YellowHandle 길이.54→.81m/중심Y.355, 목Y.76/머리Y.84, 1인칭 장착(.22,-.25,1.05)로 높이와 안쪽 위치를 조정했다. 아이콘 프레이밍도 재생성하며 전투 수치는 변경하지 않았다. 기존36개 및 native Game View 검수 통과/오류·경고0.
+
+## 아이스크림과 공통 빙결 처리 2026년 10월 15일
+
+`IceCreamCombat`은 모델 프리팹의 투척과 적중 처리를 담당한다. 속도 18m/s와 상승 3m/s, 반경 .18m의 Rigidbody/중력/ContinuousDynamic 및 기존 BrawlShot 스윕·첫 충돌 1회 처리를 재사용한다. 생성 전 중앙 시선의 가까운 벽과 시작 겹침을 검사하며 첫 충돌에서 사라지고 빗나가면 3초 뒤 삭제한다. 벽·바닥은 상태/영역을 만들지 않고 딸기색 표면 흔적을 3초 유지 후 1초 페이드한다.
+
+적중은 `DeliveryItemHit(stunSeconds:1)`을 공통 경로에 전달한다. Applied 때만 `frozenUntil=stunUntil`로 표시 시간을 기록하므로 에어캡과 면역은 동일 정책이며 방어된 대상에게 얼음이 생기지 않는다. 이동·대쉬·사용·점령은 기존 Stunned 검사로 차단하고 점령 진행을 초기화한다. 얼음 표시와 로봇 Animator 정지는 실제 빙결 시간 동안만 유지한다. `IceCreamFreezeEffect`는 충돌체 없는 끝이 뾰족한 육각 다면체/주변 결정12개를 표시하고 HUD는 서리 테두리와 빙결 남은 시간을 보여 준다. 뿅망치의 노란 기절 연출은 빙결 동안 숨긴다.
+
+`IceCreamSetup.Build`가 네이티브 딸기·바닐라 콘, 저장 메시, 재질, 프리팹 및 실제 모델 아이콘을 생성한다. 기존 전체 아이템/아이콘 재생성에도 이 빌더를 연결했다. ID5를 보존해 택배 9종의 확률과 슬롯 구조를 유지한다. 예전 선풍기 파일은 보존하지만 현재 카탈로그에는 포함하지 않는다. 테스트 시작 슬롯2는 아이스크림이다. 이번 검증과 실제 캡처는 [변경 기록](ChangeRecords/20261015/README.md)을 참고한다.
+
+후속 외형·충돌 흔적 수정(2026-10-15): 사각 Cube를 제거하고 양 끝이 뾰족한 육각 메시를 생성해 중심과 주변12개 결정에서 공유한다. 각 면의 독립 정점/법선과 기존 얼음 셰이더를 사용하며 피격 충돌체는 추가하지 않는다. 화면 서리도 알파가 삼각형인 텍스처로 바꿨다. IceCreamImpact의 기존 호출은 유지하고 선택 normal 인자를 받아 BrawlShot의 실제 표면 법선을 전달한다. 표면 흔적은 SurfaceInkMark.Initialize의 선택 색상/유지/페이드 인자를 추가해 재사용한다. 만년필 기본 검정/1초+1초는 유지하며 아이스크림만 딸기색/3초+1초다. 에어캡 방어·캐릭터 적중에는 표면 흔적을 만들지 않는다. 흔적에는 상태 이상과 충돌체가 없고 새 판 시작과 세션 정리 시 제거한다. 후속 아이스크림50개와 표면 잉크 회귀26개 실행 통과. 이전 뿅망치36개/택배48개는 첫 구현 때의 검사 이력이다.
+
+
+## 2026년 10월 15일 네트워크 추가
+
+NGO 2.13.3과 Unity Transport를 사용한다. 호스트가 참가 슬롯·팀·옷색·이동·공격·획득·점령 및 종료를 판정하고, 클라이언트는 입력을 전송한다. 20Hz 스냅샷은 캐릭터 위치와 아이템·상태·투사체·우체통·택배·시간·결과를 전달한다. 기존 부유 이동, CharacterController 충돌, 공통 피격/에어캡 방어와 아이템 이펙트를 재사용했다. 옷색과 팀 색을 구분해 우체통은 A 파랑/B 주황, 캐릭터는 개별 색과 이름 위 팀 표시를 쓴다.
+
+현재는 같은 PC 또는 같은 LAN의 직접 IPv4 개발 방이다. MD 방 코드는 IP와 UDP 포트 7777을 인코딩한 주소이며 공개 서버 검색이나 Relay 코드는 아니다. 외부 인터넷 매칭·Relay/NAT 우회·계정·호스트 이전은 미구현이며 다른 물리 PC/LAN과 WAN 품질은 이번에 실측하지 않았다. 20Hz 위치 보정은 예측/보간 없이 적용하므로 지연이 큰 환경에서는 움직임이 거칠 수 있다. 9종 사용 경로는 연결했으며 이번 네트워크 실측 공격은 아이스크림/에어캡 공통 피격 중심이다. 기존 아이템별 로컬 검수 이력과 구분한다.
+
+연결 파일은 DeliveryNetwork.cs/Gameplay/UI/Proof 및 Editor DeliveryNetworkCheck다. 방장은 호스트로 시뮬레이션하며 화면 슬롯은 NetLocal/NetGlobal로 로컬0에 매핑한다. 모드와 정원은 팀당인원1/2로 공유한다. 테스트 코드는 Editor/DevelopmentBuild에서만 포함한다.
+
+
+## 2026년 10월 16일 택배 풀
+
+ParcelSpawnPool에 저장된 Transform 후보 50개와 기존 프리팹으로 만든 택배 30개를 연결했다. 시작 배치는 부분 Fisher–Yates 추첨으로 중복을 막는다. 획득 즉시 슬롯을 비우고 오브젝트·상호작용을 끈다. LateUpdate에서 사용 중인 슬롯과 방금 먹은 슬롯을 제외한 후보를 뽑아 같은 오브젝트를 재사용한다. 별도 리스폰 지연은 추가하지 않았다. 여러 플레이어의 같은 프레임 획득도 모아서 보충한다.
+
+후보는 도로·보도 40곳과 기존 계단으로 접근 가능한 평평한 옥상 10곳이다. 풀밭·나무·장애물·기울어진 지붕·계단 없는 지붕을 거르고, 택배 발판의 아홉 지점 지지와 상자/플레이어 공간 및 후보 간 최소 4m를 검사했다. 좌표는 장면의 Layer_12_TestParcelDrops/SpawnPoints에 저장되어 직접 조정할 수 있다.
+
+위치 추첨과 아이템 지급은 호스트가 처리한다. 스냅샷의 기존 택배 활성 여부 배열을 30개 모델 각각의 후보 번호 배열로 바꿔, 클라이언트가 같은 위치·활성 상태를 적용한다. 중복되거나 범위를 벗어난 배열은 전체 적용 전에 거부한다. 초기화와 재경기에는 30곳을 다시 추첨한다. 메시지 형식이 바뀌어 NGO ProtocolVersion을 2로 올렸으므로 모든 참가자가 이번 새 실행 파일을 사용해야 한다.
+
+빌더는 ParcelSpawnSetup.Build, 기존 TestParcelDrops.Upgrade/Verify는 새풀 빌더/검수로 연결한다. 이전 RandomDrop10 메뉴는 제거해 구설정 재생성을 막았다.

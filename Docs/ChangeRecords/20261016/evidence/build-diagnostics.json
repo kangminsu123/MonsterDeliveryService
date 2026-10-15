@@ -1,0 +1,18 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"success\":true,\"message\":\"Retrieved 3 log entries.\",\"data\":[\"DirectoryNotFoundException: Could not find a part of the path \\\"C:\\\\Users\\\\xlfhf\\\\Documents\\\\Codex\\\\2026-09-18\\\\https-github-com-kangminsu123-monsterdeliveryservice-git\\\\MonsterDeliveryService\\\\Library\\\\PackageCache\\\\com.unity.pipeline@ab05e9cd7f74\\\\Runtime\\\\Plugins\\\\CodeAnalysis\\\\UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll\\\"\",\"Assets\\\\Gameplay\\\\DeliveryMinimap.cs(56,66): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'\\n\",\"Assets\\\\Gameplay\\\\DeliveryMinimap.cs(56,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'\\n\"]}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "message": "Retrieved 3 log entries.",
+    "data": [
+      "DirectoryNotFoundException: Could not find a part of the path \"C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-18\\https-github-com-kangminsu123-monsterdeliveryservice-git\\MonsterDeliveryService\\Library\\PackageCache\\com.unity.pipeline@ab05e9cd7f74\\Runtime\\Plugins\\CodeAnalysis\\UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll\"",
+      "Assets\\Gameplay\\DeliveryMinimap.cs(56,66): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'\n",
+      "Assets\\Gameplay\\DeliveryMinimap.cs(56,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'\n"
+    ]
+  },
+  "isError": false
+}

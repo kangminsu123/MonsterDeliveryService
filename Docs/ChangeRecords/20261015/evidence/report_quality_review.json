@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-15",
+  "revision": "R06-R12",
+  "docx_pages": 9,
+  "pages_reviewed": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "render_method": "Word read-only PDF export and Poppler PNG",
+  "primary_renderer": "render_docx.py attempted; LibreOffice not installed; log retained",
+  "layout": "Korean text, image framing, table width, captions and all nine pages inspected. Initial 10-page export had a 144-character overflow page; final paragraph spacing and size fixed it to nine pages.",
+  "tests": {
+    "packaged_1v1": {
+      "host": 13,
+      "each_client": 3
+    },
+    "packaged_2v2": {
+      "host": 14,
+      "each_client": 3
+    },
+    "room_lifecycle": 4
+  },
+  "build": "Succeeded; original pipeline DLL error1 and warning3 retained in diagnostics. Final EXE both modes passed.",
+  "screenshots": "Seven selected current network screenshots inspected. Earlier ice cream case preserved.",
+  "zip": "Windows ZIP CRC check passed",
+  "limits": "Same-PC actual processes tested; separate physical LAN/WAN and full nine-item online combinations not tested."
+}

@@ -1,0 +1,227 @@
+using UnityEngine;
+
+public sealed partial class MonsterDeliveryPrototype
+{
+    const float PlungerWindup = .12f, PlungerSpeed = 36, PlungerReturnSpeed = 44, PlungerRange = 15;
+    int plungerSlot = -1;
+    float plungerStarted;
+    bool plungerReturning;
+    GameObject flyingPlunger;
+    Vector3 plungerEnd, plungerCupOffset;
+    float plungerHitRadius;
+    Quaternion plungerRotation;
+
+    void StartPlungerThrow()
+    {
+        if (!UnlimitedItems && weaponAmmo[selectedSlot] <= 0) return;
+        UpdateHeldWeapon();
+        plungerSlot = selectedSlot; plungerStarted = Time.time; plungerReturning = false;
+        captureTarget = -1; captureStarted = 0;
+        playerItems.busyUntil = Time.time + PlungerWindup;
+        nextAttackAt = Time.time + .7f;
+        feedback = "압축 뚫어뻥 · 던지기!";
+    }
+
+    void UpdatePlungerThrow()
+    {
+        if (plungerSlot < 0) return;
+        if (!started || finished || Selected != WeaponKind.Plunger || !heldItem)
+        { FinishPlungerThrow(); return; }
+        playerItems.busyUntil = Time.time + .05f;
+        if (!flyingPlunger)
+        {
+            if (playerItems.Stunned(Time.time) || Time.time < rollUntil) { FinishPlungerThrow(); return; }
+            if (Time.time - plungerStarted < PlungerWindup) return;
+            var ray = cam.ViewportPointToRay(new Vector3(.5f, .5f, 0));
+            // Keep flying along launch aim; a target's old surface is not a stopping point.
+            plungerEnd = ray.GetPoint(PlungerRange - cam.nearClipPlane);
+            flyingPlunger = Instantiate(Resources.Load<GameObject>("DeliveryItems/Plunger"));
+            flyingPlunger.name = "ThrownPlunger";
+            flyingPlunger.transform.position = heldItem.transform.position;
+            flyingPlunger.transform.localScale = heldItem.transform.lossyScale;
+            plungerRotation = Quaternion.LookRotation((plungerEnd - flyingPlunger.transform.position).normalized) * heldItem.firstPersonRotation;
+            flyingPlunger.transform.rotation = plungerRotation;
+            MeasurePlungerCup();
+            if (!UnlimitedItems) weaponAmmo[plungerSlot]--;
+            if (!thirdPersonPreview) heldItem.FirstPerson();
+            heldWeapon.SetActive(false);
+            var cup = flyingPlunger.transform.TransformPoint(plungerCupOffset);
+            if (SweepItemPath(cam.transform.position, cup, plungerHitRadius, out var launchHit, out float launchDistance))
+            {
+                var path = (cup - cam.transform.position).normalized;
+                flyingPlunger.transform.position += cam.transform.position + path * launchDistance - cup;
+                ResolvePlungerHit(launchHit);
+            }
+            return; // The first movement step happens on the next frame.
+        }
+        var from = flyingPlunger.transform.position;
+        var destination = plungerReturning ? heldItem.transform.position : plungerEnd;
+        var to = Vector3.MoveTowards(from, destination, (plungerReturning ? PlungerReturnSpeed : PlungerSpeed) * Time.deltaTime);
+        var segment = to - from;
+        if (!plungerReturning) Physics.SyncTransforms();
+        var cupFrom = flyingPlunger.transform.TransformPoint(plungerCupOffset);
+        if (!plungerReturning && segment.sqrMagnitude > .000001f &&
+            SweepItemPath(cupFrom, cupFrom + segment, plungerHitRadius, out var hit, out float distance))
+        {
+            to = from + segment.normalized * distance;
+            ResolvePlungerHit(hit);
+        }
+        else if ((to - destination).sqrMagnitude < .0001f)
+        {
+            if (plungerReturning) { FinishPlungerThrow(); return; }
+            plungerReturning = true;
+        }
+        flyingPlunger.transform.position = to;
+        flyingPlunger.transform.rotation = plungerReturning
+            ? Quaternion.RotateTowards(flyingPlunger.transform.rotation, heldItem.transform.rotation, 360 * Time.deltaTime)
+            : plungerRotation;
+    }
+
+    void MeasurePlungerCup()
+    {
+        var bounds = new Bounds(); bool measured = false;
+        foreach (var filter in flyingPlunger.GetComponentsInChildren<MeshFilter>())
+        {
+            var meshBounds = filter.sharedMesh.bounds;
+            for (int i = 0; i < 8; i++)
+            {
+                var corner = new Vector3((i & 1) == 0 ? meshBounds.min.x : meshBounds.max.x,
+                    (i & 2) == 0 ? meshBounds.min.y : meshBounds.max.y,
+                    (i & 4) == 0 ? meshBounds.min.z : meshBounds.max.z);
+                var point = flyingPlunger.transform.InverseTransformPoint(filter.transform.TransformPoint(corner));
+                if (!measured) { bounds = new Bounds(point, Vector3.zero); measured = true; }
+                else bounds.Encapsulate(point);
+            }
+        }
+        // Local -Y is the suction mouth. The widest cross-section defines its sweep radius.
+        plungerCupOffset = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        var scale = flyingPlunger.transform.lossyScale;
+        plungerHitRadius = Mathf.Max(bounds.extents.x, bounds.extents.z) *
+            Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z)) + .02f;
+    }
+
+    bool SweepItemPath(Vector3 from, Vector3 to, float radius, out Collider hit, out float distance)
+    {
+        Collider nearest = null; float closest = float.PositiveInfinity;
+        void Consider(Collider candidate, float travel)
+        {
+            if (candidate.GetComponentInParent<CharacterController>()) return;
+            if (travel < closest) { nearest = candidate; closest = travel; }
+        }
+        Physics.SyncTransforms();
+        // Sphere casts alone omit overlaps at the start of a step.
+        foreach (var collider in Physics.OverlapSphere(from, radius, ~0, QueryTriggerInteraction.Ignore))
+            Consider(collider, 0);
+        var path = to - from;
+        if (!nearest && path.sqrMagnitude > .000001f)
+            foreach (var contact in Physics.SphereCastAll(new Ray(from, path.normalized), radius,
+                path.magnitude, ~0, QueryTriggerInteraction.Ignore)) Consider(contact.collider, contact.distance);
+        for (int id = 1; id <= BotCount; id++)
+        {
+            var actor = ActorController(id);
+            if (!actor || !actor.gameObject.activeInHierarchy ||
+                !SweepActorCapsule(actor, from, path, radius, out float travel)) continue;
+            // Solid cover wins a simultaneous contact with the target.
+            if (travel < closest - .0001f || !nearest) { nearest = actor; closest = travel; }
+        }
+        hit = nearest; distance = closest; return nearest;
+    }
+
+    // Controller query capsules can be smaller than their displayed/physical body bounds.
+    // Sweep against the full vertical capsule so a visible body-edge touch counts.
+    static bool SweepActorCapsule(CharacterController actor, Vector3 from, Vector3 motion, float cupRadius, out float distance)
+    {
+        var bounds = actor.bounds;
+        float bodyRadius = Mathf.Max(bounds.extents.x, bounds.extents.z);
+        float radius = bodyRadius + cupRadius;
+        float halfSegment = Mathf.Max(0, bounds.extents.y - bodyRadius);
+        var offset = from - bounds.center;
+        var nearestAxis = new Vector3(0, Mathf.Clamp(offset.y, -halfSegment, halfSegment), 0);
+        distance = float.PositiveInfinity;
+        if ((offset - nearestAxis).sqrMagnitude <= radius * radius) { distance = 0; return true; }
+        float range = motion.magnitude;
+        if (range < .000001f) return false;
+        var direction = motion / range;
+        float a = direction.x * direction.x + direction.z * direction.z;
+        float b = offset.x * direction.x + offset.z * direction.z;
+        float c = offset.x * offset.x + offset.z * offset.z - radius * radius;
+        float discriminant = b * b - a * c;
+        if (a > .000001f && discriminant >= 0)
+        {
+            float entry = (-b - Mathf.Sqrt(discriminant)) / a;
+            float y = offset.y + direction.y * entry;
+            if (entry >= 0 && entry <= range && Mathf.Abs(y) <= halfSegment) distance = entry;
+        }
+        for (int side = -1; side <= 1; side += 2)
+        {
+            var sphereOffset = offset - Vector3.up * (side * halfSegment);
+            float projection = Vector3.Dot(sphereOffset, direction);
+            float d = projection * projection - (sphereOffset.sqrMagnitude - radius * radius);
+            if (d < 0) continue;
+            float entry = -projection - Mathf.Sqrt(d);
+            if (entry >= 0 && entry <= range) distance = Mathf.Min(distance, entry);
+        }
+        return distance < float.PositiveInfinity;
+    }
+
+    void ResolvePlungerHit(Collider hit)
+    {
+        for (int id = 1; id <= BotCount; id++)
+        {
+            var actor = ActorController(id);
+            if (!actor || !actor.gameObject.activeInHierarchy || hit.GetComponentInParent<CharacterController>() != actor) continue;
+            BeginPlungerPull(id); break;
+        }
+        plungerReturning = true;
+    }
+
+    void BeginPlungerPull(int id)
+    {
+        var actor = ActorController(id);
+        var toward = player.transform.position - actor.transform.position; toward.y = 0;
+        if (toward.sqrMagnitude < .001f) toward = player.transform.forward;
+        if (!ApplyControl(id, toward.normalized * 14)) return;
+        var state = ActorState(id);
+        state.pullSpeed = PlungerReturnSpeed * state.force.magnitude / 14; // Preserve repeat-hit resistance.
+        state.force = Vector3.zero; state.pendingLift = 0;
+        state.pullSource = player.transform;
+        state.pullStandOff = player.radius + actor.radius + .5f;
+        state.pullUntil = Time.time + 2;
+    }
+
+    static bool MovePulledActor(CharacterController actor, DeliveryItemState state, ref float falling)
+    {
+        if (!state.Pulled(Time.time)) return false;
+        var before = actor.transform.position;
+        var destination = state.pullSource.position + state.pullSource.forward * state.pullStandOff;
+        var motion = Vector3.MoveTowards(before, destination, state.pullSpeed * Time.deltaTime) - before;
+        falling = 0;
+        MoveHoverActor(actor, motion, ref falling);
+        var after = actor.transform.position;
+        bool arrived = Vector3.Distance(after, destination) < .05f;
+        bool blocked = motion.sqrMagnitude > .000001f && Vector3.Dot(after - before, motion.normalized) < motion.magnitude * .1f;
+        if (arrived || blocked)
+        {
+            state.pullSource = null; state.pullUntil = Time.time + .15f;
+            falling = -2;
+        }
+        return true;
+    }
+
+    void PosePlungerThrow()
+    {
+        if (plungerSlot < 0 || !heldItem || flyingPlunger) return;
+        float pull = Mathf.Sin(Mathf.Clamp01((Time.time - plungerStarted) / PlungerWindup) * Mathf.PI);
+        if (thirdPersonPreview) { playerVisual.PushArm(-.35f * pull, true); heldItem.FollowBones(); }
+        else heldItem.transform.localPosition = heldItem.firstPersonPosition + new Vector3(0, -.04f, -.18f) * pull;
+    }
+
+    void FinishPlungerThrow()
+    {
+        int slot = plungerSlot; plungerSlot = -1;
+        if (flyingPlunger) { flyingPlunger.SetActive(false); Destroy(flyingPlunger); flyingPlunger = null; }
+        if (heldWeapon) heldWeapon.SetActive(true);
+        if (heldItem && !thirdPersonPreview) heldItem.FirstPerson();
+        if (!UnlimitedItems && slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
+    }
+}
