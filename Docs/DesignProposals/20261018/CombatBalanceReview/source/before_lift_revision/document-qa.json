@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-18",
+  "pages": 3,
+  "all_pages_visually_reviewed": true,
+  "requested_changes": 6,
+  "table_rows": [
+    7,
+    3,
+    7
+  ],
+  "code_review_only": true,
+  "no_new_unity_or_multiplayer_tests": true,
+  "game_files_sha256_unchanged": 99,
+  "current_item_guide_slime_uses": 2,
+  "renderer": "hidden read-only Word export and Poppler; render_docx.py attempted but LibreOffice unavailable",
+  "sha256": "3ec20bdc1a1b88b978cb24ebc42e92d21a333d7cded832968216ed435405d7d1",
+  "page_sha256": {
+    "page-1.png": "07d57e521e5a3228c7210bbe0f0d0555d3f221d5cac468180a319897cbbfee58",
+    "page-2.png": "9f9197802764e64bc72143743daea4a24d24aace2338fda473a4bd3283b97c25",
+    "page-3.png": "4a9d03ebe6a17c031c64c173a3e7be5aff617136ade3f3f512c1b3af7175d21f"
+  }
+}

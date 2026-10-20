@@ -1,0 +1,8 @@
+{
+  "date": "2026-10-16",
+  "pages": 8,
+  "method": "render_docx.py retried; LibreOffice absent/temp cleanup permission error. Hidden read-only Word COM export and bundled Poppler 110dpi used.",
+  "review": "All8 final PNG pages opened and visually reviewed: Korean text, image captions, tables, measured plot, footer and page breaks fit. No blank page. Case01 preserved, case02 real Windows captures, case03 actual bundle validation with no Mac screenshot or runtime claim.",
+  "mac_runtime": "NOT RUN",
+  "cross_platform_network": "NOT RUN"
+}

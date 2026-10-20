@@ -1,0 +1,34 @@
+2026-10-18T03:26:50.6611666+09:00
+Actual authored scene and Play initialization. Multiplayer rounds use controlled connected player records and a serialized participant frame, not separate processes.
+PASS fresh Play player starts at one of the saved map corners
+PASS four saved spawn regions cover all map quadrants
+PASS corner has supported floor and vegetation/capsule clearance (-69.44, 0.75, -70.80)
+PASS corner has supported floor and vegetation/capsule clearance (-70.69, 0.75, 64.45)
+PASS corner has supported floor and vegetation/capsule clearance (77.15, 0.75, 49.45)
+PASS corner has supported floor and vegetation/capsule clearance (67.15, 0.75, -69.55)
+PASS 400 allocations use saved corner positions without overlapping players
+PASS player0 samples all four corners across400 seeded allocations
+PASS player1 samples all four corners across400 seeded allocations
+PASS player2 samples all four corners across400 seeded allocations
+PASS player3 samples all four corners across400 seeded allocations
+PASS 40 actual offline restarts place actors at distinct corners with empty inventory and matching safe position
+INFO corner1 hover query=True deltaTime=0.01999999 slopeLimit=45 hits=Layer_00_GrassBase point=(-69.440, -0.250, -70.802) normal=(0.00, 1.00, 0.00) interaction=False
+PASS corner1 remains grounded through60 native movement updates; actual=(-69.441, 0.750, -70.802) expected=(-69.441, 0.750, -70.802)
+FAIL corner1 keeps hover clearance during a2.5m descending hitch step
+INFO corner2 hover query=True deltaTime=0.3333333 slopeLimit=45 hits=Layer_00_GrassBase point=(-70.691, -0.250, 64.450) normal=(0.00, 1.00, 0.00) interaction=False
+FAIL corner2 remains grounded through60 native movement updates; actual=(-70.691, -0.220, 64.450) expected=(-70.691, 0.750, 64.450)
+FAIL corner2 keeps hover clearance during a2.5m descending hitch step
+INFO corner3 hover query=True deltaTime=0.1571364 slopeLimit=45 hits=Layer_00_GrassBase point=(77.147, -0.250, 49.450) normal=(0.00, 1.00, 0.00) interaction=False
+PASS corner3 remains grounded through60 native movement updates; actual=(77.147, 0.750, 49.450) expected=(77.147, 0.750, 49.450)
+FAIL corner3 keeps hover clearance during a2.5m descending hitch step
+INFO corner4 hover query=True deltaTime=0.1207851 slopeLimit=45 hits=Layer_00_GrassBase point=(67.147, -0.250, -69.552) normal=(0.00, 1.00, 0.00) interaction=False
+PASS corner4 remains grounded through60 native movement updates; actual=(67.147, 0.750, -69.552) expected=(67.147, 0.750, -69.552)
+FAIL corner4 keeps hover clearance during a2.5m descending hitch step
+PASS 2-player80 actual host rounds keep distinct corner positions, yaw and empty inventory
+PASS 2-player host rounds select all four map corners
+PASS 4-player80 actual host rounds keep distinct corner positions, yaw and empty inventory
+PASS 4-player host rounds select all four map corners
+PASS participant frame uses the server corner, not an independent local random choice
+PASS participant camera input starts with the server inward yaw
+PASS participant fall recovery starts at the server corner
+PASS participant frame applies the full50-parcel layout

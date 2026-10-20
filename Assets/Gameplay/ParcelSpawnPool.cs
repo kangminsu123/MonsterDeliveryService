@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-// Saved, verified anchors; only the authority chooses occupancy. Reuse the same 30 models.
+// Saved, verified anchors; only the authority chooses occupancy. Reuse the same 50 models.
 [DefaultExecutionOrder(100)]
 public sealed class ParcelSpawnPool : MonoBehaviour
 {
-    public const int SpawnCount = 50, LiveCount = 30;
+    public const int SpawnCount = 100, LiveCount = 50;
     public Transform[] spawnPoints;
     public FloatingParcel[] parcels;
     [SerializeField] int[] slots = new int[LiveCount];
@@ -19,7 +19,7 @@ public sealed class ParcelSpawnPool : MonoBehaviour
     public void Initialize(MonsterDeliveryPrototype source)
     {
         if (spawnPoints.Length != SpawnCount || parcels.Length != LiveCount)
-            throw new InvalidOperationException("Parcel pool needs 50 anchors and 30 models.");
+            throw new InvalidOperationException("Parcel pool needs 100 anchors and 50 models.");
         game = source;
         foreach (var parcel in parcels) parcel.spawnPool = this;
         ResetRound();
@@ -70,9 +70,18 @@ public sealed class ParcelSpawnPool : MonoBehaviour
     }
     public bool ApplySnapshot(int[] state)
     {
-        if (state == null || state.Length != LiveCount || state.Any(s => s < -1 || s >= SpawnCount) ||
-            state.Where(s => s >= 0).Distinct().Count() != state.Count(s => s >= 0)) return false;
-        for (int i = 0; i < state.Length; i++) Place(i, state[i]);
+        if (state == null || state.Length != LiveCount) return false;
+        ulong occupiedLow=0,occupiedHigh=0;
+        for(int i=0;i<state.Length;i++)
+        {
+            int slot=state[i];if(slot < -1||slot>=SpawnCount)return false;
+            if(slot<0)continue;
+            ulong bit=1UL<<(slot&63);
+            if(slot<64){if((occupiedLow&bit)!=0)return false;occupiedLow|=bit;}
+            else{if((occupiedHigh&bit)!=0)return false;occupiedHigh|=bit;}
+        }
+        for (int i = 0; i < state.Length; i++)
+            if(slots[i]!=state[i])Place(i, state[i]);
         return true;
     }
     void OnDrawGizmosSelected()

@@ -1,0 +1,25 @@
+{
+  "pages": 16,
+  "baseline_first_13_pixel_identical": {
+    "1": true,
+    "2": true,
+    "3": true,
+    "4": true,
+    "5": true,
+    "6": true,
+    "7": true,
+    "8": true,
+    "9": true,
+    "10": true,
+    "11": true,
+    "12": true,
+    "13": true
+  },
+  "new_pages_14_to_16_visually_verified": true,
+  "game_screenshots_visually_verified": true,
+  "play_passes": 31,
+  "play_failures": 0,
+  "console_errors": 0,
+  "render_fallback": "render_docx.py failed because soffice.exe is not installed; hidden Word COM PDF export then Poppler rasterization succeeded.",
+  "limitations": "One Editor with real NGO host and controlled JSON client snapshot; clocks advanced. Separate remote peer/WAN/build not run."
+}

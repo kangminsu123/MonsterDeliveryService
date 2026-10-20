@@ -1,0 +1,65 @@
+TODO
+[x] Read blender-scene first and modules: scene-spec, modeling, lookdev, lighting-camera, animation, audit-finalize, volatile.
+[x] Phase A inspect: Blender5.1 connected. Unsaved default Scene with Cube, Camera, Light. No matching existing props.
+[x] Phase B checkpoint before broad addition; protect original Scene and every existing datablock.
+[x] Phase C silhouette, proportions, depth, contact and camera-read gates before detail.
+[x] Phase D editable geometry, unified materials, motivated lighting, restrained review animation.
+[x] Phase E structural, motion and viewed render audit; checkpoint; leave live scene open. No save-as without request.
+
+SCENE
+- intent: Design five special game items from the approved icon sheet, using native editable meshes in the user's live Blender.
+- deliverable: New MDS_SpecialItems_Design_v1 scene with five independent prop roots and comparison stage; local PNG preview. Design only; no Unity import/gameplay changes.
+- units: metres; axes: right-handed Z-up
+- render: EEVEE,1800x1400,24fps,frames1-144
+- dynamic: yes; subtle synchronized ±12degree product review sway with stable first/rest pose; no game animation claims.
+HIERARCHY
+- collection/object naming: MDS_SpecialItems_V1; HERO_AirCannon, HERO_Broadcaster, HERO_PackingMachine, HERO_LifeJacket, HERO_ExpressBattery; PRP_*, ENV_*, CAM_*, LGT_*.
+- parent/child relationships: Each prop root at floor contact on its own platform; semantic mesh parts children in local space.
+- protected existing objects: Original Scene, Cube,Camera,Light and original world/camera settings unchanged. New scene becomes active for review.
+ASSETS
+- A01 AirCannon | route BLOCK | fidelity detailed stylized | dimensions1.45,1.2,1.6m | location-2.7,1.6,.18 | orientation0,0,-.20 | origin at base | own root | broad blue open muzzle, yellow shell, handle, compressed-air tank and gauge
+- A02 Broadcaster | route BLOCK | fidelity detailed stylized | dimensions1.3,1.2,1.6m | location0,1.6,.18 | orientation0,0,.12 | base root | cream/red flared horn, pistol grip, amber beacon
+- A03 PackingMachine | route BLOCK | fidelity detailed stylized | dimensions1.7,1.2,1.5m | location2.7,1.6,.18 | orientation0,0,-.10 | base root | turquoise continuous side frames, tape reels, parcel, conveyor
+- A04 LifeJacket | route BLOCK | fidelity detailed stylized | dimensions1.25,.5,1.65m | location-1.4,-1.6,.18 | orientation0,0,-.12 | base root | shaped orange buoyancy lobes, open neckline/armholes, black webbing, buckles and reflective shoulder bands
+- A05 ExpressBattery | route BLOCK | fidelity detailed stylized | dimensions1.15,.8,1.35m | location1.4,-1.6,.18 | orientation0,0,.12 | base root | stepped blue shell, gold guards, red/black terminals, raised white lightning motif
+- A06 Stage | route BLOCK | fidelity stylized support | five2.2m platforms | floor | static | visual comparison, not exported asset
+- generation estimate/submission state: NONE; native geometry only; zero generation spend.
+SHOT
+- active camera: CAM_SpecialItems_Hero
+- framing/lens/target: orthographic11.5m from(4,-12,11) toward(0,0,.5); whole five-item arrangement with breathing room
+- foreground: jacket,battery; background: cannon,broadcaster,packer; no silhouette overlap
+LOOK
+- material roles and palette: dark blue gray hardware; warm ivory, safety yellow, coral red, cyan/purple, orange, cobalt; satin plastic and matte webbing; restrained metal fasteners
+- material route: NONE generated; native Principled flat colors, export-friendly; all materials prefixed MDS_
+- texture scale: none; no bitmap dependencies
+- relief polarity: actual geometry recesses and extruded flat symbols
+- dielectric roughness.32-.65, hardware metallic.65 roughness.28; soft clear edge highlights
+- world/background: deep navy studio floor and low neutral World
+LIGHTING
+- focal subject: all five item silhouettes; secondary: colored handles, gauge, terminals; darkest: inside cannon/horn and under stage
+- reference mood: toy-like game prop catalog, bright readable studio
+- environment route NONE; HDR not required
+- world-only and zero-world baseline: audit renders at fixed AgX exposure0
+- key: broad upper-front-left area, motivated studio softbox; directional form and stable highlight
+- fill: opposite broad weak area, only recover dark material details; does not compete
+- separation: top rear broad area only if outlines merge; target upper edges
+- reflection strategy: broad softbox highlights; no glass or mirror surfaces
+- gobos/flags/atmosphere: none
+- color management: AgX,exposure0 locked
+MOTION
+- fps/frame range:24,1-144
+- beat: roots rotationZ at1 base,48 base+.21rad,96 base-.21rad,144 base; ease Bezier
+- static stage and camera; support origins stay on platform; resting pose frame1
+ACCEPTANCE
+- structural: five unique roots, parts parented, unchanged original scene, no accidental .001 names in new scene, coherent metre dimensions, no missing images; closed mesh parts normals and nonmanifold audit
+- motion: root matrix changes at48/96, origin contact fixed, first/last equal, no camera crop or intersections
+- visual: all five recognizable from silhouettes; native geometry rather than flat icon planes; common colors and readable medium detail; no placeholders left
+- lighting: World-only,zero-world,key-only,fill-only,rim-only and grayscale renders viewed; no clipping or black-crushed main shapes; no atmosphere necessary
+refs_read: blender-scene,blender-scene-spec,blender-modeling,blender-lookdev,blender-lighting-camera,blender-animation,blender-audit-finalize,blender-volatile
+
+FINAL GATE RECORD
+- Bounds visible render, primary masses, secondary masses, orthographic silhouette, contact and final camera renders viewed. Decision continue after every reviewed gate; original bounds image omitted invisible proxies and was replaced by pass_bounds_visible.png before primary geometry.
+- Actual camera ortho10.2m. Final native dimensions and contact gaps in final_audit.json. Labels moved above rear row to prevent foreground occlusion. Cannon contact rootZ.185m.
+- Final three studio light energies1728/612/1296W; AgX exposure-.15. World-only/zero-world/key-only/fill-only/rim-only, combined and grayscale viewed. No glass, HDR or atmosphere claim.
+- Structural and motion valid true. Original3 objects retained.5roots,99editable parts,0base-mesh defects,0contact gaps,0out-of-camera sample corners. Modifiers remain editable.5proxies removed after gate.
+- Final checkpoint recovery copy exists; active Blender filepath empty. No save-as, Unity import, export or gameplay implementation.

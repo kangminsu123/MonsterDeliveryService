@@ -1,0 +1,28 @@
+{
+    "label": "after-loss",
+    "role": "host",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 79,
+    "stationaryFrames": 0,
+    "sentBytes": 115798,
+    "frames": 413,
+    "pendingCommands": 0,
+    "inputAck": 0,
+    "droppedMessages": 54,
+    "finalPosition": {
+        "x": 0.0,
+        "y": 151.0,
+        "z": 11.743474960327149
+    },
+    "serverPosition": {
+        "x": 0.0,
+        "y": 151.0,
+        "z": 11.743474960327149
+    },
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.3223419189453125,
+    "averageFrameMs": 16.896373748779298,
+    "p95FrameMs": 17.685501098632814,
+    "maximumStep": 0.6968388557434082
+}

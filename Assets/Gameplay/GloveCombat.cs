@@ -3,20 +3,21 @@ using UnityEngine;
 public sealed partial class MonsterDeliveryPrototype
 {
     const float GlovePushDuration = .42f, GloveHitDelay = .16f;
+    // With constant drag/gravity, sqrt(2) more impulse doubles first-hit travel and rise.
+    static readonly float GlovePushSpeed = 18 * Mathf.Sqrt(6), GloveLiftSpeed = 6 * Mathf.Sqrt(6);
     int boxingSlot = -1;
     float boxingStarted;
     bool boxingHit;
     bool boxingRightHand, nextBoxingRightHand = true;
 
-    float GlovePushAmount
+    float GlovePushAmount => GlovePushAt(Time.time - boxingStarted);
+
+    static float GlovePushAt(float elapsed)
     {
-        get
-        {
-            float elapsed = Time.time - boxingStarted;
-            if (elapsed < .07f) return -.12f * Mathf.SmoothStep(0, 1, elapsed / .07f);
-            if (elapsed < GloveHitDelay) return Mathf.Lerp(-.12f, 1, Mathf.SmoothStep(0, 1, (elapsed - .07f) / (GloveHitDelay - .07f)));
-            return 1 - Mathf.SmoothStep(0, 1, (elapsed - GloveHitDelay) / (GlovePushDuration - GloveHitDelay));
-        }
+        if (elapsed < 0 || elapsed >= GlovePushDuration) return 0;
+        if (elapsed < .07f) return -.12f * Mathf.SmoothStep(0, 1, elapsed / .07f);
+        if (elapsed < GloveHitDelay) return Mathf.Lerp(-.12f, 1, Mathf.SmoothStep(0, 1, (elapsed - .07f) / (GloveHitDelay - .07f)));
+        return 1 - Mathf.SmoothStep(0, 1, (elapsed - GloveHitDelay) / (GlovePushDuration - GloveHitDelay));
     }
 
     void StartGlovePush()
@@ -39,9 +40,8 @@ public sealed partial class MonsterDeliveryPrototype
         if (!boxingHit && elapsed >= GloveHitDelay)
         {
             boxingHit = true;
-            // Constant horizontal drag and gravity make travel proportional to initial speed squared.
-            float distanceScale = Mathf.Sqrt(3);
-            HitGloveTarget(18 * distanceScale, 6 * distanceScale);
+            ConsumeSelectedUse(true);
+            HitGloveTarget(GlovePushSpeed, GloveLiftSpeed);
         }
         if (elapsed >= GlovePushDuration) FinishGlovePush();
     }
@@ -63,7 +63,9 @@ public sealed partial class MonsterDeliveryPrototype
 
     void FinishGlovePush()
     {
+        int slot = boxingSlot;
         boxingSlot = -1;
         if (heldItem && !thirdPersonPreview) heldItem.PushFirstPerson(0, boxingRightHand);
+        if (slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
     }
 }

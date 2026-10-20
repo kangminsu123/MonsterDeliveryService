@@ -1,0 +1,25 @@
+from pathlib import Path
+import json,html,shutil
+from docx import Document
+R=Path('C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService');D=R/'Docs/ChangeRecords/20261020'
+logs={role:(D/f'evidence/minimap-connected/{role}.txt').read_text(encoding='utf8') for role in ['host','guest']}
+assert all('FAIL ' not in text for text in logs.values())
+data={'title':'실제 게스트 연결에서 미니맵 회전 위치 검증',
+'request':'앞선 방장 미니맵 수정이 게스트에게도 적용되는지 확인하고 문제가 있으면 수정해 달라는 요청이다. 두 실제 Unity Editor 프로세스를 NGO/UTP localhost로 연결해 검사했다.',
+'method':'기존 Library/VP/mppmaddd9a33 가상 프로젝트를 게스트로 재사용했다. 본인 글로벌 슬롯과 로컬 Player Transform의 미니맵 연결을 확인하고, 실제 TickNetwork에 통제된 회전·걷기 입력을 주입했다. 인위 편도60ms 지연과5번째마다 입력/프레임을 누락하는 조건을 실제로 활성화했다. 표시 중심은 실제 미니맵 위치와 생산 코드 PlayerMarkerMatrix를5개 화면 배율로 매프레임 확인했다. 게임 코드의 추가 수정은 필요하지 않았으며 MinimapGuestCheck 검사 도구만 추가했다.',
+'result':'최종 실행에서 방장10항목·게스트10항목 모두 통과. 방장 글로벌슬롯0·게스트슬롯1 모두 로컬Player를 지도에 연결했다. 방장3005프레임·게스트3423프레임을 샘플링했다. 제자리 회전 중 실제XZ 최대변화는 양쪽0m, 생산 회전행렬 중심 오차는 최대0.000273픽셀 미만이었다. 실제 걷기에서 캐릭터와 지도참조 위치가 함께 이동했고, 양쪽 모두 패킷누락이 발생했음을 확인했다. 게임 런타임 및 연결종료 오류는 양쪽0이다. 검사 후 게스트 검사용 프로세스는 종료되고 메인 Editor도 Play를 종료했다.',
+'retry':'처음 가상프로젝트에 ProBuilder와Settings Manager 로컬 패키지 링크가 빠져 테스트용 링크를 복구했다. 이후 UnityEditor.Search 초기화 예외가 게스트를 일시정지시켜 검사 실행에서만 자동 재개하도록 했다. 이 에디터환경 예외는 최종 게스트에서1개이며 게임 오류와 분리해 로그에 남겼다. 초기 연결검사에서는 지연은 활성화됐으나 latencyLabel에 loss가 없어 메시지누락이 실제 발생하지 않았다. 해당시도는 normal-attempt에 보존하고 loss 라벨을 지정하여 최종 양쪽누락검사까지 통과했다.',
+'limits':'localhost의 두프로세스 검사이며 WAN·실사용자 컴퓨터·배포실행파일 재빌드는 미실행이다. 화면픽셀 검출이나 실제 스크린샷이 아니라 연결된 게임상태와 생산표시행렬을 검사했다. 게스트에게도 앞선 공통 미니맵 수정이 적용됨을 확인했다. Word 본문 갱신은 완료했으나 기존 LibreOffice 미설치로 페이지화면검수는 미완료다.'}
+(D/'source/minimap_guest_report_data.json').write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf8')
+md='\n\n## 사례11 '+data['title']+'\n\n2026-10-20 · 요청R27 · 실제두프로세스 확인 완료\n\n'+'\n\n'.join(data[k] for k in ['request','method','result','retry','limits'])+'\n\n[방장검사](evidence/minimap-connected/host.txt) · [게스트검사](evidence/minimap-connected/guest.txt) · [게스트프레임기록](evidence/minimap-connected/guest.csv)\n'
+p=D/'README.md';p.write_text(p.read_text(encoding='utf8')+md,encoding='utf8')
+p=D/'requests.csv';p.write_text(p.read_text(encoding='utf-8-sig')+'R27,게스트 미니맵,실제 게스트에서도 회전 위치 유지 확인 및 필요시 수정,사례11,방장10 게스트10항목 통과\n',encoding='utf-8-sig')
+p=D/'index.html';p.write_text(p.read_text(encoding='utf8')+'<section><h2>'+data['title']+'</h2>'+''.join('<p>'+html.escape(data[k])+'</p>' for k in ['request','method','result','retry','limits'])+'<p><a href="evidence/minimap-connected/guest.txt">실제게스트검사</a></p></section>',encoding='utf8')
+doc=Document(D/'ChangeReport_20261020.docx');doc.add_page_break();doc.add_heading(data['title'],1)
+for k in ['request','method','result','retry','limits']:doc.add_paragraph(data[k])
+doc.save(D/'ChangeReport_20261020.docx')
+note='## 실제 게스트 미니맵 검증 2026년10월20일\n\n실제2개Editor NGO/UTP localhost·편도60ms·5번째마다메시지누락. 방장10·게스트10항목 통과. 양쪽 제자리회전XZ변화0m·걷기 정상·본인Slot/Player참조 확인. 앞선 미니맵수정이 게스트에도 적용,추가게임수정 없음. 검사중게임/종료오류0,게스트UnityEditor.Search초기화예외1개별도기록. Docs/ChangeRecords/20261020/README.md 사례11. WAN/배포본재빌드 미실행. Word페이지검수는 기존LibreOffice미설치로 미완료.\n\n'
+for f in ['NEXT_SESSION.txt','GAME_DESIGN.md','TEAM_STATUS.md','ART_REVIEW.md']:
+ p=R/f;p.write_text(note+p.read_text(encoding='utf8'),encoding='utf8')
+shutil.copy2(R/'Assets/Editor/MinimapGuestCheck.cs',D/'source/MinimapGuestCheck.cs');shutil.copy2(__file__,D/'source/minimap-guest-record.py')
+print('case11 recorded: host10 guest10 checks passed')

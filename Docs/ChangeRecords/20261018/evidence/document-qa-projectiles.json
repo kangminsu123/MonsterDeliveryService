@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-10-18",
+  "pages": 12,
+  "all_pages_visually_reviewed": true,
+  "changed_chart_page_rechecked": true,
+  "visual_review": "Korean glyphs, tables, captures, captions, chart axes and legend, page boundaries all passed.",
+  "renderer": "Hidden read-only Word COM export plus bundled Poppler; default failure in renderer-projectiles.log.",
+  "mapped_requests": 8,
+  "image_links": 12,
+  "actual_game_captures": 11,
+  "measurement_charts": 1,
+  "all_readme_links_exist": true,
+  "delivered_docx_matches": true,
+  "delivered_docx_sha256": "05e09bbdefcde72704f3ef4e5080c3ca8e28f3d82e5e735e1a7d691829776a09",
+  "rendered_pages": {
+    "page-01.png": "5153bd0d409658d1679d3e63acf88a1caf1b4013c810b788dfecb27e51060933",
+    "page-02.png": "67185409b7b3badacbe9e3f14ca4b614f3e880133bc1fca0c1a6f1b4431c4dd4",
+    "page-03.png": "dbe3f54de973b37624ef00635af5c4919eb2cc4e8a6286725a7018c75e99ac3f",
+    "page-04.png": "64bbf196acbe40e8dde8df0137300aa70595209fc57f4613f89d0e8347d9b051",
+    "page-05.png": "aa9d597e909d0c4122d34168c88fa32cbe8765c27558c21f5aad1ddfd03d7be7",
+    "page-06.png": "a27f456704ad6d49a38452d3920b72b32e6bb3101b66dad249ca63269ddfdc54",
+    "page-07.png": "1bd76df35c593b91ad5fa92eaf22f4ee3db872393667ebea470e51d03e4b4df4",
+    "page-08.png": "59fb4ac6ea90e9c09a8fef8c3b4882bf8abb023481aa3b674f2a88bd1ea80b3a",
+    "page-09.png": "ddf8e8410c8f35206673ce2ed038f9085b2cf3edc6192efc7050ec3a39c36046",
+    "page-10.png": "f84c184766cd92b9f3d600410f9c9080c6cb03f32a4e48c881431530947a98ab",
+    "page-11.png": "d56ba6685ec915c19e11b7332731f2c7d8fbbdc44e22e48446cb56d431437e78",
+    "page-12.png": "3daffbf1bec8da769547bf6556382604800e4c6e2f0de6a18631c53b89eb02c1"
+  }
+}

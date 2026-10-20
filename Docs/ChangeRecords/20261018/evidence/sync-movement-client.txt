@@ -1,0 +1,12 @@
+2026-10-18T02:08:30.3288023+09:00
+Two real MPPM processes,60ms per-way frame/input delay and every fifth omitted. Keyboard state injection is internal to Unity Input System.
+PASS client movement strafe
+PASS client movement backward
+PASS client movement crouch
+PASS client movement dash
+PASS client movement jump
+PASS client movement turn
+PASS client movement server-jump0
+PASS client movement server-jump1
+PASS client movement settled
+INFO final transport RTT mean_ms=86.000; artificial application queue is excluded from transport RTT

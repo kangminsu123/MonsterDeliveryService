@@ -2,12 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public enum WeaponKind { None, BoxingGloves, Plunger, ToyHammer, Slime, IceCream, RunningShoes, BubbleWrap, WorkGloves, FountainPen }
+public enum WeaponKind { None, BoxingGloves, Plunger, ToyHammer, Slime, IceCream, RunningShoes, BubbleWrap, WorkGloves, FountainPen, AirCannon, Broadcaster, PackingMachine, LifeJacket, ExpressBattery }
 
 public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
 {
-    static readonly bool UnlimitedItems = true; // Temporary unlimited uses/battery for item testing.
+    static readonly bool UnlimitedItems = false;
     const int HouseCount = 10, BotCount = 3, SlotCount = 3;
+    const float RecaptureProtectionSeconds = 20;
+    readonly float[] mailboxProtectedUntil = new float[HouseCount];
+    float MailboxProtectionRemaining(int house) => owner[house] < 0 ? 0 : Mathf.Max(0, mailboxProtectedUntil[house] - Time.time);
     readonly Color[] colors = { Color.yellow, new(1f, .25f, .25f), new(.95f, .75f, .1f), new(.65f, .3f, 1f) };
     readonly GameObject[] mailboxes = new GameObject[HouseCount], houses = new GameObject[HouseCount], bots = new GameObject[BotCount], pickups = new GameObject[10];
     readonly Renderer[] mailboxRenderers = new Renderer[HouseCount], botRenderers = new Renderer[BotCount];
@@ -25,7 +28,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     float startedAt, lookPitch = 12, vertical, captureStarted, nextAttackAt, stamina = 100, rollUntil, mapCameraPitch = 42, mapCameraYaw;
     Vector3 rollDirection;
     string feedback = "Enter를 눌러 우편함 난투를 시작하세요.";
-    [Min(30)] public float roundSeconds = 180;
+    [Min(30)] public float roundSeconds = 300;
     public bool mapEditMode;
     public bool mapExploreMode = true;
     public bool thirdPersonPreview = false;
@@ -55,15 +58,11 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             RenderSettings.fogDensity = .008f;
         }
         CreateWorld();
+        if (!mapEditMode) InitializeSpecialDelivery();
         if (!mapEditMode) gameObject.AddComponent<DeliveryMinimap>().Initialize(this, player.transform, mailboxes);
         if (mapExploreMode)
         {
             started = true;
-            // Temporary starting gear for the current item effects test.
-            AddWeapon(WeaponKind.Plunger);
-            AddWeapon(WeaponKind.IceCream);
-            AddWeapon(WeaponKind.BubbleWrap);
-            selectedSlot = 1;
             nextRivalShoesTest = Time.time + 3;
             nextRivalBubbleTest = Time.time + 3;
         }
@@ -79,9 +78,11 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     {
         cam = Camera.main ?? new GameObject("Main Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
         if (mapEditMode) { cam.transform.position = new Vector3(0, 95, -110); cam.transform.rotation = Quaternion.Euler(mapCameraPitch, mapCameraYaw, 0); return; }
+        ChooseRoundSpawns();
         player = new GameObject("Player").AddComponent<CharacterController>();
         player.transform.position = SpawnPosition(0);
         ConfigureHoverBody(player); playerItems.safePosition = SpawnPosition(0);
+        player.transform.rotation = SpawnRotation(0);
         var robotPrefab = Resources.Load<GameObject>("Characters/DeliveryRobotPlayer");
         if (!robotPrefab) throw new System.InvalidOperationException("DeliveryRobotPlayer prefab is missing.");
         playerVisual = Instantiate(robotPrefab, player.transform, false).GetComponent<DeliveryRobotVisual>();
@@ -103,8 +104,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (itemPlaytestEnabled) CreatePickups();
         var light = FindAnyObjectByType<Light>(); if (light != null) { light.intensity = .45f; light.color = new Color(.32f, .42f, 1); }
     }
-    Vector3 TruckPosition(int id) => new[] { new Vector3(-116, 0, 0), new Vector3(0, 0, 96), new Vector3(116, 0, 0), new Vector3(0, 0, -96) }[id];
-    Vector3 SpawnPosition(int id) => id == 0 ? new Vector3(0, 1, 0) : TruckPosition(id) - TruckPosition(id).normalized * 8f + Vector3.up;
+    Vector3 SpawnPosition(int id) => roundSpawns[id];
     void CreateCapturePad(int i)
     {
         var p = new[] { new Vector3(0, .06f, 0), new Vector3(-108, .06f, 62), new Vector3(-48, .06f, 58), new Vector3(42, .06f, 58), new Vector3(106, .06f, 58), new Vector3(-106, .06f, -48), new Vector3(-46, .06f, -56), new Vector3(42, .06f, -56), new Vector3(108, .06f, -44), new Vector3(94, .06f, -100) }[i];
@@ -115,7 +115,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     void CreateBot(int i)
     {
         bots[i] = new GameObject("Rival " + (i + 1));
-        bots[i].transform.position = mapExploreMode ? player.transform.position + new Vector3(4, 0, 4) : SpawnPosition(i + 1);
+        bots[i].transform.SetPositionAndRotation(SpawnPosition(i + 1), SpawnRotation(i + 1));
         botControllers[i] = bots[i].AddComponent<CharacterController>(); ConfigureHoverBody(botControllers[i]);
         botVisuals[i] = Instantiate(Resources.Load<GameObject>("Characters/DeliveryRobotPlayer"), bots[i].transform, false).GetComponent<DeliveryRobotVisual>();
         botVisuals[i].SetColor(colors[i + 1]);
@@ -140,16 +140,17 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     {
         if (mapEditMode) { UpdateMapCamera(); return; }
         if (TickNetwork()) return;
-        if (started && !finished) UpdateItemAreas();
+        if (started && !finished) { UpdateItemAreas(); UpdateParkDelivery(); }
         UpdateCamera(); var kb = Keyboard.current;
         UpdateGlovePush();
+        UpdateHandThrow();
         UpdateToyHammerSwing();
         UpdatePlungerThrow();
-        if (mapExploreMode) { UpdatePlayer(kb); UpdateInteraction(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); UpdateCapture(kb); UpdateBots(); UpdateHeldWeapon(); return; }
+        if (mapExploreMode) { UpdatePlayer(kb); AutoPickupParcels(); UpdateInteraction(); if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup(); UpdateCapture(kb); UpdateBots(); UpdateHeldWeapon(); return; }
         if (!started) { if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) Begin(); return; }
         if (finished) { if (kb != null && kb.enterKey.wasPressedThisFrame) Begin(); return; }
         if (Time.time - startedAt >= roundSeconds) { Finish(); return; }
-        UpdatePlayer(kb); UpdateInteraction();
+        UpdatePlayer(kb); AutoPickupParcels(); UpdateInteraction();
         if (kb != null && kb.eKey.wasPressedThisFrame) TryPickup();
         UpdateBots(); UpdatePickups(); UpdateCapture(kb); UpdateHeldWeapon();
     }
@@ -168,6 +169,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         PosePlungerThrow();
         if (explorationRivalGloves) explorationRivalGloves.FollowBones();
         UpdateRunningShoesFX();
+        UpdateBatteryFX();
         UpdateBubbleWrapFX();
         PoseFountainPen();
         UpdateFountainInkFX();
@@ -177,7 +179,9 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         UpdateIceCreamFX();
         PoseToyHammer();
         UpdateStunFX();
+        PoseHandThrow();
         PoseNetworkPlayers();
+        UpdateSpecialPresentation();
     }
     void UpdatePlayer(Keyboard kb)
     {
@@ -187,13 +191,15 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         // Resizing the controller resets contact state, even when the value is unchanged.
         var height = crouching ? 1.1f : 1.4f;
         if (player.height != height) { player.height = height; player.center = Vector3.up * (height * .5f); }
+        bool battery = Time.time < playerItems.batteryUntil;
+        if (battery) stamina = 100;
         var rolling = !playerItems.Stunned(Time.time) && Time.time < rollUntil;
         if (kb != null && kb.leftShiftKey.wasPressedThisFrame && !crouching && !playerItems.KnockedBack && stamina >= 50 && Time.time >= rollUntil)
         {
-            stamina -= 50;
+            if (!battery) stamina -= 50;
             rollDirection = player.transform.TransformDirection(move.sqrMagnitude > .01f ? move.normalized : Vector3.forward);
             rollUntil = Time.time + .35f; rolling = true;
-            captureTarget = -1; captureStarted = 0; feedback = "대쉬! (-50 스태미나)";
+            captureTarget = -1; captureStarted = 0; feedback = battery ? "대쉬! (스태미나 소모 없음)" : "대쉬! (-50 스태미나)";
         }
         else if (!rolling) stamina = Mathf.Min(100, stamina + 20 * Time.deltaTime);
         var velocity = rolling ? rollDirection * 17f : player.transform.TransformDirection(move.normalized) * (crouching ? 3.6f : 6.5f);
@@ -223,7 +229,14 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (player == null) return;
         cam.transform.rotation = Quaternion.Euler(lookPitch, player.transform.eulerAngles.y, 0);
         PositionCamera();
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, RunningShoesFieldOfView, Time.deltaTime * 12);
+        UpdateCameraFieldOfView();
+    }
+    bool ZoomHeld => started && !finished && !mapEditMode && (!NetworkScreens || NetPlaying && !netPause) &&
+        Cursor.lockState == CursorLockMode.Locked && Mouse.current != null && Mouse.current.rightButton.isPressed;
+    void UpdateCameraFieldOfView()
+    {
+        if (cam) cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, ZoomHeld ? 35 : RunningShoesFieldOfView,
+            1 - Mathf.Exp(-12 * Time.unscaledDeltaTime));
     }
     void PositionCamera()
     {
@@ -269,7 +282,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             else
             {
                 KeepBotOutOfEnemySpawn(i);
-                if (botTarget[i] < 0 || owner[botTarget[i]] == i + 1) botTarget[i] = FindBotTarget(i);
+                if (botTarget[i] < 0 || owner[botTarget[i]] == i + 1 || MailboxProtectionRemaining(botTarget[i]) > 0) botTarget[i] = FindBotTarget(i);
             }
             bool hasTarget = botTarget[i] >= 0;
             var target = hasTarget ? mailboxes[botTarget[i]].transform.position : bots[i].transform.position;
@@ -289,7 +302,7 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             botVisuals[i].SetMotion(new Vector2(controller.velocity.x, controller.velocity.z).sqrMagnitude > .04f, mapExploreMode && i == 0 && explorationRivalGloves);
             bool clear = hasTarget && (!mapExploreMode || !Physics.Linecast(bots[i].transform.position + Vector3.up * .4f, target + Vector3.up * 1.2f, out var obstruction, ~0, QueryTriggerInteraction.Ignore) ||
                 obstruction.collider.GetComponentInParent<InteractionTarget>()?.gameObject == mailboxes[botTarget[i]]);
-            if (state.CanCapture(Time.time) && clear && Vector3.Distance(bots[i].transform.position, target) < 2.2f)
+            if (state.CanCapture(Time.time) && clear && MailboxProtectionRemaining(botTarget[i]) <= 0 && Vector3.Distance(bots[i].transform.position, target) < 2.2f)
             {
                 if (botCaptureStarted[i] == 0) botCaptureStarted[i] = Time.time;
                 if (Time.time - botCaptureStarted[i] >= 3) { Capture(botTarget[i], i + 1); botCaptureStarted[i] = 0; botTarget[i] = -1; }
@@ -298,16 +311,16 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
             // No invisible contact damage or free bot attacks while items are staged.
         }
     }
-    void KeepPlayerOutOfEnemySpawn() { for (var id = 1; id <= BotCount; id++) { var away = player.transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { player.Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); feedback = "상대 택배차 안전구역에는 들어갈 수 없습니다."; return; } } }
-    void KeepBotOutOfEnemySpawn(int bot) { for (var id = 0; id <= BotCount; id++) if (id != bot + 1) { var away = bots[bot].transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { botControllers[bot].Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); return; } } }
-    int FindBotTarget(int bot) { for (var n = 0; n < HouseCount; n++) { var i = (bot + n + Random.Range(0, HouseCount)) % HouseCount; if (owner[i] != bot + 1) return i; } return 0; }
+    void KeepPlayerOutOfEnemySpawn() { for (var id = 1; id <= BotCount; id++) { var away = player.transform.position - SpawnPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { player.Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); feedback = "상대 시작 지역에는 들어갈 수 없습니다."; return; } } }
+    void KeepBotOutOfEnemySpawn(int bot) { for (var id = 0; id <= BotCount; id++) if (id != bot + 1) { var away = bots[bot].transform.position - SpawnPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { botControllers[bot].Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); return; } } }
+    int FindBotTarget(int bot) { int start = Random.Range(0, HouseCount); for (var n = 0; n < HouseCount; n++) { var i = (bot + n + start) % HouseCount; if (owner[i] != bot + 1 && MailboxProtectionRemaining(i) <= 0) return i; } return -1; }
     void UpdatePickups() { for (var i = 0; i < pickups.Length; i++) { if (pickups[i] != null && !pickups[i].activeSelf && Time.time >= pickupRespawnAt[i]) pickups[i].SetActive(true); if (pickups[i] != null && pickups[i].activeSelf) pickups[i].transform.position += Vector3.up * Mathf.Sin(Time.time * 3 + i) * .003f; } }
     void UpdateInteraction()
     {
         Physics.SyncTransforms(); // Floating parcel colliders follow the current visual pose.
         InteractionTarget next = null; float distance = float.PositiveInfinity;
         if (cam && started && !finished && !mapEditMode &&
-            InteractionRayHit(cam.ViewportPointToRay(new Vector3(.5f, .5f, 0)), 12, out var hit))
+            InteractionRayHit(cam.ViewportPointToRay(new Vector3(.5f, .5f, 0)), Selected == WeaponKind.PackingMachine ? RemoteDeliveryRange : 12, out var hit))
         {
             next = hit.collider.GetComponentInParent<InteractionTarget>(); distance = hit.distance + cam.nearClipPlane;
             if (thirdPersonPreview)
@@ -323,9 +336,9 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (focusedTarget && focusedTarget != next) focusedTarget.SetFocus(false, false);
         focusedTarget = next;
         interactionReady = next && next.available && distance <= next.interactionDistance && playerItems.CanCapture(Time.time) && Time.time >= rollUntil;
-        if (next && (next.GetComponent<FloatingParcel>() || next.GetComponent<PickupKind>()) && !HasEmptySlot()) interactionReady = false;
+        if (next && IsParcelTarget(next) && !AllowsSpecialReplacement(next) && !HasEmptySlot()) interactionReady = false;
         if (next && next.GetComponent<PickupKind>() && !itemPlaytestEnabled) interactionReady = false;
-        for (int i = 0; i < HouseCount; i++) if (next && mailboxes[i] == next.gameObject && MailboxOwnedByUs(i)) interactionReady = false;
+        for (int i = 0; i < HouseCount; i++) if (next && mailboxes[i] == next.gameObject && (MailboxOwnedByUs(i) || MailboxProtectionRemaining(i) > 0)) interactionReady = false;
         if (next) next.SetFocus(true, interactionReady);
     }
     bool InteractionRayHit(Ray ray, float range, out RaycastHit nearest)
@@ -337,20 +350,23 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         return closest < float.PositiveInfinity;
     }
     void OnDisable() { if (focusedTarget) focusedTarget.SetFocus(false, false); }
+    void AutoPickupParcels()
+    {
+        if (!started || finished || mapEditMode || !ParcelAuthority || !playerItems.CanCapture(Time.time) || Time.time < rollUntil) return;
+        while (HasEmptySlot() && FloatingParcel.CollectTouching(player))
+            AddWeapon((WeaponKind)Random.Range(1, (int)WeaponKind.FountainPen + 1));
+    }
     void TryPickup()
     {
         if (!interactionReady || !focusedTarget) return;
-        var parcel = focusedTarget.GetComponent<FloatingParcel>();
-        if (parcel)
+        var special = focusedTarget.GetComponent<SpecialDeliveryParcel>();
+        if (special)
         {
-            if (!HasEmptySlot()) return;
-            if (parcel.TryCollect())
-            {
-                AddWeapon((WeaponKind)Random.Range(1, (int)WeaponKind.FountainPen + 1)); focusedTarget = null; interactionReady = false;
-                captureTarget = -1; captureStarted = 0;
-            }
+            CollectSpecialLocal(special);
             return;
         }
+        var parcel = focusedTarget.GetComponent<FloatingParcel>();
+        if (parcel) return;
         if (!itemPlaytestEnabled) return;
         for (var i = 0; i < pickups.Length; i++) if (pickups[i] == focusedTarget.gameObject)
         {
@@ -363,11 +379,19 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         if (!interactionReady || !focusedTarget || !playerItems.CanCapture(Time.time) || kb == null || !kb.eKey.isPressed) { captureTarget = -1; captureStarted = 0; return; }
         var target = -1;
         for (int i = 0; i < HouseCount; i++) if (mailboxes[i] == focusedTarget.gameObject) { target = i; break; }
-        if (target < 0 || owner[target] == 0) { captureTarget = -1; captureStarted = 0; return; }
+        if (target < 0 || owner[target] == 0 || MailboxProtectionRemaining(target) > 0) { captureTarget = -1; captureStarted = 0; return; }
         if (captureTarget != target) { captureTarget = target; captureStarted = Time.time; }
-        if (Time.time - captureStarted >= CaptureSeconds) { Capture(target, 0); if (Selected == WeaponKind.WorkGloves) Consume(); captureTarget = -1; captureStarted = 0; }
+        if (Time.time - captureStarted >= CaptureSeconds) { if (Capture(target, 0) && Selected == WeaponKind.WorkGloves) Consume(); captureTarget = -1; captureStarted = 0; }
     }
-    void Capture(int house, int playerId) { owner[house] = playerId; SetMailboxEffectColor(house, colors[playerId]); feedback = (playerId == 0 ? "우편함 점령!" : "Rival " + playerId + "이 우편함을 탈환했습니다."); }
+    bool Capture(int house, int playerId) => CaptureMailbox(house, playerId, false);
+    bool CaptureMailbox(int house, int playerId, bool ignoreProtection)
+    {
+        if (owner[house] == playerId || !ignoreProtection && MailboxProtectionRemaining(house) > 0) return false;
+        owner[house] = playerId; mailboxProtectedUntil[house] = Time.time + RecaptureProtectionSeconds;
+        SetMailboxEffectColor(house, CaptureColor(playerId));
+        feedback = playerId == 0 ? "우편함 점령!" : "Rival " + playerId + "이 우편함을 탈환했습니다.";
+        return true;
+    }
 
     public void SetPlayerColor(int playerId, Color color)
     {
@@ -405,47 +429,47 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
         WeaponKind.ToyHammer => "뿅망치", WeaponKind.Slime => "슬라임",
         WeaponKind.IceCream => "아이스크림", WeaponKind.RunningShoes => "러닝화",
         WeaponKind.BubbleWrap => "에어캡", WeaponKind.WorkGloves => "작업용 장갑",
-        WeaponKind.FountainPen => "만년필", _ => "빈손"
+        WeaponKind.FountainPen => "만년필", WeaponKind.AirCannon => "공기 대포",
+        WeaponKind.Broadcaster => "긴급 배송 방송기", WeaponKind.PackingMachine => "원격 배송기", WeaponKind.LifeJacket => "구명조끼", WeaponKind.ExpressBattery => "특급 배송 배터리", _ => "빈손"
     };
-    string ItemRemainingText(int slot) => UnlimitedItems || inventory[slot] == WeaponKind.BoxingGloves ? "무제한" : weaponAmmo[slot] + "회";
+    string ItemRemainingText(int slot) => weaponAmmo[slot] + "회";
     string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + ItemRemainingText(slot);
-    int Ammo(WeaponKind item) => item switch { WeaponKind.Plunger => 3, WeaponKind.ToyHammer or WeaponKind.Slime or WeaponKind.FountainPen or WeaponKind.IceCream => 2, WeaponKind.None or WeaponKind.BoxingGloves => 0, _ => 1 };
+    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves => 2, WeaponKind.Slime => 3, WeaponKind.None => 0, _ => 1 };
     readonly int[] weaponAmmo = new int[SlotCount];
 
     float CaptureSeconds => Selected == WeaponKind.WorkGloves ? 1.5f : 3;
 
     void AddWeapon(WeaponKind item)
     {
-        if ((int)item < 1 || (int)item > (int)WeaponKind.FountainPen) return;
+        if ((int)item < 1 || (int)item > (int)WeaponKind.ExpressBattery) return;
         for (var i = 0; i < SlotCount; i++) if (inventory[i] == WeaponKind.None)
         {
             inventory[i] = item; weaponAmmo[i] = Ammo(item); weaponSeconds[i] = 0;
             selectedSlot = i; feedback = ItemName(item) + " 획득!"; return;
         }
     }
-    void ClearSlot(int slot) { if (plungerSlot == slot) FinishPlungerThrow(); inventory[slot] = WeaponKind.None; weaponAmmo[slot] = 0; weaponSeconds[slot] = 0; if (armedGloveSlot == slot) armedGloveSlot = -1; if (boxingSlot == slot) boxingSlot = -1; if (hammerSlot == slot) FinishToyHammerSwing(); if (selectedSlot == slot) { captureTarget = -1; captureStarted = 0; } }
-    void Consume() { if (!UnlimitedItems && --weaponAmmo[selectedSlot] <= 0) ClearSlot(selectedSlot); }
+    void ClearSlot(int slot) { if (handThrowSlot == slot) handThrowSlot = -1; if (plungerSlot == slot) FinishPlungerThrow(); inventory[slot] = WeaponKind.None; weaponAmmo[slot] = 0; weaponSeconds[slot] = 0; if (armedGloveSlot == slot) armedGloveSlot = -1; if (boxingSlot == slot) boxingSlot = -1; if (hammerSlot == slot) FinishToyHammerSwing(); if (selectedSlot == slot) { captureTarget = -1; captureStarted = 0; } }
+    void Consume() => ConsumeSelectedUse(false);
+    void ConsumeSelectedUse(bool finishMotion) { weaponAmmo[selectedSlot] = Mathf.Max(0, weaponAmmo[selectedSlot] - 1); if (weaponAmmo[selectedSlot] == 0 && !finishMotion) ClearSlot(selectedSlot); }
     void DropSelectedWeapon() { if (Selected == WeaponKind.None) return; feedback = ItemName(Selected) + "을 버렸습니다."; ClearSlot(selectedSlot); }
     void UseWeapon()
     {
-        if ((!itemPlaytestEnabled && Selected != WeaponKind.BoxingGloves && Selected != WeaponKind.Plunger && Selected != WeaponKind.RunningShoes && Selected != WeaponKind.BubbleWrap && Selected != WeaponKind.FountainPen && Selected != WeaponKind.Slime && Selected != WeaponKind.ToyHammer && Selected != WeaponKind.IceCream) || !started || finished || playerItems.Stunned(Time.time) || Selected == WeaponKind.None || Time.time < nextAttackAt || boxingSlot >= 0 || plungerSlot >= 0 || hammerSlot >= 0) return;
+        if ((!itemPlaytestEnabled && !IsSpecial(Selected) && Selected != WeaponKind.BoxingGloves && Selected != WeaponKind.Plunger && Selected != WeaponKind.RunningShoes && Selected != WeaponKind.BubbleWrap && Selected != WeaponKind.FountainPen && Selected != WeaponKind.Slime && Selected != WeaponKind.ToyHammer && Selected != WeaponKind.IceCream) || !started || finished || playerItems.Stunned(Time.time) || Selected == WeaponKind.None || Time.time < nextAttackAt || boxingSlot >= 0 || plungerSlot >= 0 || hammerSlot >= 0) return;
+        if (handThrowSlot >= 0) return;
+        if (weaponAmmo[selectedSlot] <= 0) return;
         var kind = Selected;
+        if (IsSpecial(kind)) { StartSpecialUse(kind); return; }
         if (kind == WeaponKind.WorkGloves) return; // Wearing the selected gloves shortens capture without a separate click.
         if (kind == WeaponKind.BoxingGloves) { StartGlovePush(); return; }
         if (kind == WeaponKind.Plunger) { StartPlungerThrow(); return; }
         if (kind == WeaponKind.ToyHammer) { StartToyHammerSwing(); return; }
+        if (IsHandThrown(kind)) { StartHandThrow(kind); return; }
         captureTarget = -1; captureStarted = 0;
         playerItems.busyUntil = Time.time + .5f;
         nextAttackAt = Time.time + .6f;
         feedback = ItemName(kind) + " 사용!";
         switch (kind)
         {
-            case WeaponKind.Slime:
-                MakeShot(cam.transform.forward, 18, kind); slimeThrownAt = Time.time; break;
-            case WeaponKind.FountainPen:
-                MakeShot(cam.transform.forward, 48, kind); fountainThrownAt = Time.time; break;
-            case WeaponKind.IceCream:
-                MakeIceCreamShot(cam.transform.forward); iceCreamThrownAt = Time.time; break;
             case WeaponKind.RunningShoes: ActivateRunningShoes(0); break;
             case WeaponKind.BubbleWrap: ActivateBubbleWrap(0); break;
         }
@@ -540,17 +564,24 @@ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
     }
     void Begin()
     {
+        ChooseRoundSpawns();
+        System.Array.Clear(mailboxProtectedUntil, 0, HouseCount);
+        if (parcelPool) parcelPool.ResetRound();
         started = true; finished = false; stamina = 100; vertical = 0; rollUntil = 0; crouching = false; startedAt = Time.time;
         selectedSlot = 0; captureTarget = -1; captureStarted = 0; armedGloveSlot = -1; nextAttackAt = 0; hammerSlot = -1;
         ClearSlimePuddles(); ClearIceCreamMarks(); foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
         playerItems = new DeliveryItemState { safePosition = SpawnPosition(0) };
         player.enabled = false; player.transform.position = SpawnPosition(0); player.enabled = true;
+        player.transform.rotation = SpawnRotation(0); lookPitch = 12;
         for (var i = 0; i < HouseCount; i++) if (mailboxes[i] != null) { owner[i] = -1; SetMailboxEffectColor(i, Color.white); }
         for (var i = 0; i < SlotCount; i++) ClearSlot(i);
         for (var i = 0; i < BotCount; i++) if (bots[i] != null)
-        { botControllers[i].enabled = false; bots[i].transform.position = SpawnPosition(i + 1); botControllers[i].enabled = true; botItems[i] = new DeliveryItemState { safePosition = SpawnPosition(i + 1) }; botVertical[i] = 0; botTarget[i] = -1; botCaptureStarted[i] = 0; }
+        { botControllers[i].enabled = false; bots[i].transform.SetPositionAndRotation(SpawnPosition(i + 1), SpawnRotation(i + 1)); botControllers[i].enabled = true; botItems[i] = new DeliveryItemState { safePosition = SpawnPosition(i + 1) }; botVertical[i] = 0; botTarget[i] = -1; botCaptureStarted[i] = 0; }
         for (var i = 0; i < pickups.Length; i++) if (pickups[i] != null) { pickupRespawnAt[i] = 0; pickups[i].SetActive(itemPlaytestEnabled); }
-        feedback = "빈손으로 시작합니다."; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+        feedback = "빈손으로 시작합니다.";
+        ResetSpecialPickups();
+        GrantSpecialTestLoadout();
+        Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
     }
     void Finish() { if (focusedTarget) focusedTarget.SetFocus(false, false); focusedTarget = null; interactionReady = false; finished = true; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
     int Score(int id) { var total = 0; for (var i = 0; i < HouseCount; i++) if (owner[i] == id) total++; return total; }
@@ -573,18 +604,25 @@ public sealed class PickupKind : MonoBehaviour { public WeaponKind kind; }
 // Legacy component name retained for existing collision-check tooling, now carries no damage.
 public sealed class BrawlShot : MonoBehaviour
 {
-    public MonsterDeliveryPrototype owner; public WeaponKind kind;
+    MonsterDeliveryPrototype shotOwner;
+    public MonsterDeliveryPrototype owner
+    {
+        get=>shotOwner;
+        set {if(shotOwner)shotOwner.ForgetNetShot(this);shotOwner=value;if(shotOwner)shotOwner.TrackNetShot(this);}
+    }
+    public WeaponKind kind;
     public float maxDistance = float.PositiveInfinity;
     public int sourceId;
     Vector3 launchPosition;
     Rigidbody body; bool impacted;
-    void Awake() { body = GetComponent<Rigidbody>(); launchPosition = transform.position; }
-    void Start() { if (kind != WeaponKind.Slime) Destroy(gameObject, 3); }
+    void Awake() { body = GetComponent<Rigidbody>(); if(body)body.interpolation=RigidbodyInterpolation.Interpolate; launchPosition = transform.position; }
+    void OnDestroy(){if(shotOwner)shotOwner.ForgetNetShot(this);}
+    void Start() { if (kind != WeaponKind.Slime && kind != WeaponKind.AirCannon) Destroy(gameObject, 3); }
     void FixedUpdate()
     {
         if (impacted || body == null) return;
         if ((transform.position - launchPosition).sqrMagnitude >= maxDistance * maxDistance ||
-            kind == WeaponKind.Slime && transform.position.y < -20)
+            (kind == WeaponKind.Slime || kind == WeaponKind.AirCannon) && transform.position.y < -20)
         { gameObject.SetActive(false); Destroy(gameObject); return; }
         var travel = body.linearVelocity * Time.fixedDeltaTime;
         if (travel.sqrMagnitude > .0001f && body.SweepTest(travel.normalized, out var hit, travel.magnitude, QueryTriggerInteraction.Ignore)) Impact(hit.point, hit.collider, hit.normal);
@@ -604,6 +642,7 @@ public sealed class BrawlShot : MonoBehaviour
             owner.ReplicateNetImpact(kind, point, normal, collider);
             if (kind == WeaponKind.FountainPen) owner.FountainPenImpact(collider, point, sourceId, normal);
             else if (kind == WeaponKind.Slime) owner.SlimeImpact(collider, point, sourceId, normal);
+            else if (kind == WeaponKind.AirCannon) owner.AirCannonImpact(point, sourceId, normal);
             else if (kind == WeaponKind.IceCream) owner.IceCreamImpact(collider, point, sourceId, normal);
             else owner.ItemImpact(kind, point);
         }

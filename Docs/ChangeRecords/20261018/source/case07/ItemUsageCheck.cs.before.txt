@@ -1,0 +1,170 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+
+public static class ItemUsageCheck
+{
+    const BindingFlags Flags=BindingFlags.NonPublic|BindingFlags.Instance;
+    [MenuItem("Tools/Gameplay/Inventory/Verify Limited Uses")]
+    public static void Verify()
+    {
+        if(!EditorApplication.isPlaying)throw new InvalidOperationException("Fresh Play required");
+        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));
+    }
+    static IEnumerator Run(MonsterDeliveryPrototype game)
+    {
+        const string folder="Docs/ChangeRecords/20261018/";
+        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
+        void Set(string n,object v)=>type.GetField(n,Flags).SetValue(game,v);
+        object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
+        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Real Play use/cancel/depletion paths. Network uses real host initialization, controlled player records and serialized participant frames; not separate network processes."};
+        void Check(bool ok,string text){log.Add((ok?"PASS ":"FAIL ")+text);}
+        int[] limits={0,3,3,2,2,2,1,1,1,2};
+        var inventory=(WeaponKind[])Get("inventory");var ammo=(int[])Get("weaponAmmo");
+        var player=(CharacterController)Get("player");var cam=(Camera)Get("cam");
+        var mailboxes=(GameObject[])Get("mailboxes");var originalMailbox=mailboxes[0];var owners=(int[])Get("owner");
+        GameObject mailbox=null,floor=null;bool oldEnabled=game.enabled;
+        void ClearLocal(){for(int i=0;i<3;i++)Call("ClearSlot",i);Set("playerItems",new DeliveryItemState());Set("nextAttackAt",0f);Set("rollUntil",0f);}
+        void Equip(int kind){ClearLocal();Call("AddWeapon",(WeaponKind)kind);Call("UpdateHeldWeapon");}
+        void Age(string field,float age){Set(field,Time.time-age);}
+        void AdvanceLocal(int kind,bool finish)
+        {
+            if(kind==1){Age("boxingStarted",finish?.5f:.17f);Call("UpdateGlovePush");}
+            else if(kind==3){Age("hammerStarted",finish?.5f:.19f);Call("UpdateToyHammerSwing");}
+            else if(kind==2){if(finish)Call("FinishPlungerThrow");else{Age("plungerStarted",.13f);Call("UpdatePlungerThrow");}}
+            else if(kind==4||kind==5||kind==9){Age("handThrowStarted",finish?.56f:.23f);Call("UpdateHandThrow");}
+        }
+        try
+        {
+            game.enabled=false;game.NetworkScreens=false;game.mapEditMode=false;game.thirdPersonPreview=false;
+            Set("started",true);Set("finished",false);EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
+            floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(100,.2f,100);
+            player.enabled=false;player.transform.SetPositionAndRotation(new Vector3(0,151,0),Quaternion.identity);player.enabled=true;
+            cam.transform.rotation=Quaternion.Euler(-30,0,0);Call("PositionCamera");
+            for(int kind=1;kind<=9;kind++)
+            {
+                Equip(kind);Check(ammo[0]==limits[kind]&&(string)Call("ItemRemainingText",0)==limits[kind]+"회",((WeaponKind)kind)+" offline grant and HUD match limit "+limits[kind]);
+                if(kind==8)continue;
+                for(int use=1;use<=limits[kind];use++)
+                {
+                    Set("nextAttackAt",0f);Call("UseWeapon");
+                    if(kind!=6&&kind!=7)Check(ammo[0]==limits[kind]-use+1,((WeaponKind)kind)+" windup does not spend before release/hit "+use);
+                    AdvanceLocal(kind,false);
+                    Check(ammo[0]==limits[kind]-use,((WeaponKind)kind)+" offline spends exactly one use "+use);
+                    if(kind!=6&&kind!=7)
+                    {
+                        Check(inventory[0]==(WeaponKind)kind,((WeaponKind)kind)+" stays through current motion/return "+use);
+                        AdvanceLocal(kind,true);
+                    }
+                }
+                Check(inventory[0]==WeaponKind.None,((WeaponKind)kind)+" offline slot clears on final completion");
+                if(kind==6||kind==7){var s=(DeliveryItemState)Get("playerItems");Check(kind==6?s.speedUntil>Time.time:s.shieldUntil>Time.time,((WeaponKind)kind)+" active effect survives item consumption");}
+            }
+            foreach(int kind in new[]{1,2,3,4,5,9})
+            {
+                Equip(kind);Call("UseWeapon");((DeliveryItemState)Get("playerItems")).stunUntil=Time.time+1;
+                AdvanceLocal(kind,false);Check(ammo[0]==limits[kind],((WeaponKind)kind)+" interrupted windup preserves use");
+            }
+            Equip(8);mailbox=GameObject.CreatePrimitive(PrimitiveType.Cube);mailbox.name="Item Usage Review Mailbox";
+            mailbox.transform.position=((DeliveryRobotVisual)Get("playerVisual")).EyePosition+Vector3.forward*2;mailbox.transform.localScale=new Vector3(.5f,.8f,.4f);
+            var interaction=mailbox.AddComponent<InteractionTarget>();mailboxes[0]=mailbox;owners[0]=-1;
+            Set("focusedTarget",interaction);Set("interactionReady",true);Set("captureTarget",0);Age("captureStarted",.7f);
+            var keyboard=Keyboard.current;InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.E));InputSystem.Update();Call("UpdateCapture",keyboard);
+            Check(ammo[0]==1&&owners[0]==-1,"offline work gloves preserve use during incomplete capture");
+            Age("captureStarted",1.51f);Call("UpdateCapture",keyboard);
+            Check(owners[0]==0&&ammo[0]==0&&inventory[0]==WeaponKind.None,"offline work gloves consume only after successful capture");
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState());InputSystem.Update();
+            Call("ClearActiveNetShots");Call("ClearSlimePuddles");Call("ClearIceCreamMarks");
+            ClearLocal();Call("AddWeapon",WeaponKind.BoxingGloves);Call("AddWeapon",WeaponKind.IceCream);Call("AddWeapon",WeaponKind.WorkGloves);Set("selectedSlot",0);cam.transform.rotation=Quaternion.identity;Call("PositionCamera");
+            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_offline.png");game.enabled=false;
+            game.NetworkScreens=true;game.HostRoom();yield return null;
+            var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
+            for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
+            game.StartNetRound();
+            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==4,"protocol4 requires peers with use counters");
+            Check(players.All(p=>p.ammo.All(x=>x==0)&&p.items.All(x=>x==0)),"network round starts with empty items and zero counters");
+            for(int g=0;g<4;g++)
+            {
+                var actor=g==0?player:((CharacterController[])Get("botControllers"))[g-1];actor.enabled=false;actor.transform.position=new Vector3(g*8,151,0);actor.enabled=true;
+                ((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[g]=new MonsterDeliveryPrototype.NetInput{pitch=-40};
+            }
+            foreach(int g in new[]{0,1})for(int kind=1;kind<=9;kind++)
+            {
+                Call("ClearNetPlungers");var p=players[g];p.selected=0;p.cooldown=0;p.actionKind=0;p.actionAt=-10;
+                if(g==0)Set("playerItems",new DeliveryItemState());else ((DeliveryItemState[])Get("botItems"))[g-1]=new DeliveryItemState();
+                Call("GiveNetItem",g,0,kind);Check(p.ammo[0]==limits[kind],"server player"+g+" grants "+(WeaponKind)kind+" with correct uses");
+                if(kind==8){Call("UseNetWeapon",g);Check(p.ammo[0]==1,"work gloves click is passive and does not spend");continue;}
+                for(int use=1;use<=limits[kind];use++)
+                {
+                    p.cooldown=0;Call("UseNetWeapon",g);
+                    if(kind==1||kind==3)
+                    {
+                        foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);
+                        Call("UpdateNetMelee");Call("UpdateNetMelee");
+                    }
+                    if(kind==4||kind==5||kind==9)
+                    {
+                        p.actionAt=Time.time-.23f;
+                        foreach(var a in (IEnumerable)Get("netHandThrows"))a.GetType().GetField("started").SetValue(a,p.actionAt);
+                        Call("UpdateNetHandThrows");Call("UpdateNetHandThrows");
+                    }
+                    Check(p.ammo[0]==limits[kind]-use,"server player"+g+" "+(WeaponKind)kind+" spends once "+use);
+                    Call("CleanupNetItemUses");
+                    if(kind!=6&&kind!=7)Check(p.items[0]==kind,"server final action/return is retained "+g+" "+(WeaponKind)kind+" "+use);
+                    if(kind==2)
+                    {
+                        foreach(var a in (IEnumerable)Get("netPlungers")){var t=a.GetType();t.GetField("returning").SetValue(a,true);((GameObject)t.GetField("model").GetValue(a)).transform.position=g==0?((DeliveryRobotVisual)Get("playerVisual")).EyePosition:((DeliveryRobotVisual[])Get("botVisuals"))[g-1].EyePosition;}
+                        Call("UpdateNetPlungers");
+                    }
+                    p.actionAt=Time.time-2;Call("CleanupNetItemUses");
+                }
+                Check(p.items[0]==0,"server clears final slot "+g+" "+(WeaponKind)kind);
+                float action=p.actionAt;p.cooldown=0;Call("UseNetWeapon",g);Check(p.actionAt==action,"depleted item cannot be reused "+g+" "+(WeaponKind)kind);
+            }
+            foreach(int kind in new[]{1,3,4,5,9})
+            {
+                var p=players[1];p.cooldown=0;p.selected=0;((DeliveryItemState[])Get("botItems"))[0]=new DeliveryItemState();Call("GiveNetItem",1,0,kind);Call("UseNetWeapon",1);
+                ((DeliveryItemState[])Get("botItems"))[0].stunUntil=Time.time+1;
+                foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);
+                Call("UpdateNetMelee");Call("UpdateNetHandThrows");
+                Check(p.ammo[0]==limits[kind],"server canceled windup preserves "+(WeaponKind)kind+" uses");
+            }
+            Set("playerItems",new DeliveryItemState());var host=players[0];host.cooldown=0;host.selected=0;
+            Call("GiveNetItem",0,0,1);Call("GiveNetItem",0,1,1);Call("UseNetWeapon",0);host.selected=1;
+            foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);Call("UpdateNetMelee");
+            Check(host.ammo[0]==3&&host.ammo[1]==3,"switching to a duplicate item cannot spend the wrong slot");
+            host.selected=0;host.cooldown=0;host.ammo[0]=0;float oldAction=host.actionAt;Call("UseNetWeapon",0);Check(host.actionAt==oldAction,"zero-use item cannot start a new action before cleanup");
+            Call("GiveNetItem",0,0,8);host.selected=0;host.target=0;host.captureAt=Time.time-.7f;owners[0]=-1;
+            Set("playerItems",new DeliveryItemState());var netInput=((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[0];netInput.pitch=0;netInput.yaw=0;
+            mailbox.transform.position=((DeliveryRobotVisual)Get("playerVisual")).EyePosition+Vector3.forward*2;Physics.SyncTransforms();Call("NetCaptureAndPickup",0,true);
+            Check(host.ammo[0]==1&&owners[0]==-1,"server incomplete capture does not spend work gloves");
+            host.captureAt=Time.time-1.51f;Call("NetCaptureAndPickup",0,true);
+            Check(owners[0]==0&&host.items[0]==0&&host.ammo[0]==0,"server successful capture spends work gloves");
+            Call("GiveNetItem",1,0,2);Call("ConsumeNetItem",1,0,true);Call("GiveNetItem",1,1,5);Call("ConsumeNetItem",1,1,true);Call("GiveNetItem",1,2,8);
+            Call("ClearNetPlungers");Call("ClearActiveNetShots");
+            var frameType=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var frame=Activator.CreateInstance(frameType);
+            void Field(string n,object v)=>frameType.GetField(n).SetValue(frame,v);
+            Field("players",players);Field("own",1);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("teamSize",2);Field("remaining",180f);Field("owners",Enumerable.Repeat(-1,10).ToArray());Field("parcels",((ParcelSpawnPool)Get("parcelPool")).CaptureSlots());
+            frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),frameType);game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);Call("ApplyNetFrame",frame);Call("UpdateHeldWeapon");
+            Check(ammo.SequenceEqual(new[]{2,1,1}),"serialized participant frame restores remaining uses 2/1/1");
+            Check((string)Call("ItemRemainingText",0)=="2회"&&(string)Call("ItemRemainingText",1)=="1회","participant HUD shows finite server counters");
+            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_participant.png");game.enabled=false;
+        }
+        finally
+        {
+            File.WriteAllLines(folder+"evidence/item-usage-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
+            if(Keyboard.current!=null){InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState());InputSystem.Update();}
+            game.LeaveRoom();game.enabled=oldEnabled;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
+        }
+        Debug.Log("ITEM_USAGE: "+log.Count(x=>x.StartsWith("PASS "))+" PASS / "+log.Count(x=>x.StartsWith("FAIL "))+" FAIL");
+        if(log.Any(x=>x.StartsWith("FAIL ")))throw new Exception("ITEM_USAGE_FAILED");
+    }
+    static void Capture(string path){var image=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,image.EncodeToPNG());}finally{UnityEngine.Object.Destroy(image);}}
+}

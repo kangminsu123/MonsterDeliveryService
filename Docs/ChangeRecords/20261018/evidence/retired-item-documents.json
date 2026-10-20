@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-18",
+  "removed": [
+    {
+      "path": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-10-17\\dbslx\\outputs\\ItemUsageReport_20261006.docx",
+      "sha256": "b9f941b3f40e47766d2f5cda40d77f3d449441bf9fc5b2da0c58170570d3158e",
+      "action": "deleted at explicit user request"
+    },
+    {
+      "path": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-10-17\\dbslx\\outputs\\ItemUsageReport_20261006.md",
+      "sha256": "d316fc6248c490f05aae913b9d46b936ef3ecade3eb571630da675907f85640e",
+      "action": "deleted at explicit user request"
+    },
+    {
+      "path": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-10-17\\dbslx\\outputs\\ItemTroubleshooting_20261015.docx",
+      "sha256": "d946c7f35a62239a3e32ad63a3cfdf6d206a66f8ecacd6859fad89b9aecda398",
+      "action": "deleted at explicit user request"
+    },
+    {
+      "path": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-18\\https-github-com-kangminsu123-monsterdeliveryservice-git\\MonsterDeliveryService\\Docs\\ItemTroubleshooting_20261015\\ItemTroubleshooting_20261015.docx",
+      "sha256": "d946c7f35a62239a3e32ad63a3cfdf6d206a66f8ecacd6859fad89b9aecda398",
+      "action": "deleted at explicit user request"
+    },
+    {
+      "path": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-09-18\\https-github-com-kangminsu123-monsterdeliveryservice-git\\MonsterDeliveryService\\Docs\\ItemTroubleshooting_20261015\\index.html",
+      "sha256": "ad75c1f335a0aa101a630138111382e602594a0f7f706d92965d592429819e1f",
+      "action": "deleted at explicit user request"
+    }
+  ],
+  "current_document": "Docs/ChangeRecords/20261018/ItemUsageReport_20261018.docx",
+  "retained": "raw change evidence and cumulative case history"
+}

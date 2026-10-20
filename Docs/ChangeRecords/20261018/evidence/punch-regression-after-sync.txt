@@ -1,0 +1,31 @@
+2026-10-18T02:10:13.2368892+09:00
+SampleScene, controlled local network-state reproduction (not a remote connection).
+PASS swing 0 gloves stay visible during windup
+swing=0 forward=0.5500,0.0000
+PASS swing 0 extends only right hand
+PASS swing 0 returns to guard
+PASS swing 1 gloves stay visible during windup
+swing=1 forward=0.0000,0.5500
+PASS swing 1 extends only left hand
+PASS swing 1 returns to guard
+PASS swing 2 gloves stay visible during windup
+swing=2 forward=0.5500,0.0000
+PASS swing 2 extends only right hand
+PASS swing 2 returns to guard
+PASS swing 3 gloves stay visible during windup
+swing=3 forward=0.0000,0.5500
+PASS swing 3 extends only left hand
+PASS swing 3 returns to guard
+PASS only four accepted glove swings advance hand alternation
+PASS cooldown rejection does not change hand or restart animation
+PASS stunned input does not advance alternation
+PASS switching from another item action does not invent a glove punch
+PASS stun interrupts visible punch
+PASS dash interrupts visible punch
+PASS 600 idle network poses retain rotation fix
+PASS remote right punch moves only matching arm
+PASS remote glove stays attached to animated arm
+PASS remote left punch moves only matching arm
+PASS remote glove stays attached to animated arm
+PASS snapshot JSON preserves accepted hand and action metadata
+PASS client global slot 1 displays left punch on its local first-person model

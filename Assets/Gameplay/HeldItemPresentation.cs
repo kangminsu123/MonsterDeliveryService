@@ -8,7 +8,7 @@ public sealed partial class MonsterDeliveryPrototype
     DeliveryHeldItem heldItem;
     Camera heldCamera;
 
-    static bool HasHeldModel(WeaponKind kind) => kind != WeaponKind.None && kind != WeaponKind.RunningShoes && kind != WeaponKind.BubbleWrap;
+    static bool HasHeldModel(WeaponKind kind) => kind != WeaponKind.None && kind != WeaponKind.RunningShoes && kind != WeaponKind.BubbleWrap && kind != WeaponKind.LifeJacket;
 
     void UpdateHeldWeapon()
     {

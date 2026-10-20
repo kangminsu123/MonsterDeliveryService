@@ -34,7 +34,9 @@ public sealed partial class MonsterDeliveryPrototype
     static void MoveHoverActor(CharacterController actor, Vector3 motion, ref float falling)
     {
         var next = actor.transform.position + motion;
-        if (falling <= 0 && TryHoverGround(actor, next, out var ground) &&
+        // A long frame can put the next probe below the floor. Check from the current height first.
+        var probe = new Vector3(next.x, Mathf.Max(next.y, actor.transform.position.y), next.z);
+        if (falling <= 0 && (TryHoverGround(actor, probe, out var ground) || TryHoverGround(actor, next, out ground)) &&
             next.y <= ground.point.y + DeliveryRobotVisual.HoverClearance)
         {
             motion.y = ground.point.y + DeliveryRobotVisual.HoverClearance - actor.transform.position.y;

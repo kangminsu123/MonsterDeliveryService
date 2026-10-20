@@ -2,21 +2,19 @@ using UnityEngine;
 
 public sealed partial class MonsterDeliveryPrototype
 {
-    const float HammerRange = 3.5f, HammerRadius = .32f, HammerHitDelay = .18f, HammerDuration = .48f, HammerStun = 1.2f;
+    const float HammerRange = 3.5f, HammerRadius = .32f, HammerHitDelay = .18f, HammerDuration = .48f, HammerStun = 5f;
     int hammerSlot = -1;
     float hammerStarted;
     bool hammerHit;
     readonly DeliveryStunEffect[] stunEffects = new DeliveryStunEffect[BotCount + 1];
 
-    float HammerSwingAmount
+    float HammerSwingAmount=>HammerSwingAt(Time.time-hammerStarted);
+    static float HammerSwingAt(float age)
     {
-        get
-        {
-            float age = Time.time - hammerStarted;
-            if (age < .09f) return Mathf.Lerp(0, -.3f, Mathf.SmoothStep(0, 1, age / .09f));
-            if (age < HammerHitDelay) return Mathf.Lerp(-.3f, 1, Mathf.SmoothStep(0, 1, (age - .09f) / (HammerHitDelay - .09f)));
-            return 1 - Mathf.SmoothStep(0, 1, (age - HammerHitDelay) / (HammerDuration - HammerHitDelay));
-        }
+        if(age<0||age>=HammerDuration)return 0;
+        if (age < .09f) return Mathf.Lerp(0, -.3f, Mathf.SmoothStep(0, 1, age / .09f));
+        if (age < HammerHitDelay) return Mathf.Lerp(-.3f, 1, Mathf.SmoothStep(0, 1, (age - .09f) / (HammerHitDelay - .09f)));
+        return 1 - Mathf.SmoothStep(0, 1, (age - HammerHitDelay) / (HammerDuration - HammerHitDelay));
     }
 
     void StartToyHammerSwing()
@@ -34,7 +32,7 @@ public sealed partial class MonsterDeliveryPrototype
         if (!started || finished || mapEditMode || Selected != WeaponKind.ToyHammer || playerItems.Stunned(Time.time) || Time.time < rollUntil)
         { FinishToyHammerSwing(); return; }
         float age = Time.time - hammerStarted;
-        if (!hammerHit && age >= HammerHitDelay) { hammerHit = true; HitToyHammerTarget(); }
+        if (!hammerHit && age >= HammerHitDelay) { hammerHit = true; ConsumeSelectedUse(true); HitToyHammerTarget(); }
         if (age >= HammerDuration) FinishToyHammerSwing();
     }
 
@@ -58,23 +56,29 @@ public sealed partial class MonsterDeliveryPrototype
     {
         if (heldKind != WeaponKind.ToyHammer || !heldItem) return;
         float amount = hammerSlot >= 0 ? HammerSwingAmount : 0;
-        if (!thirdPersonPreview)
+        PoseHammerSwing(heldItem,playerVisual,amount,!thirdPersonPreview);
+    }
+    static void PoseHammerSwing(DeliveryHeldItem item,DeliveryRobotVisual visual,float amount,bool firstPerson)
+    {
+        if (firstPerson)
         {
-            heldItem.FirstPerson();
-            heldItem.transform.localPosition += new Vector3(-.25f, .15f, .12f) * amount;
-            heldItem.transform.localRotation *= Quaternion.Euler(95 * amount, 0, -25 * amount);
+            item.FirstPerson();
+            item.transform.localPosition += new Vector3(-.25f, .15f, .12f) * amount;
+            item.transform.localRotation *= Quaternion.Euler(95 * amount, 0, -25 * amount);
         }
-        else if (hammerSlot >= 0)
+        else
         {
-            playerVisual.PushArm(amount * 2.8f, true); heldItem.FollowBones();
-            heldItem.transform.localRotation *= Quaternion.Euler(75 * amount, 0, -20 * amount);
+            if(amount!=0)visual.PushArm(amount * 2.8f, true);item.FollowBones();
+            item.transform.localRotation *= Quaternion.Euler(75 * amount, 0, -20 * amount);
         }
     }
 
     void FinishToyHammerSwing()
     {
+        int slot = hammerSlot;
         hammerSlot = -1;
         if (heldKind == WeaponKind.ToyHammer && heldItem && !thirdPersonPreview) heldItem.FirstPerson();
+        if (slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
     }
 
     void UpdateStunFX()

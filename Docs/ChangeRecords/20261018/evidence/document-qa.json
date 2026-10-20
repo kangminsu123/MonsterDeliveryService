@@ -1,0 +1,14 @@
+{
+  "pages": 4,
+  "verification": {
+    "punch-after": 25,
+    "punch-connected-host": 3,
+    "punch-connected-client": 3,
+    "rotation-regression": 12
+  },
+  "review": "All four final PNG pages opened: Korean text, before/after comparisons, one-hand motion, real localhost remote arm captures and captions readable with no clipping or blank page.",
+  "renderer": "Packaged render_docx.py failed (missing LibreOffice/temp permission); approved hidden read-only Word COM + bundled Poppler succeeded.",
+  "real_connection": "Two MPPM Editor processes via localhost NGO; scripted input commands and controlled platform/equipment.",
+  "external_pc": "NOT RUN",
+  "build": "NOT RUN"
+}

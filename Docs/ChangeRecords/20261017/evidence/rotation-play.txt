@@ -1,0 +1,6 @@
+2026-10-18T00:01:12.6076264+09:00
+SampleScene Play Mode: simulated connected local player; real PoseNetworkPlayers per frame. No remote connection.
+PASS BoxingGloves actual PoseNetworkPlayers across 180 rendered frames, max drift=0.00000deg
+PASS BoxingGloves third-person / first-person switch recreated presentation without exception
+PASS WorkGloves actual PoseNetworkPlayers across 180 rendered frames, max drift=0.00000deg
+PASS WorkGloves third-person / first-person switch recreated presentation without exception

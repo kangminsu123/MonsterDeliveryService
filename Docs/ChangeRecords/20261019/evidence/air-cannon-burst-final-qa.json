@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-19",
+  "case": "05 final follow-up radius6 and impact burst",
+  "pages": 9,
+  "visually_reviewed_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "review": "All pages opened. Korean text, current6m/protocol12, historical tables, actual floor burst and remote wall effect images legible; no clipping, overflow, blank page or orphan caption.",
+  "counts": {
+    "offline": {
+      "pass": 29,
+      "fail": 0
+    },
+    "special_regression": {
+      "pass": 31,
+      "fail": 0
+    },
+    "row_regression": {
+      "pass": 45,
+      "fail": 0
+    },
+    "host": {
+      "pass": 12,
+      "fail": 0
+    },
+    "client": {
+      "pass": 12,
+      "fail": 0
+    }
+  },
+  "source_hashes_match_tested_code": true,
+  "docx_output_byte_identical": true,
+  "readme_relative_links_valid": true,
+  "renderer": "Packaged renderer attempted; LibreOffice unavailable. Hidden read-only Word PDF export and bundled Poppler succeeded.",
+  "handoff": "Main Unity Play at park five-item row. Task-owned hidden clone39832 closed. Main Console0 errors.",
+  "limits": [
+    "WAN not run",
+    "four-player not run",
+    "release build not rebuilt"
+  ]
+}

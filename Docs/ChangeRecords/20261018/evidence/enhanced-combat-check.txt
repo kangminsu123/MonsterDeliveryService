@@ -1,0 +1,28 @@
+2026-10-18T23:53:25.5982921+09:00
+Actual item use and CharacterController movement on controlled flat floor; network uses host initialized records. Separate-peer test is recorded separately.
+PASS shared glove horizontal impulse44.0908
+PASS shared glove lift impulse14.6969
+PASS actual offline glove hit applies enhanced horizontal impulse
+PASS actual offline glove hit applies enhanced lift
+INFO previous travel/rise=(16.20, 2.65) enhanced=(32.40, 5.33)
+PASS native controller horizontal travel is approximately32.4m
+PASS native controller extra rise is approximately5.4m
+PASS actual controlled travel and rise are approximately twice the previous values
+PASS offline hammer hit stuns5 seconds
+PASS hammer immunity ends2 seconds after5-second stun
+PASS offline ice cream impact freezes3 seconds
+PASS ice cream hit feedback says3 seconds
+PASS shared recovery immunity blocks immediate ice refreeze
+PASS aircap blocks enhanced hammer without stun
+PASS aircap blocks enhanced ice without freeze
+PASS offline ice launch uses forward36 and upward3m/s
+PASS offline plunger aims30m from camera
+PASS slime default uses3
+PASS boxing default remains2
+PASS protocol7 requires updated effects at both peers
+PASS server melee uses shared enhanced BoxingGloves effect
+PASS server melee uses shared enhanced ToyHammer effect
+PASS server ice launch matches offline36m/s plus upward3
+PASS server plunger step never exceeds30m
+PASS server plunger returns at30m rather than15m
+PASS server grants guest3 slime uses

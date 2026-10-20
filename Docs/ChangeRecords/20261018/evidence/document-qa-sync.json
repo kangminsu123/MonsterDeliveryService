@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-18",
+  "pages": 16,
+  "all_pages_visually_reviewed": true,
+  "visual_review": "All16 pages: Korean text, tables, actual captures, chart, captions, page boundaries passed.",
+  "renderer": "Hidden read-only Word COM export plus Poppler. Default renderer failure preserved in renderer-sync.log.",
+  "mapped_requests": 12,
+  "image_links": 15,
+  "all_readme_links_exist": true,
+  "delivered_docx_matches": true,
+  "delivered_docx_sha256": "0447d3fb23c97c629c12fff4750c9bcabcd0a7a1068deffc06294630503d3f5a",
+  "rendered_pages": {
+    "page-01.png": "e60eae4bdd753b167f746f8cc46a0fd8a04c062f13194253c1635952a5dee8e6",
+    "page-02.png": "67185409b7b3badacbe9e3f14ca4b614f3e880133bc1fca0c1a6f1b4431c4dd4",
+    "page-03.png": "dbe3f54de973b37624ef00635af5c4919eb2cc4e8a6286725a7018c75e99ac3f",
+    "page-04.png": "64bbf196acbe40e8dde8df0137300aa70595209fc57f4613f89d0e8347d9b051",
+    "page-05.png": "aa9d597e909d0c4122d34168c88fa32cbe8765c27558c21f5aad1ddfd03d7be7",
+    "page-06.png": "a27f456704ad6d49a38452d3920b72b32e6bb3101b66dad249ca63269ddfdc54",
+    "page-07.png": "1bd76df35c593b91ad5fa92eaf22f4ee3db872393667ebea470e51d03e4b4df4",
+    "page-08.png": "59fb4ac6ea90e9c09a8fef8c3b4882bf8abb023481aa3b674f2a88bd1ea80b3a",
+    "page-09.png": "ddf8e8410c8f35206673ce2ed038f9085b2cf3edc6192efc7050ec3a39c36046",
+    "page-10.png": "f84c184766cd92b9f3d600410f9c9080c6cb03f32a4e48c881431530947a98ab",
+    "page-11.png": "d56ba6685ec915c19e11b7332731f2c7d8fbbdc44e22e48446cb56d431437e78",
+    "page-12.png": "3daffbf1bec8da769547bf6556382604800e4c6e2f0de6a18631c53b89eb02c1",
+    "page-13.png": "a6ad10ff3759ff537c8cfe82a4cc96a67f087b31c4d1a93d03424ab1f5fd66e5",
+    "page-14.png": "ef3f544844aaf8ea6a199a6ea732d5a4eda804903ec7f20ae4fca48b8195898b",
+    "page-15.png": "d12a74c0c916bea228592bc84191faf96d4280504b475e4caaf593c2a749596a",
+    "page-16.png": "fa2f5521f8241d19620be53d4dd55d03594de781fc72d2d5c2ab87695265d82b"
+  },
+  "limitations": [
+    "samePC, application delay/omission simulation; no WAN or physical4player test",
+    "source only, standalone builds unchanged",
+    "allocation counter unsupported, N/A",
+    "single before/after run; no claim that internet ping or total bandwidth improved"
+  ]
+}

@@ -1,0 +1,36 @@
+2026-10-20T13:37:42.3983047+09:00
+Real shared/local/bot/host capture paths. Controlled connected records and serialized participant frames; not separate peer/WAN.
+PASS neutral mailbox is available without20s delay
+PASS first capture succeeds
+PASS successful first capture starts20s protection
+PASS shared guard rejects immediate enemy recapture
+PASS same owner cannot renew protection by interacting
+PASS crosshair HUD shows20-second countdown
+PASS positive fractional second rounds up, never prematurely says0
+PASS recapture succeeds exactly at expiry
+PASS successful recapture starts a new20s protection
+PASS local E cannot precharge progress during protection
+PASS offline bot skips all protected enemy mailboxes
+PASS offline bot finds the sole neutral mailbox across100 target scans
+PASS offline bot can target mailbox as soon as protection expires
+PASS offline restart clears owners and all protection timers
+PASS real crosshair ray focuses locked mailbox but blocks E and ready outline
+PASS crosshair becomes interactable at expiry
+PASS blocked capture does not consume work gloves
+PASS expiry begins fresh progress instead of inheriting time held during lock
+FAIL unlocked work-glove capture consumes one use on success
+FAIL protocol6 separates capture-lock snapshots from old builds
+PASS host new round clears all mailbox protection
+PASS server player0 rejects locked capture without consuming gloves
+PASS server player0 can start progress after expiry
+PASS server player0 captures once, spends gloves and renews20s lock
+PASS server player1 rejects locked capture without consuming gloves
+PASS server player1 can start progress after expiry
+PASS server player1 captures once, spends gloves and renews20s lock
+PASS participant reconstructs server remaining lock without relying on equal clocks
+PASS participant keeps correct global-to-local mailbox owner mapping
+PASS participant HUD uses replicated countdown
+PASS stale frame cannot erase a newer protection state
+PASS malformed timer array rejected before state mutation
+PASS fresh expiry snapshot removes participant lock
+PASS existing shared stun and freeze recovery immunity remains2s;5s is suggestion only

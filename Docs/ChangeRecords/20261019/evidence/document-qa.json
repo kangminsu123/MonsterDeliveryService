@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-19",
+  "document_pages": 2,
+  "viewed_pages": [
+    1,
+    2
+  ],
+  "native_design_render_viewed": true,
+  "native_viewport_viewed": true,
+  "motion_samples_viewed": [
+    1,
+    24,
+    48,
+    96,
+    144
+  ],
+  "isolated_lighting_and_grayscale_viewed": true,
+  "renderer": "Packaged LibreOffice missing, Word COM PDF + bundled Poppler succeeded",
+  "output_docx_matches_record": true,
+  "preview_sha256": "a7d6515ebafb3c8de7613a0c1596690dd20e58ccf0468b7c8b7cc43a7128a583"
+}

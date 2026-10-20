@@ -1,0 +1,6 @@
+2026-10-18T00:29:52.5811020+09:00
+SampleScene, controlled local network-state reproduction (not a remote connection).
+FAIL swing 0 gloves stay visible during windup
+swing=0 forward=0.0000,0.0000
+FAIL swing 0 extends only right hand
+PASS swing 0 returns to guard

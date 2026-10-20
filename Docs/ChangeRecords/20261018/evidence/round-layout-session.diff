@@ -1,0 +1,654 @@
+--- Assets/Gameplay/DeliveryNetwork.cs before this request
++++ Assets/Gameplay/DeliveryNetwork.cs after this request
+@@ -147,7 +147,7 @@
+         ResetNetPrediction(true);
+         ResetNetDiagnostics();
+         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
+-        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 4, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
++        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 5, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
+         netManager.ConnectionApprovalCallback = (request, response) =>
+         {
+@@ -289,22 +289,22 @@
+         ClearActiveNetShots();
+         Array.Fill(owner,-1); for(int i=0;i<10;i++) SetMailboxEffectColor(i,Color.white);
+         if (parcelPool) parcelPool.ResetRound();
++        ChooseRoundSpawns();
+         for(int g=0;g<4;g++)
+         {
+             var p=netPlayers[g]; if(p==null||!p.connected) continue;
+             var actor=ActorController(g); actor.gameObject.SetActive(true); actor.enabled=false;
+-            actor.transform.position = new Vector3(p.team==0 ? -5 : 5,1,(g/2)*3-1.5f); actor.enabled=true;
+-            actor.transform.rotation=Quaternion.Euler(0,p.team==0?90:270,0);
++            actor.transform.SetPositionAndRotation(SpawnPosition(g),SpawnRotation(g)); actor.enabled=true;
+             var state=new DeliveryItemState { safePosition=actor.transform.position };
+             if(g==0)playerItems=state;else botItems[g-1]=state;
+             p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new int[SlotCount];p.ammo=new int[SlotCount];p.selected=0;p.actionAt=-10;
+-            netInputs[g]=new NetInput {yaw=p.team==0?90:270,slot=0};
++            netInputs[g]=new NetInput {yaw=actor.transform.eulerAngles.y,slot=0};
+             p.used=p.dashed=p.dropped=p.inputAck=0;p.dashRemaining=0;
+             p.boxingPunches=p.actionKind=p.actionSlot=0;
+             p.throwReleased=p.plungerFlying=false;
+         }
+         ResetNetPrediction();
+-        netLocalInput=new NetInput {yaw=netPlayers[0].team==0?90:270,slot=0};
++        netLocalInput=new NetInput {yaw=ActorController(0).transform.eulerAngles.y,slot=0};
+         RoomState=RoomPhase.Playing;started=true;finished=false;netRoundUntil=Time.time+roundSeconds;netPhaseUntil=0; netPause=false;
+         SyncHostInventory(); NetBroadcast();
+         Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;
+@@ -396,6 +396,7 @@
+             if(NetPlaying&&g!=netOwn){netRemoteTargets[g]=p.position;netRemoteYaws[g]=p.yaw;if(starting){a.transform.SetPositionAndRotation(p.position,Quaternion.Euler(0,p.yaw,0));}}
+             p.actionAt=Time.time-p.actionAge;p.dashUntil=Time.time+p.dashRemaining;
+             var state=ActorState(l);bool freshInk=p.ink>0&&state.visionBlockedUntil<=Time.time;
++            if(starting)state.safePosition=p.position;
+             state.stunUntil=Time.time+p.stun;state.frozenUntil=Time.time+p.frozen;state.shieldUntil=Time.time+p.shield;state.shieldBrokenAt=p.shieldBreak<1?Time.time-p.shieldBreak:float.NegativeInfinity;
+             state.speedUntil=Time.time+p.speed;state.slowUntil=Time.time+p.slow;state.visionBlockedUntil=Time.time+p.ink;
+             if(freshInk)ShowFountainInkHit(l,a.bounds.center);
+--- Assets/Gameplay/DeliveryNetworkUI.cs before this request
++++ Assets/Gameplay/DeliveryNetworkUI.cs after this request
+@@ -49,7 +49,7 @@
+                 netAddress=RoomField(new Rect(w-680,587,520,60),netAddress,"MD-… 또는 로컬 접속 주소");
+                 if(RoomButton(new Rect(w-680,670,520,70),"방에 참가하기"))JoinRoom(netAddress);
+                 RoomText(new Rect(w-680,770,520,62),"옷 색은 입장할 때 자동으로 배정됩니다.\n모든 참가자가 서로 다른 색으로 만나요.",20,new Color(.6f,.7f,.8f));
+-                if(NetDevelopment&&RoomButton(new Rect(110,h-170,290,60),"혼자 탐색 · 개발용")){NetworkScreens=false;started=true;finished=false;for(int i=0;i<3;i++)bots[i].SetActive(i==0);PositionCamera();Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
++                if(NetDevelopment&&RoomButton(new Rect(110,h-170,290,60),"혼자 탐색 · 개발용")){NetworkScreens=false;Begin();for(int i=0;i<3;i++)bots[i].SetActive(i==0);UpdateCamera();Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
+                 if(RoomButton(new Rect(425,h-170,180,60),"종료"))Application.Quit();
+             }
+             else if(RoomState==RoomPhase.Connecting)
+--- Assets/Gameplay/HoverMovement.cs before this request
++++ Assets/Gameplay/HoverMovement.cs after this request
+@@ -34,7 +34,9 @@
+     static void MoveHoverActor(CharacterController actor, Vector3 motion, ref float falling)
+     {
+         var next = actor.transform.position + motion;
+-        if (falling <= 0 && TryHoverGround(actor, next, out var ground) &&
++        // A long frame can put the next probe below the floor. Check from the current height first.
++        var probe = new Vector3(next.x, Mathf.Max(next.y, actor.transform.position.y), next.z);
++        if (falling <= 0 && (TryHoverGround(actor, probe, out var ground) || TryHoverGround(actor, next, out ground)) &&
+             next.y <= ground.point.y + DeliveryRobotVisual.HoverClearance)
+         {
+             motion.y = ground.point.y + DeliveryRobotVisual.HoverClearance - actor.transform.position.y;
+--- Assets/Editor/ItemUsageCheck.cs before this request
++++ Assets/Editor/ItemUsageCheck.cs after this request
+@@ -26,7 +26,7 @@
+         object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
+         var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Real Play use/cancel/depletion paths. Network uses real host initialization, controlled player records and serialized participant frames; not separate network processes."};
+         void Check(bool ok,string text){log.Add((ok?"PASS ":"FAIL ")+text);}
+-        int[] limits={0,3,3,2,2,2,1,1,1,2};
++        int[] limits={0,2,1,1,2,1,1,1,1,1};
+         var inventory=(WeaponKind[])Get("inventory");var ammo=(int[])Get("weaponAmmo");
+         var player=(CharacterController)Get("player");var cam=(Camera)Get("cam");
+         var mailboxes=(GameObject[])Get("mailboxes");var originalMailbox=mailboxes[0];var owners=(int[])Get("owner");
+@@ -83,12 +83,12 @@
+             InputSystem.QueueStateEvent(keyboard,new KeyboardState());InputSystem.Update();
+             Call("ClearActiveNetShots");Call("ClearSlimePuddles");Call("ClearIceCreamMarks");
+             ClearLocal();Call("AddWeapon",WeaponKind.BoxingGloves);Call("AddWeapon",WeaponKind.IceCream);Call("AddWeapon",WeaponKind.WorkGloves);Set("selectedSlot",0);cam.transform.rotation=Quaternion.identity;Call("PositionCamera");
+-            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_offline.png");game.enabled=false;
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_balance_offline.png");game.enabled=false;
+             game.NetworkScreens=true;game.HostRoom();yield return null;
+             var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
+             for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
+             game.StartNetRound();
+-            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==4,"protocol4 requires peers with use counters");
++            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==5,"protocol5 requires the same100/50 layout and use limits");
+             Check(players.All(p=>p.ammo.All(x=>x==0)&&p.items.All(x=>x==0)),"network round starts with empty items and zero counters");
+             for(int g=0;g<4;g++)
+             {
+@@ -139,7 +139,7 @@
+             Set("playerItems",new DeliveryItemState());var host=players[0];host.cooldown=0;host.selected=0;
+             Call("GiveNetItem",0,0,1);Call("GiveNetItem",0,1,1);Call("UseNetWeapon",0);host.selected=1;
+             foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);Call("UpdateNetMelee");
+-            Check(host.ammo[0]==3&&host.ammo[1]==3,"switching to a duplicate item cannot spend the wrong slot");
++            Check(host.ammo[0]==2&&host.ammo[1]==2,"switching to a duplicate item cannot spend the wrong slot");
+             host.selected=0;host.cooldown=0;host.ammo[0]=0;float oldAction=host.actionAt;Call("UseNetWeapon",0);Check(host.actionAt==oldAction,"zero-use item cannot start a new action before cleanup");
+             Call("GiveNetItem",0,0,8);host.selected=0;host.target=0;host.captureAt=Time.time-.7f;owners[0]=-1;
+             Set("playerItems",new DeliveryItemState());var netInput=((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[0];netInput.pitch=0;netInput.yaw=0;
+@@ -147,19 +147,19 @@
+             Check(host.ammo[0]==1&&owners[0]==-1,"server incomplete capture does not spend work gloves");
+             host.captureAt=Time.time-1.51f;Call("NetCaptureAndPickup",0,true);
+             Check(owners[0]==0&&host.items[0]==0&&host.ammo[0]==0,"server successful capture spends work gloves");
+-            Call("GiveNetItem",1,0,2);Call("ConsumeNetItem",1,0,true);Call("GiveNetItem",1,1,5);Call("ConsumeNetItem",1,1,true);Call("GiveNetItem",1,2,8);
++            Call("GiveNetItem",1,0,2);Call("GiveNetItem",1,1,5);Call("GiveNetItem",1,2,8);
+             Call("ClearNetPlungers");Call("ClearActiveNetShots");
+             var frameType=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var frame=Activator.CreateInstance(frameType);
+             void Field(string n,object v)=>frameType.GetField(n).SetValue(frame,v);
+             Field("players",players);Field("own",1);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("teamSize",2);Field("remaining",180f);Field("owners",Enumerable.Repeat(-1,10).ToArray());Field("parcels",((ParcelSpawnPool)Get("parcelPool")).CaptureSlots());
+             frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),frameType);game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);Call("ApplyNetFrame",frame);Call("UpdateHeldWeapon");
+-            Check(ammo.SequenceEqual(new[]{2,1,1}),"serialized participant frame restores remaining uses 2/1/1");
+-            Check((string)Call("ItemRemainingText",0)=="2회"&&(string)Call("ItemRemainingText",1)=="1회","participant HUD shows finite server counters");
+-            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_participant.png");game.enabled=false;
++            Check(ammo.SequenceEqual(new[]{1,1,1}),"serialized participant frame restores remaining uses 1/1/1");
++            Check((string)Call("ItemRemainingText",0)=="1회"&&(string)Call("ItemRemainingText",1)=="1회","participant HUD shows finite server counters");
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_balance_participant.png");game.enabled=false;
+         }
+         finally
+         {
+-            File.WriteAllLines(folder+"evidence/item-usage-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
++            File.WriteAllLines(folder+"evidence/item-usage-balance-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
+             if(Keyboard.current!=null){InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState());InputSystem.Update();}
+             game.LeaveRoom();game.enabled=oldEnabled;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
+         }
+--- Assets/Gameplay/MonsterDeliveryPrototype.cs before this request
++++ Assets/Gameplay/MonsterDeliveryPrototype.cs after this request
+@@ -74,9 +74,11 @@
+     {
+         cam = Camera.main ?? new GameObject("Main Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
+         if (mapEditMode) { cam.transform.position = new Vector3(0, 95, -110); cam.transform.rotation = Quaternion.Euler(mapCameraPitch, mapCameraYaw, 0); return; }
++        ChooseRoundSpawns();
+         player = new GameObject("Player").AddComponent<CharacterController>();
+         player.transform.position = SpawnPosition(0);
+         ConfigureHoverBody(player); playerItems.safePosition = SpawnPosition(0);
++        player.transform.rotation = SpawnRotation(0);
+         var robotPrefab = Resources.Load<GameObject>("Characters/DeliveryRobotPlayer");
+         if (!robotPrefab) throw new System.InvalidOperationException("DeliveryRobotPlayer prefab is missing.");
+         playerVisual = Instantiate(robotPrefab, player.transform, false).GetComponent<DeliveryRobotVisual>();
+@@ -98,8 +100,7 @@
+         if (itemPlaytestEnabled) CreatePickups();
+         var light = FindAnyObjectByType<Light>(); if (light != null) { light.intensity = .45f; light.color = new Color(.32f, .42f, 1); }
+     }
+-    Vector3 TruckPosition(int id) => new[] { new Vector3(-116, 0, 0), new Vector3(0, 0, 96), new Vector3(116, 0, 0), new Vector3(0, 0, -96) }[id];
+-    Vector3 SpawnPosition(int id) => id == 0 ? new Vector3(0, 1, 0) : TruckPosition(id) - TruckPosition(id).normalized * 8f + Vector3.up;
++    Vector3 SpawnPosition(int id) => roundSpawns[id];
+     void CreateCapturePad(int i)
+     {
+         var p = new[] { new Vector3(0, .06f, 0), new Vector3(-108, .06f, 62), new Vector3(-48, .06f, 58), new Vector3(42, .06f, 58), new Vector3(106, .06f, 58), new Vector3(-106, .06f, -48), new Vector3(-46, .06f, -56), new Vector3(42, .06f, -56), new Vector3(108, .06f, -44), new Vector3(94, .06f, -100) }[i];
+@@ -110,7 +111,7 @@
+     void CreateBot(int i)
+     {
+         bots[i] = new GameObject("Rival " + (i + 1));
+-        bots[i].transform.position = mapExploreMode ? player.transform.position + new Vector3(4, 0, 4) : SpawnPosition(i + 1);
++        bots[i].transform.SetPositionAndRotation(SpawnPosition(i + 1), SpawnRotation(i + 1));
+         botControllers[i] = bots[i].AddComponent<CharacterController>(); ConfigureHoverBody(botControllers[i]);
+         botVisuals[i] = Instantiate(Resources.Load<GameObject>("Characters/DeliveryRobotPlayer"), bots[i].transform, false).GetComponent<DeliveryRobotVisual>();
+         botVisuals[i].SetColor(colors[i + 1]);
+@@ -295,8 +296,8 @@
+             // No invisible contact damage or free bot attacks while items are staged.
+         }
+     }
+-    void KeepPlayerOutOfEnemySpawn() { for (var id = 1; id <= BotCount; id++) { var away = player.transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { player.Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); feedback = "상대 택배차 안전구역에는 들어갈 수 없습니다."; return; } } }
+-    void KeepBotOutOfEnemySpawn(int bot) { for (var id = 0; id <= BotCount; id++) if (id != bot + 1) { var away = bots[bot].transform.position - TruckPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { botControllers[bot].Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); return; } } }
++    void KeepPlayerOutOfEnemySpawn() { for (var id = 1; id <= BotCount; id++) { var away = player.transform.position - SpawnPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { player.Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); feedback = "상대 시작 지역에는 들어갈 수 없습니다."; return; } } }
++    void KeepBotOutOfEnemySpawn(int bot) { for (var id = 0; id <= BotCount; id++) if (id != bot + 1) { var away = bots[bot].transform.position - SpawnPosition(id); away.y = 0; if (away.sqrMagnitude < 196) { botControllers[bot].Move((away.sqrMagnitude < .01f ? Vector3.forward : away.normalized) * (14 - Mathf.Sqrt(away.sqrMagnitude) + .2f)); return; } } }
+     int FindBotTarget(int bot) { for (var n = 0; n < HouseCount; n++) { var i = (bot + n + Random.Range(0, HouseCount)) % HouseCount; if (owner[i] != bot + 1) return i; } return 0; }
+     void UpdatePickups() { for (var i = 0; i < pickups.Length; i++) { if (pickups[i] != null && !pickups[i].activeSelf && Time.time >= pickupRespawnAt[i]) pickups[i].SetActive(true); if (pickups[i] != null && pickups[i].activeSelf) pickups[i].transform.position += Vector3.up * Mathf.Sin(Time.time * 3 + i) * .003f; } }
+     void UpdateInteraction()
+@@ -406,7 +407,7 @@
+     };
+     string ItemRemainingText(int slot) => weaponAmmo[slot] + "회";
+     string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + ItemRemainingText(slot);
+-    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves or WeaponKind.Plunger => 3, WeaponKind.ToyHammer or WeaponKind.Slime or WeaponKind.FountainPen or WeaponKind.IceCream => 2, WeaponKind.None => 0, _ => 1 };
++    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves or WeaponKind.Slime => 2, WeaponKind.None => 0, _ => 1 };
+     readonly int[] weaponAmmo = new int[SlotCount];
+ 
+     float CaptureSeconds => Selected == WeaponKind.WorkGloves ? 1.5f : 3;
+@@ -535,15 +536,18 @@
+     }
+     void Begin()
+     {
++        ChooseRoundSpawns();
++        if (parcelPool) parcelPool.ResetRound();
+         started = true; finished = false; stamina = 100; vertical = 0; rollUntil = 0; crouching = false; startedAt = Time.time;
+         selectedSlot = 0; captureTarget = -1; captureStarted = 0; armedGloveSlot = -1; nextAttackAt = 0; hammerSlot = -1;
+         ClearSlimePuddles(); ClearIceCreamMarks(); foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
+         playerItems = new DeliveryItemState { safePosition = SpawnPosition(0) };
+         player.enabled = false; player.transform.position = SpawnPosition(0); player.enabled = true;
++        player.transform.rotation = SpawnRotation(0); lookPitch = 12;
+         for (var i = 0; i < HouseCount; i++) if (mailboxes[i] != null) { owner[i] = -1; SetMailboxEffectColor(i, Color.white); }
+         for (var i = 0; i < SlotCount; i++) ClearSlot(i);
+         for (var i = 0; i < BotCount; i++) if (bots[i] != null)
+-        { botControllers[i].enabled = false; bots[i].transform.position = SpawnPosition(i + 1); botControllers[i].enabled = true; botItems[i] = new DeliveryItemState { safePosition = SpawnPosition(i + 1) }; botVertical[i] = 0; botTarget[i] = -1; botCaptureStarted[i] = 0; }
++        { botControllers[i].enabled = false; bots[i].transform.SetPositionAndRotation(SpawnPosition(i + 1), SpawnRotation(i + 1)); botControllers[i].enabled = true; botItems[i] = new DeliveryItemState { safePosition = SpawnPosition(i + 1) }; botVertical[i] = 0; botTarget[i] = -1; botCaptureStarted[i] = 0; }
+         for (var i = 0; i < pickups.Length; i++) if (pickups[i] != null) { pickupRespawnAt[i] = 0; pickups[i].SetActive(itemPlaytestEnabled); }
+         feedback = "빈손으로 시작합니다."; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+     }
+--- Assets/Editor/ParcelSpawnCheck.cs before this request
++++ Assets/Editor/ParcelSpawnCheck.cs after this request
+@@ -9,7 +9,7 @@
+ 
+ public static class ParcelSpawnCheck
+ {
+-    const string Folder = "Docs/ChangeRecords/20261016";
++    const string Folder = "Docs/ChangeRecords/20261018";
+     [MenuItem("Tools/Gameplay/Test Parcels/Verify Respawn Pool")]
+     public static void Verify()
+     {
+@@ -30,12 +30,12 @@
+         var report = new List<string>(); ParcelSpawnReviewOverlay overlay = null;
+         bool network = game.NetworkScreens, enabled = game.enabled; Camera heldCamera = null; bool heldCameraEnabled = false;
+         void Check(bool value, string text) { if (!value) throw new Exception("PARCEL_RESPAWN: " + text); report.Add("PASS " + text); }
+-        bool Valid() => pool.ActiveCount == 30 && pool.CaptureSlots().Distinct().Count() == 30 && pool.CaptureSlots().All(s => s >= 0 && s < 50);
++        bool Valid() => pool.ActiveCount == ParcelSpawnPool.LiveCount && pool.CaptureSlots().Distinct().Count() == ParcelSpawnPool.LiveCount && pool.CaptureSlots().All(s => s >= 0 && s < ParcelSpawnPool.SpawnCount);
+         try
+         {
+             game.NetworkScreens = false; game.enabled = false;
+-            Check(pool.spawnPoints.Length == 50 && pool.parcels.Length == 30, "50 saved anchors and 30 pooled models");
+-            Check(Valid(), "round starts with 30 distinct occupied anchors and 20 empty anchors");
++            Check(pool.spawnPoints.Length == 100 && pool.parcels.Length == 50, "100 saved anchors and 50 pooled models");
++            Check(Valid(), "round starts with 50 distinct occupied anchors and 50 empty anchors");
+             var ids = pool.parcels.Select(p => p.GetEntityId()).ToArray();
+             var used = new HashSet<int>(); var subsets = new HashSet<string>(); bool allRounds = true;
+             UnityEngine.Random.InitState(20261016);
+@@ -44,27 +44,31 @@
+                 pool.ResetRound(); allRounds &= Valid(); var slots = pool.CaptureSlots();
+                 foreach (var slot in slots) used.Add(slot); subsets.Add(string.Join(",", slots.OrderBy(s => s)));
+             }
+-            Check(allRounds, "200 new rounds keep 30 unique occupied anchors");
+-            Check(subsets.Count > 1 && used.Count == 50, "new rounds vary their subsets and exercise every saved anchor");
++            Check(allRounds, "200 new rounds keep 50 unique occupied anchors");
++            Check(subsets.Count > 1 && used.Count == 100, "new rounds vary their subsets and exercise every saved anchor");
+             bool cycles = true, duplicateGuard = true, relocated = true;
+             for (int i = 0; i < 1000; i++)
+             {
+-                int index = i % 30, old = pool.CaptureSlots()[index];
+-                cycles &= pool.parcels[index].TryCollect() && pool.ActiveCount == 29;
++                int index = i % ParcelSpawnPool.LiveCount, old = pool.CaptureSlots()[index];
++                cycles &= pool.parcels[index].TryCollect() && pool.ActiveCount == 49;
+                 duplicateGuard &= !pool.parcels[index].TryCollect(); pool.Refill();
+                 cycles &= Valid(); relocated &= pool.CaptureSlots()[index] != old;
+             }
+-            Check(cycles, "1000 real TryCollect/refill cycles reduce to 29 then restore 30 without overlap");
++            Check(cycles, "1000 real TryCollect/refill cycles reduce to 49 then restore 50 without overlap");
+             Check(duplicateGuard, "collected parcel cannot grant twice before refill");
+             Check(relocated, "refill selects a different empty anchor instead of the consumed position");
+-            foreach (var p in pool.parcels.Take(5)) p.TryCollect(); Check(pool.ActiveCount == 25, "five pickups in one frame leave 25 parcels");
+-            pool.Refill(); Check(Valid(), "same-frame pickups refill to 30 unique anchors");
+-            foreach (var p in pool.parcels) p.TryCollect(); Check(pool.ActiveCount == 0, "all thirty simultaneous pickups are represented");
+-            pool.Refill(); Check(Valid(), "empty pool refills to thirty without duplicate anchors");
++            foreach (var p in pool.parcels.Take(5)) p.TryCollect(); Check(pool.ActiveCount == 45, "five pickups in one frame leave 45 parcels");
++            pool.Refill(); Check(Valid(), "same-frame pickups refill to 50 unique anchors");
++            foreach (var p in pool.parcels) p.TryCollect(); Check(pool.ActiveCount == 0, "all fifty simultaneous pickups are represented");
++            pool.Refill(); Check(Valid(), "empty pool refills to fifty without duplicate anchors");
+             Check(ids.SequenceEqual(pool.parcels.Select(p => p.GetEntityId())), "models are reused with no instantiate/destroy churn");
+             var state = pool.CaptureSlots(); var invalid = (int[])state.Clone(); invalid[1] = invalid[0];
+             Check(!pool.ApplySnapshot(invalid) && state.SequenceEqual(pool.CaptureSlots()), "duplicate network slots rejected atomically");
+-            invalid[1] = 50; Check(!pool.ApplySnapshot(invalid), "out-of-range network slot rejected");
++            invalid[1] = 100; Check(!pool.ApplySnapshot(invalid), "out-of-range network slot rejected");
++            var boundary=Enumerable.Range(0,49).Concat(new[]{64}).ToArray();
++            Check(pool.ApplySnapshot(boundary), "slots0 and64 coexist without a64-bit shift collision");
++            invalid=(int[])boundary.Clone();invalid[0]=64;Check(!pool.ApplySnapshot(invalid), "duplicate upper-half slot rejected atomically");
++            invalid=(int[])boundary.Clone();invalid[0]=-2;Check(!pool.ApplySnapshot(invalid), "invalid negative slot rejected");
+             game.NetworkScreens = true;
+             Check(!pool.CanCollect && !pool.parcels[0].TryCollect() && Valid(), "client/menu cannot locally collect or roll replacement positions");
+             game.NetworkScreens = false;
+@@ -81,12 +85,12 @@
+             var area = GameObject.Find("Layer_00_GrassBase").GetComponent<Renderer>().bounds;
+             cam.orthographic = true; cam.orthographicSize = Mathf.Max(area.size.z, area.size.x / cam.aspect) * .53f;
+             cam.transform.SetPositionAndRotation(new Vector3(area.center.x, 150, area.center.z), Quaternion.Euler(90, 0, 0));
+-            overlay.title = "택배 30개 / 후보 50곳 · 풀밭 배치 없음";
+-            yield return Capture("20261016_parcels_50_points_30_live");
++            overlay.title = "택배 50개 / 후보 100곳 · 풀밭 배치 없음";
++            yield return Capture("20261018_parcels_100_points_50_live");
+             overlay.oldSlot = pool.CaptureSlots()[0]; pool.parcels[0].TryCollect();
+-            Check(pool.ActiveCount == 29, "review pickup removes one box before replacement"); pool.Refill(); overlay.newSlot = pool.CaptureSlots()[0];
+-            overlay.title = "획득 후 빈 위치에 재생성 · 30개 유지";
+-            yield return Capture("20261016_parcels_after_refill");
++            Check(pool.ActiveCount == 49, "review pickup removes one box before replacement"); pool.Refill(); overlay.newSlot = pool.CaptureSlots()[0];
++            overlay.title = "획득 후 빈 위치에 재생성 · 50개 유지";
++            yield return Capture("20261018_parcels_after_refill");
+             File.WriteAllLines(Folder + "/evidence/parcel-respawn-check.txt", report);
+             Debug.Log("PARCEL_RESPAWN_OK: " + report.Count + " checks passed.");
+         }
+@@ -124,6 +128,12 @@
+             GUI.color = new Color(.02f, .025f, .035f, .9f); GUI.DrawTexture(new Rect(p.x - 16, Screen.height - p.y - 12, 32, 24), Texture2D.whiteTexture); GUI.color = Color.white;
+             DeliveryUIArt.Text(new Rect(p.x - 16, Screen.height - p.y - 12, 32, 24), (i + 1).ToString("D2"), 16, color, TextAnchor.MiddleCenter);
+         }
++        var corners=GameObject.Find("Layer_13_PlayerSpawns");if(!corners)return;
++        for(int i=0;i<corners.transform.childCount;i++)
++        {
++            var p=cam.WorldToScreenPoint(corners.transform.GetChild(i).position);
++            DeliveryUIArt.Text(new Rect(p.x-65,Screen.height-p.y-20,130,40),"시작지역 "+(i+1),18,new Color(1,.35f,1),TextAnchor.MiddleCenter);
++        }
+     }
+ }
+ 
+--- Assets/Gameplay/ParcelSpawnPool.cs before this request
++++ Assets/Gameplay/ParcelSpawnPool.cs after this request
+@@ -2,11 +2,11 @@
+ using System.Linq;
+ using UnityEngine;
+ 
+-// Saved, verified anchors; only the authority chooses occupancy. Reuse the same 30 models.
++// Saved, verified anchors; only the authority chooses occupancy. Reuse the same 50 models.
+ [DefaultExecutionOrder(100)]
+ public sealed class ParcelSpawnPool : MonoBehaviour
+ {
+-    public const int SpawnCount = 50, LiveCount = 30;
++    public const int SpawnCount = 100, LiveCount = 50;
+     public Transform[] spawnPoints;
+     public FloatingParcel[] parcels;
+     [SerializeField] int[] slots = new int[LiveCount];
+@@ -19,7 +19,7 @@
+     public void Initialize(MonsterDeliveryPrototype source)
+     {
+         if (spawnPoints.Length != SpawnCount || parcels.Length != LiveCount)
+-            throw new InvalidOperationException("Parcel pool needs 50 anchors and 30 models.");
++            throw new InvalidOperationException("Parcel pool needs 100 anchors and 50 models.");
+         game = source;
+         foreach (var parcel in parcels) parcel.spawnPool = this;
+         ResetRound();
+@@ -71,12 +71,14 @@
+     public bool ApplySnapshot(int[] state)
+     {
+         if (state == null || state.Length != LiveCount) return false;
+-        ulong occupied=0;
++        ulong occupiedLow=0,occupiedHigh=0;
+         for(int i=0;i<state.Length;i++)
+         {
+             int slot=state[i];if(slot < -1||slot>=SpawnCount)return false;
+             if(slot<0)continue;
+-            ulong bit=1UL<<slot;if((occupied&bit)!=0)return false;occupied|=bit;
++            ulong bit=1UL<<(slot&63);
++            if(slot<64){if((occupiedLow&bit)!=0)return false;occupiedLow|=bit;}
++            else{if((occupiedHigh&bit)!=0)return false;occupiedHigh|=bit;}
+         }
+         for (int i = 0; i < state.Length; i++)
+             if(slots[i]!=state[i])Place(i, state[i]);
+--- Assets/Editor/ParcelSpawnSetup.cs before this request
++++ Assets/Editor/ParcelSpawnSetup.cs after this request
+@@ -8,11 +8,11 @@
+ 
+ public static class ParcelSpawnSetup
+ {
+-    const string Folder = "Docs/ChangeRecords/20261016";
++    const string Folder = "Docs/ChangeRecords/20261018";
+     const string Layer = "Layer_12_TestParcelDrops";
+     const string Prefab = "Assets/Art/DeliveryProps/parcel.prefab";
+ 
+-    [MenuItem("Tools/Gameplay/Test Parcels/Build 50 Spawn Points")]
++    [MenuItem("Tools/Gameplay/Test Parcels/Build 100 Spawn Points")]
+     public static void Build()
+     {
+         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+@@ -26,8 +26,9 @@
+         var points = new List<Vector3>();
+         for (int i = 0; i < ParcelSpawnPool.SpawnCount; i++)
+         {
+-            bool roof = i >= 40;
+-            var bounds = roof ? roofs[(i - 40) % roofs.Length].GetComponent<Renderer>().bounds : area;
++            int streetCount = ParcelSpawnPool.SpawnCount - 10;
++            bool roof = i >= streetCount;
++            var bounds = roof ? roofs[(i - streetCount) % roofs.Length].GetComponent<Renderer>().bounds : area;
+             bool found = false;
+             for (int attempt = 0; attempt < 20000; attempt++)
+             {
+@@ -41,8 +42,8 @@
+             if (!found) throw new Exception("Cannot find safe anchor " + (i + 1) + "; existing scene preserved.");
+         }
+         Directory.CreateDirectory(Folder + "/source");
+-        if (!File.Exists(Folder + "/source/SampleScene_before_parcel_pool.unity"))
+-            EditorSceneManager.SaveScene(scene, Folder + "/source/SampleScene_before_parcel_pool.unity", true);
++        if (!File.Exists(Folder + "/source/case07/SampleScene.unity.before.txt"))
++            throw new Exception("Save the before-scene evidence before rebuilding the layout.");
+         var old = GameObject.Find(Layer);
+         if (old) Undo.DestroyObjectImmediate(old);
+         var root = new GameObject(Layer); Undo.RegisterCreatedObjectUndo(root, "Build parcel spawn pool");
+@@ -63,14 +64,14 @@
+         foreach (var p in pool.parcels) PrefabUtility.RecordPrefabInstancePropertyModifications(p.transform);
+         EditorUtility.SetDirty(pool); EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
+         VerifyLayout(); Selection.activeGameObject = root;
+-        Debug.Log("PARCEL_POOL_SETUP_OK: 50 verified anchors (40 street/sidewalk, 10 accessible roofs), 30 reusable parcels saved.");
++        Debug.Log("PARCEL_POOL_SETUP_OK: 100 verified anchors (90 street/sidewalk, 10 accessible roofs), 50 reusable parcels saved.");
+     }
+ 
+     [MenuItem("Tools/Gameplay/Test Parcels/Verify Spawn Layout")]
+     public static void VerifyLayout()
+     {
+         var pool = UnityEngine.Object.FindAnyObjectByType<ParcelSpawnPool>();
+-        if (!pool || pool.spawnPoints.Length != 50 || pool.parcels.Length != 30) throw new Exception("Expected 50 anchors and 30 parcel models.");
++        if (!pool || pool.spawnPoints.Length != ParcelSpawnPool.SpawnCount || pool.parcels.Length != ParcelSpawnPool.LiveCount) throw new Exception("Expected 100 anchors and 50 parcel models.");
+         Physics.SyncTransforms(); var rows = new List<string>();
+         for (int i = 0; i < pool.spawnPoints.Length; i++)
+         {
+@@ -81,8 +82,8 @@
+             if (pool.spawnPoints.Where((p, j) => j != i).Any(p => (p.position - point).sqrMagnitude < 15.99f)) throw new Exception("Anchor separation below 4m.");
+             rows.Add("PASS " + pool.spawnPoints[i].name + " | " + point.ToString("F3") + " | " + hit.collider.transform.root.name + "/" + hit.collider.name);
+         }
+-        if (pool.ActiveCount != 30 || pool.CaptureSlots().Distinct().Count() != 30) throw new Exception("Expected 30 unique occupied slots.");
+-        rows.Add("PASS 30 active models occupy 30 distinct anchors; 20 anchors empty");
++        if (pool.ActiveCount != ParcelSpawnPool.LiveCount || pool.CaptureSlots().Distinct().Count() != ParcelSpawnPool.LiveCount) throw new Exception("Expected 50 unique occupied slots.");
++        rows.Add("PASS 50 active models occupy 50 distinct anchors; 50 anchors empty");
+         Directory.CreateDirectory(Folder + "/evidence"); File.WriteAllLines(Folder + "/evidence/parcel-layout-check.txt", rows);
+         File.WriteAllText(Folder + "/source/parcel-spawn-points.json", JsonUtility.ToJson(new SpawnLayout { points = pool.spawnPoints.Select(p => p.position).ToArray() }, true));
+         Debug.Log("PARCEL_LAYOUT_OK: " + rows.Count + " checks passed.");
+--- /dev/null
++++ Assets/Gameplay/DeliveryPlayerSpawns.cs
+@@ -0,0 +1,29 @@
++using System;
++using UnityEngine;
++
++public sealed partial class MonsterDeliveryPrototype
++{
++    readonly Vector3[] roundSpawns = new Vector3[4];
++    readonly int[] spawnOrder = { 0, 1, 2, 3 };
++    Vector3 spawnCenter;
++
++    void ChooseRoundSpawns()
++    {
++        var root = GameObject.Find("Layer_13_PlayerSpawns");
++        if (!root || root.transform.childCount != 4)
++            throw new InvalidOperationException("Expected four saved corner spawns. Run Tools/Gameplay/Map Layout/Build100 Spots50 Parcels and Corner Spawns.");
++        spawnCenter = Vector3.zero;
++        for (int i = 0; i < 4; i++) { spawnOrder[i] = i; spawnCenter += root.transform.GetChild(i).position * .25f; }
++        for (int i = 0; i < 4; i++)
++        {
++            int other = UnityEngine.Random.Range(i, 4);
++            (spawnOrder[i], spawnOrder[other]) = (spawnOrder[other], spawnOrder[i]);
++            roundSpawns[i] = root.transform.GetChild(spawnOrder[i]).position;
++        }
++    }
++    Quaternion SpawnRotation(int id)
++    {
++        var toward = spawnCenter - SpawnPosition(id); toward.y = 0;
++        return Quaternion.LookRotation(toward);
++    }
++}
+--- /dev/null
++++ Assets/Editor/RoundLayoutSetup.cs
+@@ -0,0 +1,94 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using UnityEditor;
++using UnityEditor.SceneManagement;
++using UnityEngine;
++using UnityEngine.AI;
++
++public static class RoundLayoutSetup
++{
++    const string RootName="Layer_13_PlayerSpawns";
++    const string Folder="Docs/ChangeRecords/20261018";
++    [MenuItem("Tools/Gameplay/Map Layout/Build100 Spots50 Parcels and Corner Spawns")]
++    public static void Build()
++    {
++        if(EditorApplication.isPlaying||UnityEngine.SceneManagement.SceneManager.GetActiveScene().name!="SampleScene")throw new Exception("Open SampleScene in Edit Mode.");
++        var grass=GameObject.Find("Layer_00_GrassBase").GetComponent<Renderer>().bounds;
++        var navigation=AssetDatabase.LoadAssetAtPath<NavMeshData>("Assets/Resources/Navigation/ExplorationIsland.asset");
++        if(!navigation)throw new Exception("Existing island navigation data missing.");
++        var nav=NavMesh.AddNavMeshData(navigation);var corners=new List<Vector3>();
++        try
++        {
++            Physics.SyncTransforms();
++            if(!NavMesh.SamplePosition(new Vector3(grass.center.x,0,grass.center.z),out var center,20,NavMesh.AllAreas))throw new Exception("No walkable map center.");
++            foreach(var sign in new[]{new Vector2(-1,-1),new Vector2(-1,1),new Vector2(1,1),new Vector2(1,-1)})
++            {
++                var edge=new Vector3(sign.x<0?grass.min.x:grass.max.x,0,sign.y<0?grass.min.z:grass.max.z);
++                var candidates=new List<Vector3>();
++                for(float x=3;x<grass.size.x*.25f;x+=1.25f)for(float z=3;z<grass.size.z*.25f;z+=1.25f)candidates.Add(edge-new Vector3(sign.x*x,0,sign.y*z));
++                bool found=false;
++                foreach(var point in candidates.OrderBy(p=>(p-edge).sqrMagnitude))
++                {
++                    if(!PlayerGround(point,out var hit)||!SafePlayerFloor(hit.point))continue;
++                    if(!NavMesh.SamplePosition(hit.point,out var walkable,.4f,NavMesh.AllAreas))continue;
++                    var route=new NavMeshPath();if(!NavMesh.CalculatePath(walkable.position,center.position,NavMesh.AllAreas,route)||route.status!=NavMeshPathStatus.PathComplete)continue;
++                    if(!PlayerGround(walkable.position,out var ground)||!SafePlayerFloor(ground.point))continue;
++                    corners.Add(ground.point+Vector3.up*DeliveryRobotVisual.HoverClearance);found=true;break;
++                }
++                if(!found)throw new Exception("No clear, reachable corner spawn near "+edge+"; saved scene preserved.");
++            }
++        }
++        finally{nav.Remove();}
++        ParcelSpawnSetup.Build();
++        var old=GameObject.Find(RootName);if(old)Undo.DestroyObjectImmediate(old);
++        var root=new GameObject(RootName);Undo.RegisterCreatedObjectUndo(root,"Create corner spawns");
++        string[] names={"SouthWest","NorthWest","NorthEast","SouthEast"};
++        for(int i=0;i<4;i++)
++        {
++            var child=new GameObject("Spawn_"+names[i]).transform;child.SetParent(root.transform,false);child.position=corners[i];
++            var inward=grass.center-child.position;inward.y=0;child.rotation=Quaternion.LookRotation(inward);
++        }
++        var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);
++        Verify();Selection.activeGameObject=root;
++    }
++    [MenuItem("Tools/Gameplay/Map Layout/Verify Corner Spawns")]
++    public static void Verify()
++    {
++        var root=GameObject.Find(RootName);if(!root||root.transform.childCount!=4)throw new Exception("Four corner spawns required.");
++        var report=new List<string>();var positions=new List<Vector3>();Physics.SyncTransforms();
++        foreach(Transform point in root.transform)
++        {
++            var floor=point.position-Vector3.up*DeliveryRobotVisual.HoverClearance;
++            if(!PlayerGround(floor,out var hit)||Mathf.Abs(hit.point.y-floor.y)>.02f||!SafePlayerFloor(floor))throw new Exception("Unsafe spawn "+point.name);
++            positions.Add(point.position);report.Add("PASS "+point.name+" "+point.position.ToString("F3")+" floor="+hit.collider.transform.root.name);
++        }
++        if(positions.Select(p=>new Vector2(Mathf.Sign(p.x),Mathf.Sign(p.z))).Distinct().Count()!=4)throw new Exception("Expected four different map corners.");
++        Directory.CreateDirectory(Folder+"/evidence");File.WriteAllLines(Folder+"/evidence/corner-layout-check.txt",report);
++        File.WriteAllText(Folder+"/source/player-corner-spawns.json",JsonUtility.ToJson(new Positions{positions=positions.ToArray()},true));
++        Debug.Log("CORNER_LAYOUT_OK:4 clear corner spawn regions saved.");
++    }
++    public static bool PlayerGround(Vector3 point,out RaycastHit ground)
++    {
++        var hits=Physics.RaycastAll(new Vector3(point.x,40,point.z),Vector3.down,60,~0,QueryTriggerInteraction.Ignore)
++            .Where(h=>h.collider.transform.root.name!="Layer_12_TestParcelDrops"&&!(h.collider is CharacterController)).OrderBy(h=>h.distance).ToArray();
++        ground=hits.Length>0?hits[0]:default;
++        if(hits.Length==0||ground.normal.y<.999f||ground.point.y>=.5f||ground.point.y<-.5f)return false;
++        string root=ground.collider.transform.root.name;
++        return root=="Layer_00_GrassBase"||root=="Layer_01_Sidewalks"||root=="Layer_02_Roads";
++    }
++    public static bool SafePlayerFloor(Vector3 floor)
++    {
++        if(!TestParcelDrops.Clear(floor))return false;
++        // The hovering1.4m capsule reaches2.4m above the ground, higher than a parcel clearance box.
++        var room=new Bounds(floor+Vector3.up*1.4f,new Vector3(2.4f,2.7f,2.4f));
++        if(Physics.OverlapBox(room.center,room.extents,Quaternion.identity,~0,QueryTriggerInteraction.Ignore).Any(c=>c.transform.root.name!="Layer_12_TestParcelDrops"&&!(c is CharacterController)))return false;
++        var plants=GameObject.Find("Layer_07_ReferenceLandscape");
++        if(plants&&plants.GetComponentsInChildren<Renderer>().Any(r=>r.bounds.Intersects(room)))return false;
++        foreach(float x in new[]{-.65f,0,.65f})foreach(float z in new[]{-.65f,0,.65f})
++            if(!PlayerGround(floor+new Vector3(x,0,z),out var hit)||Mathf.Abs(hit.point.y-floor.y)>.035f)return false;
++        return true;
++    }
++    [Serializable]sealed class Positions{public Vector3[] positions;}
++}
+--- /dev/null
++++ Assets/Editor/CornerSpawnCheck.cs
+@@ -0,0 +1,110 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using UnityEditor;
++using UnityEngine;
++
++public static class CornerSpawnCheck
++{
++    [MenuItem("Tools/Gameplay/Map Layout/Verify Random Corner Starts")]
++    public static void Verify()
++    {
++        if(!EditorApplication.isPlaying)throw new Exception("Fresh Play required.");
++        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));
++    }
++    static IEnumerator Run(MonsterDeliveryPrototype game)
++    {
++        const string folder="Docs/ChangeRecords/20261018/";
++        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
++        var type=game.GetType();object Get(string n)=>type.GetField(n,flags).GetValue(game);
++        void Set(string n,object v)=>type.GetField(n,flags).SetValue(game,v);
++        object Call(string n,params object[] args)=>type.GetMethod(n,flags).Invoke(game,args);
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Actual authored scene and Play initialization. Multiplayer rounds use controlled connected player records and a serialized participant frame, not separate processes."};
++        void Check(bool ok,string message){log.Add((ok?"PASS ":"FAIL ")+message);}
++        var corners=GameObject.Find("Layer_13_PlayerSpawns").transform.Cast<Transform>().Select(t=>t.position).ToArray();
++        var player=(CharacterController)Get("player");var actors=new[]{player}.Concat((CharacterController[])Get("botControllers")).ToArray();
++        int Corner(Vector3 p)=>Array.FindIndex(corners,c=>Vector3.Distance(c,p)<.1f);
++        var random=UnityEngine.Random.state;bool oldEnabled=game.enabled;
++        try
++        {
++            game.enabled=false;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            Check(Corner(player.transform.position)>=0,"fresh Play player starts at one of the saved map corners");
++            Check(corners.Length==4&&corners.Select(p=>new Vector2(Mathf.Sign(p.x),Mathf.Sign(p.z))).Distinct().Count()==4,"four saved spawn regions cover all map quadrants");
++            foreach(var point in corners)Check(RoundLayoutSetup.SafePlayerFloor(point-Vector3.up),"corner has supported floor and vegetation/capsule clearance "+point.ToString("F2"));
++            UnityEngine.Random.InitState(20261018);int[,] hits=new int[4,4];bool distinct=true;
++            for(int round=0;round<400;round++)
++            {
++                Call("ChooseRoundSpawns");var positions=(Vector3[])Get("roundSpawns");distinct&=positions.Distinct().Count()==4;
++                for(int id=0;id<4;id++){int corner=Corner(positions[id]);if(corner<0)distinct=false;else hits[id,corner]++;}
++            }
++            Check(distinct,"400 allocations use saved corner positions without overlapping players");
++            for(int id=0;id<4;id++)Check(Enumerable.Range(0,4).All(c=>hits[id,c]>0),"player"+id+" samples all four corners across400 seeded allocations");
++            File.WriteAllLines(folder+"evidence/corner-random-distribution.csv",new[]{"player,south_west,north_west,north_east,south_east"}.Concat(Enumerable.Range(0,4).Select(id=>id+","+string.Join(",",Enumerable.Range(0,4).Select(c=>hits[id,c])))));
++            game.NetworkScreens=false;bool starts=true;
++            for(int round=0;round<40;round++)
++            {
++                Call("Begin");starts&=actors.All(a=>Corner(a.transform.position)>=0)&&actors.Select(a=>a.transform.position).Distinct().Count()==4;
++                starts&=((WeaponKind[])Get("inventory")).All(k=>k==WeaponKind.None);
++                starts&=Vector3.Distance(((DeliveryItemState)Get("playerItems")).safePosition,player.transform.position)<.01f;
++            }
++            Check(starts,"40 actual offline restarts place actors at distinct corners with empty inventory and matching safe position");
++            foreach(var actor in actors.Skip(1))actor.gameObject.SetActive(false);
++            for(int i=0;i<4;i++)
++            {
++                player.enabled=false;player.transform.position=corners[i];var inward=-corners[i];inward.y=0;player.transform.rotation=Quaternion.LookRotation(inward);player.enabled=true;
++                Set("playerItems",new DeliveryItemState{safePosition=corners[i]});Set("vertical",0f);Set("lookPitch",12f);Call("UpdateCamera");
++                var groundArgs=new object[]{player,corners[i],default(RaycastHit)};
++                bool hasGround=(bool)type.GetMethod("TryHoverGround",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,groundArgs);
++                log.Add("INFO corner"+(i+1)+" hover query="+hasGround+" deltaTime="+Time.deltaTime+" slopeLimit="+player.slopeLimit+" hits="+string.Join(";",Physics.RaycastAll(corners[i]+Vector3.up*.3f,Vector3.down,1.6f,~0,QueryTriggerInteraction.Ignore).Select(h=>h.collider.name+" point="+h.point.ToString("F3")+" normal="+h.normal.ToString("F2")+" interaction="+(bool)h.collider.GetComponentInParent<InteractionTarget>())));
++                for(int n=0;n<60;n++)Call("UpdatePlayer",new object[]{null});
++                Check(Vector3.Distance(player.transform.position,corners[i])<.08f,"corner"+(i+1)+" remains grounded through60 native movement updates; actual="+player.transform.position.ToString("F3")+" expected="+corners[i].ToString("F3"));
++                player.enabled=false;player.transform.position=corners[i];player.enabled=true;
++                var hitchArgs=new object[]{player,Vector3.down*2.5f,-20f};type.GetMethod("MoveHoverActor",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,hitchArgs);
++                Check(Vector3.Distance(player.transform.position,corners[i])<.08f,"corner"+(i+1)+" keeps hover clearance during a2.5m descending hitch step");
++                game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_player_corner_"+(i+1)+".png");game.enabled=false;
++            }
++            game.NetworkScreens=true;game.HostRoom();yield return null;
++            var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
++            for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
++            foreach(int count in new[]{2,4})
++            {
++                game.NetTeamSize=count/2;for(int g=0;g<4;g++)players[g].connected=g<count;
++                bool rounds=true;var seen=new HashSet<int>();
++                for(int round=0;round<80;round++)
++                {
++                    game.StartNetRound();var active=actors.Take(count).ToArray();
++                    rounds&=active.All(a=>Corner(a.transform.position)>=0)&&active.Select(a=>a.transform.position).Distinct().Count()==count;
++                    for(int g=0;g<count;g++)
++                    {
++                        seen.Add(Corner(actors[g].transform.position));
++                        rounds&=Vector3.Distance(players[g].position,actors[g].transform.position)<.01f&&players[g].items.All(k=>k==0)&&players[g].ammo.All(n=>n==0);
++                        rounds&=Mathf.Abs(Mathf.DeltaAngle(((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[g].yaw,actors[g].transform.eulerAngles.y))<.1f;
++                    }
++                }
++                Check(rounds,count+"-player80 actual host rounds keep distinct corner positions, yaw and empty inventory");
++                Check(seen.Count==4,count+"-player host rounds select all four map corners");
++            }
++            var pool=UnityEngine.Object.FindAnyObjectByType<ParcelSpawnPool>();
++            var frameType=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var frame=Activator.CreateInstance(frameType);
++            void Field(string n,object v)=>frameType.GetField(n).SetValue(frame,v);
++            Field("players",players);Field("own",1);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("teamSize",2);Field("remaining",180f);Field("owners",Enumerable.Repeat(-1,10).ToArray());Field("parcels",pool.CaptureSlots());
++            var expected=players[1].position;float yaw=players[1].yaw;frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),frameType);
++            game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);Call("ApplyNetFrame",frame);
++            Check(Vector3.Distance(player.transform.position,expected)<.01f&&Corner(player.transform.position)>=0,"participant frame uses the server corner, not an independent local random choice");
++            Check(Mathf.Abs(Mathf.DeltaAngle(((MonsterDeliveryPrototype.NetInput)Get("netLocalInput")).yaw,yaw))<.1f,"participant camera input starts with the server inward yaw");
++            Check(Vector3.Distance(((DeliveryItemState)Get("playerItems")).safePosition,expected)<.01f,"participant fall recovery starts at the server corner");
++            Check(pool.ActiveCount==50&&pool.CaptureSlots().Length==50,"participant frame applies the full50-parcel layout");
++        }
++        finally
++        {
++            File.WriteAllLines(folder+"evidence/corner-spawn-play-check.txt",log);game.LeaveRoom();game.enabled=oldEnabled;
++            UnityEngine.Random.state=random;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
++        }
++        Debug.Log("CORNER_STARTS: "+log.Count(x=>x.StartsWith("PASS "))+" PASS / "+log.Count(x=>x.StartsWith("FAIL "))+" FAIL");
++        if(log.Any(x=>x.StartsWith("FAIL ")))throw new Exception("CORNER_SPAWN_CHECK_FAILED");
++    }
++    static void Capture(string path){var image=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,image.EncodeToPNG());}finally{UnityEngine.Object.Destroy(image);}}
++}

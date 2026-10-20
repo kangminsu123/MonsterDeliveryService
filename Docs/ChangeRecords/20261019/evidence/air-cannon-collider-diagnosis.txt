@@ -1,0 +1,21 @@
+2026-10-19T18:15:07.1320627+09:00
+Actual Play; controlled positions, production input/use, ballistic physics and hit paths. Separate peers recorded separately.
+PASS one impact hits every in-range rival radially with60m/s horizontal and18m/s lift
+PASS outside five-metre sphere is excluded
+PASS source is excluded
+PASS one rival does not occlude another rival in the same blast
+PASS aircap blocks and spends once
+PASS life jacket blocks blast
+PASS wall blocks only the covered rival
+PASS vertical distance excludes another storey beyond blast radius
+PASS participant impact replay cannot apply gameplay force
+TRACE floor=Center: (0.00, 149.90, 10.00), Extents: (50.00, 0.10, 50.00) enabled=True simulation=FixedUpdate shotCollider=Center: (0.00, 75.95, 0.59), Extents: (0.23, 0.23, 0.23) enabled=True trigger=False floorIgnored=False
+PASS normal click does not hit immediately at launch
+PASS same18m/s forward plus3m/s upward gravity as slime; origin=(0.00, 151.90, 1.18)
+PASS normal click consumes exactly one use
+FAIL real floor collision triggers one blast against both nearby rivals; remaining=(0.00, 116.50, 55.15) lifts=0/0
+TRACE remainingCollider=True BrawlShot=True body=True floor=Center: (0.00, 149.90, 10.00), Extents: (50.00, 0.10, 50.00) ray=True ground=Cube (UnityEngine.BoxCollider)
+PASS real blast leaves distant rival untouched
+FAIL actual flight and impact images captured
+PASS last-use slot clears after recoil while launched shot persists
+FAIL muzzle cover resolves immediately without a projectile behind wall

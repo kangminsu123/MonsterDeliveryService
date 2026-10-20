@@ -1,0 +1,159 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Unity.Netcode;
+using UnityEngine;
+
+// Opt-in native-player reproduction. Synthetic inputs/delay never run during ordinary play.
+public sealed partial class MonsterDeliveryPrototype
+{
+    bool latencyProof, latencyCaptured, latencySaved;
+    string latencyLabel, latencyDirectory;
+    float latencyStarted, latencyInputAt = -1, latencyMovedAt = -1;
+    Vector3 latencyPrevious, latencyInputPosition;
+    readonly List<float> latencyFrameMs = new();
+    readonly List<string> latencyRows = new();
+    int latencyMotionFrames, latencyStationaryFrames, latencyFrames, latencySentBytes,latencyMessageNumber,latencyDroppedMessages;
+    float latencyMaximumStep;
+    const float ProofOneWayDelay = .06f;
+
+    void BeginLatencyProof(string label, string directory)
+    {
+        latencyProof = true; latencyLabel = label; latencyDirectory = directory;
+        Directory.CreateDirectory(directory);
+        QualitySettings.vSyncCount = 0; Application.targetFrameRate = 60;
+        UnityEngine.Random.InitState(241016);
+        latencyRows.Add("elapsed_s,frame_ms,x,y,z,input_z");
+    }
+    void LatencyProofInput()
+    {
+        if (!latencyProof || !NetPlaying || latencySaved) return;
+        if (latencyStarted == 0)
+        { latencyStarted = Time.realtimeSinceStartup; latencyPrevious = player.transform.position; }
+        float age = Time.realtimeSinceStartup - latencyStarted;
+        netLocalInput.x = 0; netLocalInput.z = age >= 1 && age < 2.8f ? 1 : 0;
+        netLocalInput.yaw = 0; netLocalInput.pitch = 0;
+        if (netLocalInput.z > 0 && latencyInputAt < 0)
+        { latencyInputAt = Time.realtimeSinceStartup; latencyInputPosition = player.transform.position; }
+    }
+    void TickLatencyProof()
+    {
+        if (!latencyProof || !NetPlaying || latencySaved || latencyStarted == 0) return;
+        float age = Time.realtimeSinceStartup - latencyStarted;
+        var pos = player.transform.position;
+        latencyMaximumStep=Mathf.Max(latencyMaximumStep,Vector3.Distance(pos,latencyPrevious));
+        if (latencyInputAt >= 0 && latencyMovedAt < 0 && Vector3.Distance(pos, latencyInputPosition) > .02f)
+            latencyMovedAt = Time.realtimeSinceStartup;
+        if (age > 1.25f && age < 2.65f)
+        {
+            if (Vector3.Distance(pos, latencyPrevious) > .005f) latencyMotionFrames++; else latencyStationaryFrames++;
+        }
+        latencyPrevious = pos; latencyFrames++;
+        if (age > .5f) latencyFrameMs.Add(Time.unscaledDeltaTime * 1000);
+        latencyRows.Add(FormattableString.Invariant($"{age:F4},{Time.unscaledDeltaTime*1000:F3},{pos.x:F4},{pos.y:F4},{pos.z:F4},{netLocalInput.z:F0}"));
+        if (age > 2.1f && !latencyCaptured)
+        { latencyCaptured = true; StartCoroutine(CaptureLatencyProof()); }
+        if (age > 7)
+        {
+            latencySaved = true;
+            var sorted = latencyFrameMs.OrderBy(x => x).ToArray();
+            var result = new LatencyResult {
+                label=latencyLabel, role=NetServer?"host":"client-"+netOwn, players=NetCount,
+                simulatedOneWayMs=ProofOneWayDelay*1000, firstMovementMs=(latencyMovedAt-latencyInputAt)*1000,
+                movingFrames=latencyMotionFrames, stationaryFrames=latencyStationaryFrames,
+                averageFrameMs=sorted.Length>0?sorted.Average():0, p95FrameMs=sorted.Length>0?sorted[(int)((sorted.Length-1)*.95f)]:0,
+                sentBytes=latencySentBytes, frames=latencyFrames,
+                finalPosition=pos,serverPosition=netPlayers[netOwn].position,maximumStep=latencyMaximumStep,
+                pendingCommands=netPendingInputs.Count,inputAck=netPlayers[netOwn].inputAck,droppedMessages=latencyDroppedMessages,
+                note="Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement."
+            };
+            string stem=Path.Combine(latencyDirectory,result.role+"-"+latencyLabel);
+            File.WriteAllText(stem+".json",JsonUtility.ToJson(result,true));File.WriteAllLines(stem+".csv",latencyRows);
+            Debug.Log("LATENCY_PROOF "+JsonUtility.ToJson(result));
+            StartCoroutine(QuitLatencyProof());
+        }
+    }
+    [Serializable] sealed class LatencyResult
+    {
+        public string label,role,note;
+        public int players,movingFrames,stationaryFrames,sentBytes,frames,pendingCommands,inputAck,droppedMessages;
+        public Vector3 finalPosition,serverPosition;
+        public float simulatedOneWayMs,firstMovementMs,averageFrameMs,p95FrameMs,maximumStep;
+    }
+    IEnumerator QuitLatencyProof() { yield return new WaitForSecondsRealtime(2); if(!Application.isEditor)Application.Quit(); }
+    IEnumerator DelayedLatencySend(string kind,string json,ulong recipient,NetworkDelivery delivery)
+    {
+        if(latencyLabel.Contains("loss")&&++latencyMessageNumber%5==0){latencyDroppedMessages++;yield break;}
+        yield return new WaitForSecondsRealtime(ProofOneWayDelay);SendNetJson(kind,json,recipient,delivery);
+    }
+    IEnumerator CaptureLatencyProof()
+    {
+        yield return new WaitForEndOfFrame();
+        var tex=ScreenCapture.CaptureScreenshotAsTexture();
+        File.WriteAllBytes(Path.Combine(latencyDirectory,(NetServer?"host":"client-"+netOwn)+"-"+latencyLabel+".png"),tex.EncodeToPNG());Destroy(tex);
+    }
+    void DrawLatencyProof()
+    {
+        if(!latencyProof)return;
+        float response=latencyMovedAt<0?-1:(latencyMovedAt-latencyInputAt)*1000;
+        RoomPanel(new Rect(38,205,740,100),new Color(.02f,.03f,.04f,.94f));
+        RoomText(new Rect(52,210,715,32),"검수용 · "+latencyLabel+" · "+(NetServer?"방장":"참가자")+" · 인위적 왕복 지연 약120ms",20,Color.white);
+        RoomText(new Rect(52,245,715,48),"첫 이동 반응 "+response.ToString("F1")+"ms   /   이동 프레임 "+latencyMotionFrames+" · 정지 프레임 "+latencyStationaryFrames,21,new Color(.5f,1,.75f));
+    }
+    public IEnumerator VerifyNetPredictionAndHud()
+    {
+        if(RoomState!=RoomPhase.Menu)throw new InvalidOperationException("Return to the menu before verification.");
+        netProof=latencyProof=false;netProofChecks.Clear();enabled=false;
+        int previousSize=NetTeamSize;
+        HostRoom();yield return null;
+        try
+        {
+            ProofCheck(netManager.NetworkConfig.ProtocolVersion==3,"protocol3 separates the new input and frame format");
+            netFrameSequence=71;netLastFrameSequence=65;ResetNetPrediction();
+            ProofCheck(netFrameSequence==71&&netLastFrameSequence==65,"round reset preserves monotonic snapshot sequence");
+            NetTeamSize=1;netPlayers[0].name="Host";netPlayers[0].color=2;
+            netPlayers[1]=new NetPlayer{connected=true,name="Guest",team=1,color=4};netInputs[1]=new NetInput();
+            StartNetRound();SyncHostInventory();
+            ProofCheck(netFrameSequence>=71,"starting another round does not reuse old snapshot numbers");
+            ProofCheck(HudScoreTitle=="점령"&&!MapOwnershipLegend.Contains("팀"),"individual score and minimap omit team wording");
+            ProofCheck(NetSideName(0)=="Host"&&NetSideName(1)=="Guest","individual scoreboard uses player names");
+            ProofCheck(HudPortraitName=="robot_portrait_2"&&LocalPlayerColor==CoatColors[2],"local portrait selects the assigned coat colour");
+            ProofCheck(Enumerable.Range(0,6).All(i=>Resources.Load<Texture2D>("UI/InGame/robot_portrait_"+i)),"all six native robot portrait assets exist");
+            ProofCheck(CaptureColor(0)==CoatColors[2]&&LocalMailboxColor==CoatColors[2],"individual ownership uses the player's colour");
+            NetTeamSize=2;
+            ProofCheck(HudScoreTitle=="우리 팀"&&NetSideName(0)=="A 팀"&&LocalMailboxColor==TeamColors[0],"2v2 retains team score wording and ownership colours");
+            NetTeamSize=1;
+            QueueNetInputs(1,new NetInputBatch{commands=new[]{new NetInput{sequence=1},new NetInput{sequence=2}}});
+            QueueNetInputs(1,new NetInputBatch{commands=new[]{new NetInput{sequence=1},new NetInput{sequence=2}}});
+            ProofCheck(netMovementInputs[1].Count==2,"resent input commands are queued exactly once");
+            QueueNetInputs(1,new NetInputBatch{commands=new[]{new NetInput{sequence=3,x=float.NaN},new NetInput{sequence=99999}}});
+            ProofCheck(netMovementInputs[1].Count==2,"invalid and implausibly future inputs are rejected");
+            var origin=new Vector3(0,1,-15);netPendingInputs.Clear();
+            for(int i=1;i<=6;i++)netPendingInputs.Add(new NetInput{sequence=i,z=1,yaw=0});
+            var p=new NetPlayer{position=origin,vertical=-2};playerItems=new DeliveryItemState{safePosition=origin};
+            ReconcileNetLocal(p);var predicted=player.transform.position;
+            ProofCheck(predicted.z-origin.z>.6f,"unacknowledged forward input moves locally before a server reply");
+            p.position=origin+Vector3.forward*.325f;p.vertical=-2;p.inputAck=3;
+            ReconcileNetLocal(p);
+            ProofCheck(netPendingInputs.Count==3&&netPendingInputs[0].sequence==4,"server acknowledgement removes only the confirmed input prefix");
+            ProofCheck(Vector3.Distance(player.transform.position,predicted)<.02f,"replaying remaining inputs retains the predicted movement");
+            string notice=netNotice;
+            ApplyNetFrame(new NetFrame{sequence=netLastFrameSequence,players=netPlayers,owners=owner,own=0,notice="stale"});
+            ProofCheck(netNotice==notice,"stale snapshot cannot overwrite current state");
+            var text="{\"name\":\"테스트\",\"values\":[1,2,3]}";
+            ProofCheck(UnpackNetJson(PackNetJson(text))==text,"compressed UTF8 room payload preserves Korean text");
+            bool limited=false;try{UnpackNetJson(PackNetJson(new string('x',65537)));}catch(InvalidDataException){limited=true;}
+            ProofCheck(limited,"decompression rejects payloads over64KiB");
+            var slots=parcelPool.CaptureSlots();parcelPool.ApplySnapshot(slots);
+            ProofCheck(parcelPool.ActiveCount==30&&slots.Distinct().Count()==30,"unchanged parcel snapshots preserve thirty unique live models");
+            string folder="Docs/ChangeRecords/20261016/evidence";
+            File.WriteAllLines(Path.Combine(folder,"prediction-hud-check.txt"),netProofChecks);
+            Debug.Log("PREDICTION_HUD_CHECK "+netProofChecks.Count+" checks; failures="+netProofChecks.Count(c=>c.StartsWith("FAIL")));
+        }
+        finally{LeaveRoom();NetTeamSize=previousSize;enabled=true;}
+    }
+}
+#endif

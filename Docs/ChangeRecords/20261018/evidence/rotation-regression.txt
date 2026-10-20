@@ -1,0 +1,18 @@
+2026-10-18T00:37:06.6469922+09:00
+Unity 6000.5.10f1
+Native Editor prefab reproduction; repeated calls, not an online match.
+BoxingGloves 600 calls max drift=0.00000deg max displacement=0.000000m
+PASS BoxingGloves 600 calls preserve both guard poses
+PASS BoxingGloves guard follows camera yaw/pitch/roll without drift
+PASS BoxingGloves only selected right glove extends
+PASS BoxingGloves repeated pose restores guard after punch
+PASS BoxingGloves only selected left glove extends
+PASS BoxingGloves repeated pose restores guard after punch
+WorkGloves 600 calls max drift=0.00000deg max displacement=0.000000m
+PASS WorkGloves 600 calls preserve both guard poses
+PASS WorkGloves guard follows camera yaw/pitch/roll without drift
+PASS WorkGloves only selected right glove extends
+PASS WorkGloves repeated pose restores guard after punch
+PASS WorkGloves only selected left glove extends
+PASS WorkGloves repeated pose restores guard after punch
+Passed=12

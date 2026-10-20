@@ -1,0 +1,55 @@
+{
+  "root": "HERO_FragileParcel",
+  "parts": 56,
+  "mesh_defects": [],
+  "existing_mesh_changes": [],
+  "camera_outside": [],
+  "motion": [
+    {
+      "frame": 1,
+      "angle": -0.12,
+      "anchor": [
+        2.700000047683716,
+        -1.600000023841858,
+        0.18000000715255737
+      ]
+    },
+    {
+      "frame": 48,
+      "angle": 0.09,
+      "anchor": [
+        2.700000047683716,
+        -1.600000023841858,
+        0.18000000715255737
+      ]
+    },
+    {
+      "frame": 96,
+      "angle": -0.33,
+      "anchor": [
+        2.700000047683716,
+        -1.600000023841858,
+        0.18000000715255737
+      ]
+    },
+    {
+      "frame": 144,
+      "angle": -0.12,
+      "anchor": [
+        2.700000047683716,
+        -1.600000023841858,
+        0.18000000715255737
+      ]
+    }
+  ],
+  "filepath_unchanged": true,
+  "dimensions_m": [
+    1.3,
+    1.233,
+    1.288
+  ],
+  "contact_gap_m": 0.0,
+  "mesh_triangles_with_bevels": 6032,
+  "valid": true,
+  "visual_audit": "Viewed parcel detail, all-six native render and motion1/48/96/144; no clipping or detached labels."
+}

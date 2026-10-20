@@ -1,0 +1,11 @@
+{
+    "platform": "StandaloneWindows64",
+    "result": "Succeeded",
+    "path": "C:/Users/xlfhf/Documents/Codex/2026-10-20/durl/outputs/MonsterDeliveryService_Windows/MonsterDeliveryService.exe",
+    "startedAt": "2026-10-20T18:00:40.5040552+09:00",
+    "bytes": 166136463,
+    "errors": 1,
+    "warnings": 4,
+    "seconds": 168.310579,
+    "protocol": 15
+}

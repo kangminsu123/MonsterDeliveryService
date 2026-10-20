@@ -1,0 +1,6 @@
+2026-10-17T23:59:34.9122577+09:00
+Unity 6000.5.10f1
+Native Editor prefab reproduction; repeated calls, not an online match.
+BoxingGloves 600 calls max drift=179.90350deg max displacement=0.000000m
+WorkGloves 600 calls max drift=179.90350deg max displacement=0.000000m
+Passed=0

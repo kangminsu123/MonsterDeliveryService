@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-10-20T18:05:57.9564902+09:00",
+  "host_connected": true,
+  "client_connected": true,
+  "runtime_error_matches": [],
+  "summary": "최신 일반 빌드 두 프로세스가 실제 localhost로 연결됐으며 게임 로그에서 런타임 예외 또는 충돌을 찾지 못했다. 이 확인은 시작과 연결 확인이며 전체 경기의 재검사가 아니다."
+}

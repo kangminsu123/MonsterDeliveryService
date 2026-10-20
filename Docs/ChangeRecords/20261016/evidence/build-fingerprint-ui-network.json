@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-16",
+  "engine": "6000.5.10f1",
+  "platform": "Windows x64",
+  "configuration": "Development Mono LZ4",
+  "network_protocol": 3,
+  "base_commit": "7dbb9f1",
+  "current_changes_committed": false,
+  "parcel_spawn_points": 50,
+  "parcel_live_count": 30,
+  "exe_sha256": "a9f784d5d7e032d37a1e58e6c9c158f9ee729638be4d3079f891802c90c2f11b",
+  "assembly_sha256": "0de168ece0d601795ef2415e80bfae41d34618d334b3f8b9c280bf3c6f3db8b5",
+  "note": "Unity launcher EXE hash alone does not identify gameplay code; use the managed assembly hash and protocol as well."
+}

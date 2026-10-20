@@ -13,10 +13,13 @@ public sealed class DeliveryRobotVisual : MonoBehaviour
     MaterialPropertyBlock colorBlock;
     bool firstPerson;
     Transform[] arms;
+    Vector3 modelLocalPosition,networkPosition;
+    bool networkPositionReady;
 
     void Awake()
     {
         animator = model.GetComponent<Animator>();
+        modelLocalPosition=model.localPosition;
         colorBlock = new MaterialPropertyBlock();
         renderers = model.GetComponentsInChildren<Renderer>();
         arms = System.Array.FindAll(model.GetComponentsInChildren<Transform>(), t => t.name == "Arm.R" || t.name == "Arm.L");
@@ -26,6 +29,13 @@ public sealed class DeliveryRobotVisual : MonoBehaviour
     {
         animator.SetBool("Moving", moving);
         animator.SetBool("Holding", holding);
+    }
+    public void SmoothNetworkPosition(bool smooth,float dt)
+    {
+        var target=transform.TransformPoint(modelLocalPosition);
+        networkPosition=!smooth||!networkPositionReady||Vector3.Distance(networkPosition,target)>3
+            ? target : Vector3.Lerp(networkPosition,target,1-Mathf.Exp(-25*dt));
+        model.position=networkPosition;networkPositionReady=smooth;
     }
     public void SetFirstPerson(bool value)
     {
@@ -44,6 +54,7 @@ public sealed class DeliveryRobotVisual : MonoBehaviour
     public void SetColor(Color color)
     {
         color.a = 1;
+        renderers ??= model.GetComponentsInChildren<Renderer>();
         colorBlock ??= new MaterialPropertyBlock();
         foreach (var renderer in renderers)
         {

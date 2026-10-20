@@ -1,0 +1,174 @@
+--- before/DeliveryNetwork.cs
++++ after/DeliveryNetwork.cs
+@@ -77,6 +77,10 @@
+         public int own, phase, teamSize;
+         public float remaining;
+         public float[] specialPickupRemaining;
++        public Vector3 deliveryPosition;
++        public bool deliveryAvailable;
++        public float deliveryNotice;
++        public int deliveryMinute;
+         public string notice;
+         public NetPlayer[] players;
+         public int[] owners;
+@@ -149,7 +153,7 @@
+         ResetNetPrediction(true);
+         ResetNetDiagnostics();
+         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
+-        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 14, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
++        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 15, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
+         netManager.ConnectionApprovalCallback = (request, response) =>
+         {
+@@ -337,7 +341,7 @@
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             LatencyProofInput();
+ #endif
+-            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();CleanupNetItemUses();UpdateItemAreas();
++            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();CleanupNetItemUses();UpdateItemAreas();UpdateParkDelivery();
+                 if(Time.time>=netRoundUntil){RoomState=RoomPhase.Results;finished=true;netNotice="";NetBroadcast();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}}
+             else {PredictNetLocalMovement();InterpolateNetRemotes();UpdateNetShotViews(Time.time,Time.deltaTime);}
+             SyncHostInventory(); UpdateCameraForNet(); UpdateInteraction();
+@@ -388,7 +392,7 @@
+         }
+         var shots=netActiveShots.Where(s=>s&&s.gameObject.activeSelf).Select(CaptureNetShot).ToList();
+         foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation,velocity=p.velocity});
+-        var frame=new NetFrame{specialPickupRemaining=CaptureSpecialPickups(),sequence=++netFrameSequence,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,captureLocks=Enumerable.Range(0,HouseCount).Select(MailboxProtectionRemaining).ToArray(),parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice};
++        var frame=new NetFrame{deliveryPosition=specialParcel ? specialParcel.transform.position : Vector3.zero,deliveryAvailable=specialParcel && specialParcel.Available,deliveryMinute=deliveryMinute,deliveryNotice=Mathf.Max(0,deliveryNoticeUntil-Time.time),specialPickupRemaining=CaptureSpecialPickups(),sequence=++netFrameSequence,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,captureLocks=Enumerable.Range(0,HouseCount).Select(MailboxProtectionRemaining).ToArray(),parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice};
+         foreach(var pair in netSlots)if(pair.Key!=NetworkManager.ServerClientId&&netManager.ConnectedClientsIds.Contains(pair.Key))
+         {frame.own=pair.Value;SendNet("frame",frame,pair.Key,NetworkDelivery.ReliableFragmentedSequenced);}
+         RecordNetWork(workAt,workAlloc);
+@@ -419,6 +423,7 @@
+         for(int i=0;i<10;i++){mailboxProtectedUntil[i]=Time.time+Mathf.Clamp(f.captureLocks[i],0,RecaptureProtectionSeconds);int v=f.owners[i]<0?-1:NetLocal(f.owners[i]);if(owner[i]!=v||starting){owner[i]=v;SetMailboxEffectColor(i,v<0?Color.white:CaptureColor(v));}}
+         if(parcelPool) parcelPool.ApplySnapshot(f.parcels);
+         ApplySpecialPickups(f.specialPickupRemaining);
++        ApplyParkDelivery(f.deliveryAvailable, f.deliveryPosition, f.deliveryMinute, f.deliveryNotice);
+         SyncHostInventory();SyncNetShotViews(NetPlaying?f.shots??Array.Empty<NetShot>():Array.Empty<NetShot>());
+         RecordNetWork(workAt,workAlloc);
+     }
+--- before/MonsterDeliveryHUD.cs
++++ after/MonsterDeliveryHUD.cs
+@@ -54,6 +54,7 @@
+             DrawIceCreamScreen(w, h);
+             DrawStunScreen(w, h);
+             DrawSpecialTestHUD(w,h,scale);
++            DrawParkDeliveryNotice(w);
+             DeliveryUIArt.Image(new Rect(38, 28, 248, 99), "score_panel");
+             DeliveryUIArt.Image(new Rect(48, 36, 80, 82), "mailbox_icon");
+             DeliveryUIArt.Text(new Rect(134, 38, 134, 24), HudScoreTitle, 21, Color.white);
+--- before/MonsterDeliveryPrototype.cs
++++ after/MonsterDeliveryPrototype.cs
+@@ -28,7 +28,7 @@
+     float startedAt, lookPitch = 12, vertical, captureStarted, nextAttackAt, stamina = 100, rollUntil, mapCameraPitch = 42, mapCameraYaw;
+     Vector3 rollDirection;
+     string feedback = "Enter를 눌러 우편함 난투를 시작하세요.";
+-    [Min(30)] public float roundSeconds = 180;
++    [Min(30)] public float roundSeconds = 300;
+     public bool mapEditMode;
+     public bool mapExploreMode = true;
+     public bool thirdPersonPreview = false;
+@@ -140,7 +140,7 @@
+     {
+         if (mapEditMode) { UpdateMapCamera(); return; }
+         if (TickNetwork()) return;
+-        if (started && !finished) UpdateItemAreas();
++        if (started && !finished) { UpdateItemAreas(); UpdateParkDelivery(); }
+         UpdateCamera(); var kb = Keyboard.current;
+         UpdateGlovePush();
+         UpdateHandThrow();
+--- before/SpecialDeliveryItems.cs
++++ after/SpecialDeliveryItems.cs
+@@ -12,7 +12,8 @@
+     readonly GameObject[] lifeJacketViews = new GameObject[4];
+     readonly LifeJacketProtectionFX[] lifeJacketFX = new LifeJacketProtectionFX[4];
+     readonly float[] specialFxAt = { -10, -10, -10, -10 };
+-    bool SpecialTestLoadout => specialParcel && specialParcel.testLoadout;
++    public bool SpecialDevelopmentPickups => !NetworkScreens && mapExploreMode;
++    bool SpecialTestLoadout => SpecialDevelopmentPickups && specialParcel && specialParcel.testLoadout;
+     static bool IsSpecial(WeaponKind kind) => kind >= WeaponKind.AirCannon && kind <= WeaponKind.ExpressBattery;
+     static bool AllowsSpecialReplacement(InteractionTarget target) => target && target.TryGetComponent<SpecialDeliveryParcel>(out var pickup) && pickup.ReplaceSelected;
+     static bool IsParcelTarget(InteractionTarget target) => target &&
+@@ -27,14 +28,28 @@
+             pickup.Initialize(this);
+             if (pickup.fixedItem != WeaponKind.None) pickup.GetComponent<InteractionTarget>().displayName = ItemName(pickup.fixedItem);
+         }
++        ResetSpecialPickups();
+         GrantSpecialTestLoadout();
+     }
+-    void ResetSpecialPickups() { foreach (var pickup in specialPickups) pickup.ResetRound(); }
++    void ResetSpecialPickups()
++    {
++        deliveryMinute = 0; deliveryNoticeUntil = 0;
++        foreach (var pickup in specialPickups)
++        {
++            pickup.gameObject.SetActive(!pickup.ReplaceSelected || SpecialDevelopmentPickups);
++            pickup.ResetRound();
++        }
++    }
+     float[] CaptureSpecialPickups() => specialPickups.Select(p => p.Remaining).ToArray();
+     void ApplySpecialPickups(float[] remaining)
+     {
+         if (remaining == null || remaining.Length != specialPickups.Length) return;
+-        for (int i = 0; i < remaining.Length; i++) specialPickups[i].ApplySnapshot(remaining[i]);
++        for (int i = 0; i < remaining.Length; i++)
++        {
++            var pickup = specialPickups[i];
++            pickup.gameObject.SetActive(!pickup.ReplaceSelected || SpecialDevelopmentPickups);
++            if (!pickup.Scheduled) pickup.ApplySnapshot(remaining[i]);
++        }
+     }
+     void CollectSpecialLocal(SpecialDeliveryParcel pickup)
+     {
+@@ -185,7 +200,7 @@
+         }
+         foreach (var pickup in specialPickups)
+         {
+-            if (!pickup.ReplaceSelected || !pickup.Available || Vector3.Distance(cam.transform.position,pickup.transform.position)>22) continue;
++            if (!pickup.gameObject.activeInHierarchy || !pickup.ReplaceSelected || !pickup.Available || Vector3.Distance(cam.transform.position,pickup.transform.position)>22) continue;
+             var p=cam.WorldToScreenPoint(pickup.transform.position+Vector3.up*(pickup.GetComponent<BoxCollider>().bounds.size.y+.3f));
+             if(p.z<=0)continue;
+             var rect=new Rect(p.x/scale-95,(Screen.height-p.y)/scale-14,190,28);
+--- before/SpecialDeliveryParcel.cs
++++ after/SpecialDeliveryParcel.cs
+@@ -1,6 +1,6 @@
+ using UnityEngine;
+ 
+-// One authored park parcel; the host owns collection and the ten-second test respawn.
++// The host owns scheduled park delivery. Fixed test pickups remain available in exploration.
+ [RequireComponent(typeof(InteractionTarget), typeof(BoxCollider))]
+ public sealed class SpecialDeliveryParcel : MonoBehaviour
+ {
+@@ -16,19 +16,29 @@
+     public float Remaining => Mathf.Max(0, readyAt - Time.time);
+     public bool Available => GetComponent<InteractionTarget>().available;
+     public void Initialize(MonsterDeliveryPrototype owner) { game = owner; ResetRound(); }
+-    public void ResetRound() => ApplySnapshot(0);
+-    void Update() { if (game && game.ParcelAuthority && !Available && Remaining <= 0) ApplySnapshot(0); }
++    public bool Scheduled => fixedItem == WeaponKind.None && game && !game.SpecialDevelopmentPickups;
++    public void ResetRound() { if (Scheduled) SetAvailable(false); else ApplySnapshot(0); }
++    void Update() { if (game && game.ParcelAuthority && !Scheduled && !Available && Remaining <= 0) ApplySnapshot(0); }
+     public bool TryCollect()
+     {
+         if (!game || !game.ParcelAuthority || !Available) return false;
+-        ApplySnapshot(respawnSeconds); return true;
++        if (Scheduled) SetAvailable(false); else ApplySnapshot(respawnSeconds);
++        return true;
+     }
+     public void ApplySnapshot(float remaining)
+     {
+         readyAt = Time.time + Mathf.Max(0, remaining);
+-        bool available = remaining <= 0;
++        SetAvailable(remaining <= 0);
++    }
++    public void Deliver(Vector3 position)
++    {
++        transform.position = position; readyAt = 0; SetAvailable(true);
++    }
++    public void SetAvailable(bool available)
++    {
+         GetComponent<InteractionTarget>().available = available;
+         GetComponent<BoxCollider>().enabled = available;
+         if (model) model.SetActive(available);
++        if (TryGetComponent<ParkDeliveryGlow>(out var glow)) glow.SetVisible(available);
+     }
+ }

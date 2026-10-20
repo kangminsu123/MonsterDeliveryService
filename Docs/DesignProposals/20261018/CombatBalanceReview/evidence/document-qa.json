@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-18",
+  "pages": 3,
+  "all_pages_visually_reviewed": true,
+  "requested_changes": 7,
+  "table_rows": [
+    8,
+    3,
+    7
+  ],
+  "code_review_only": true,
+  "no_new_unity_or_multiplayer_tests": true,
+  "game_files_sha256_unchanged": 99,
+  "current_item_guide_slime_uses": 2,
+  "renderer": "hidden read-only Word export and Poppler; render_docx.py attempted but LibreOffice unavailable",
+  "sha256": "d0a0831754119e3da5888741d6b4321d29be945a8433902519d1e011607b17de",
+  "page_sha256": {
+    "page-1.png": "c7878178194944aa3fc04800df9b09b62861037005713e63c907713ab58d96fa",
+    "page-2.png": "d23b091a4d063381407690bd0d3fbb25a2267f7af66f235c171bcb6cb0ad280b",
+    "page-3.png": "addda402f77f398bda2071ec3fd4d4b889eb6be088b55f622ad10b735ebceb46"
+  },
+  "revision": "glove launches higher; height2x is proposal, not user-confirmed numeric value"
+}

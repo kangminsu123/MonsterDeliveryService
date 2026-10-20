@@ -1,0 +1,241 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+public sealed partial class MonsterDeliveryPrototype
+{
+    sealed class NetMelee { public int source, kind, slot; public float at, started; }
+    sealed class NetPlunger { public int source; public float distance; public bool returning; public GameObject model; public Vector3 velocity; }
+    readonly List<NetMelee> netMelee = new();
+    readonly List<NetPlunger> netPlungers = new();
+    readonly DeliveryHeldItem[] netHeld = new DeliveryHeldItem[4];
+    readonly WeaponKind[] netHeldKinds = new WeaponKind[4];
+    readonly Vector3[] netLastPositions = new Vector3[4];
+    readonly float[] netWalkingUntil = new float[4];
+
+    void GiveNetItem(int g,int slot,int kind)
+    {
+        var p=netPlayers[g];p.items[slot]=kind;p.ammo[slot]=Ammo((WeaponKind)kind);
+        if(p.actionSlot==slot)p.actionKind=0;
+    }
+    void ConsumeNetItem(int g,int slot,bool finishMotion=false)
+    {
+        var p=netPlayers[g];p.ammo[slot]=Mathf.Max(0,p.ammo[slot]-1);
+        if(p.ammo[slot]==0&&!finishMotion)p.items[slot]=0;
+    }
+    void CleanupNetItemUses()
+    {
+        for(int g=0;g<4;g++)
+        {
+            var p=netPlayers[g];if(p==null||!p.connected)continue;
+            float duration=IsSpecial((WeaponKind)p.actionKind)?SpecialActionDuration:p.actionKind==1?GlovePushDuration:p.actionKind==3?HammerDuration:IsHandThrown((WeaponKind)p.actionKind)?HandThrowDuration:0;
+            for(int slot=0;slot<SlotCount;slot++)
+            {
+                if(p.items[slot]==0||p.ammo[slot]>0)continue;
+                if(p.items[slot]==2&&netPlungers.Any(s=>s.source==g))continue;
+                if(p.actionSlot==slot&&p.actionKind==p.items[slot]&&Time.time-p.actionAt<duration)continue;
+                p.items[slot]=0;
+            }
+        }
+    }
+
+    Vector3 NetAim(int g) { var input=netInputs[g];return Quaternion.Euler(input?.pitch??0,input?.yaw??0,0)*Vector3.forward; }
+    Vector3 NetEye(int g) => (g==0?playerVisual:botVisuals[g-1]).EyePosition;
+    bool NetRay(int source,Vector3 origin,Vector3 direction,float range,float radius,out Collider collider,out Vector3 point,out Vector3 normal)
+    {
+        collider=null;point=origin+direction*range;normal=-direction;float distance=float.PositiveInfinity;
+        var own=ActorController(source);
+        foreach(var c in Physics.OverlapSphere(origin,radius,~0,QueryTriggerInteraction.Ignore))
+            if(c!=own){collider=c;point=c.ClosestPoint(origin);return true;}
+        foreach(var hit in Physics.SphereCastAll(origin,radius,direction,range,~0,QueryTriggerInteraction.Ignore))
+            if(hit.collider!=own&&hit.distance<distance){distance=hit.distance;collider=hit.collider;point=hit.point;normal=hit.normal;}
+        return collider;
+    }
+    void StepNetPlayers()
+    {
+        for(int g=0;g<4;g++)
+        {
+            var p=netPlayers[g];if(p==null)continue;var actor=ActorController(g);actor.gameObject.SetActive(p.connected);if(!p.connected)continue;
+            if(g==0)StepNetPlayerCommand(g,netInputs[g]??new NetInput(),Time.deltaTime);
+            else
+            {
+                netMovementBudget[g]=Mathf.Min(.25f,netMovementBudget[g]+Time.deltaTime);
+                while(netMovementInputs[g].Count>0&&netMovementBudget[g]>=NetInputStep)
+                {
+                    netMovementBudget[g]-=NetInputStep;
+                    var input=netMovementInputs[g].Dequeue();netInputs[g]=input;
+                    StepNetPlayerCommand(g,input,NetInputStep);p.inputAck=input.sequence;
+                }
+            }
+            var state=ActorState(g);var current=netInputs[g];
+            NetCaptureAndPickup(g,current!=null&&current.capture&&!state.Stunned(Time.time)&&p.dashRemaining<=0);
+        }
+    }
+    void StepNetPlayerCommand(int g,NetInput input,float dt)
+    {
+        var p=netPlayers[g];var state=ActorState(g);bool locked=state.Stunned(Time.time);
+        bool flying=netPlungers.Any(s=>s.source==g);
+        if(!locked&&!flying&&p.selected!=input.slot){p.selected=input.slot;p.target=-1;}
+        if(input.drop!=p.dropped){p.dropped=input.drop;if(!locked){p.items[p.selected]=0;p.ammo[p.selected]=0;p.target=-1;foreach(var shot in netPlungers.Where(s=>s.source==g).ToArray()){Destroy(shot.model);netPlungers.Remove(shot);}}}
+        SimulateNetMovement(ActorController(g),state,p,input,dt,true);
+        if(input.use!=p.used){p.used=input.use;if(!locked&&p.dashRemaining<=0)UseNetWeapon(g);}
+    }
+    void NetCaptureAndPickup(int g,bool pressed)
+    {
+        var p=netPlayers[g];var state=ActorState(g);
+        if(!pressed||!state.CanCapture(Time.time)){p.target=-1;return;}
+        if(!NetRay(g,NetEye(g),NetAim(g),3,.01f,out var hit,out _,out _)){p.target=-1;return;}
+        var target=hit.GetComponentInParent<InteractionTarget>();if(!target||!target.available){p.target=-1;return;}
+        var special=target.GetComponent<SpecialDeliveryParcel>();
+        if(special)
+        {
+            p.target=-1;int empty=System.Array.IndexOf(p.items,0);
+            if(empty<0&&special.ReplaceSelected)empty=p.selected;
+            if(empty>=0&&special.TryCollect()){GiveNetItem(g,empty,(int)special.RewardKind);p.selected=empty;}
+            return;
+        }
+        var parcel=target.GetComponent<FloatingParcel>();
+        if(parcel)
+        {
+            p.target=-1;int empty=System.Array.IndexOf(p.items,0);
+            if(empty>=0&&parcel.TryCollect()){GiveNetItem(g,empty,Random.Range(1,10));p.selected=empty;}
+            return;
+        }
+        int house=System.Array.FindIndex(mailboxes,m=>m==target.gameObject);
+        if(house<0||MailboxProtectionRemaining(house)>0||owner[house]>=0&&netPlayers[owner[house]].team==p.team){p.target=-1;return;}
+        if(p.target!=house){p.target=house;p.captureAt=Time.time;}
+        if(Time.time-p.captureAt>=(p.items[p.selected]==8?1.5f:3))
+        {if(Capture(house,g)&&p.items[p.selected]==8)ConsumeNetItem(g,p.selected);p.target=-1;}
+    }
+    void UseNetWeapon(int g)
+    {
+        var p=netPlayers[g];if(Time.time<p.cooldown||netPlungers.Any(s=>s.source==g)||netHandThrows.Any(s=>s.source==g)||ActorState(g).Stunned(Time.time))return;
+        int kind=p.items[p.selected];if(kind==0||kind==8||p.ammo[p.selected]<=0)return;
+        if(kind==(int)WeaponKind.PackingMachine&&RemoteCaptureTarget(g,NetEye(g),NetAim(g))<0)return;
+        p.cooldown=Time.time+(kind==3?.75f:kind==2?.7f:.6f);p.actionAt=Time.time;p.target=-1;
+        p.actionKind=kind;p.actionSlot=p.selected;
+        p.throwReleased=false;
+        if(kind==(int)WeaponKind.BoxingGloves)p.boxingPunches++;
+        ActorState(g).busyUntil=Time.time+.5f;
+        if(IsSpecial((WeaponKind)kind)){UseSpecialWeapon(g,(WeaponKind)kind,NetEye(g),NetAim(g));ConsumeNetItem(g,p.selected,true);return;}
+        if(kind==6){ActivateRunningShoes(g);ConsumeNetItem(g,p.selected);return;}if(kind==7){ActivateBubbleWrap(g);ConsumeNetItem(g,p.selected);return;}
+        if(kind==1||kind==3){netMelee.Add(new NetMelee{source=g,kind=kind,slot=p.selected,started=p.actionAt,at=Time.time+(kind==1?.16f:.18f)});return;}
+        if(IsHandThrown((WeaponKind)kind))
+        {
+            ActorState(g).busyUntil=Time.time+HandThrowDuration;
+            netHandThrows.Add(new NetHandThrow{source=g,kind=(WeaponKind)kind,slot=p.selected,started=Time.time});return;
+        }
+        ConsumeNetItem(g,p.selected,true);LaunchNetProjectile(g,kind);
+    }
+    void LaunchNetProjectile(int g,int kind)
+    {
+        var aim=NetAim(g);var eye=NetEye(g);float radius=kind==4?.23f:.18f;
+        if(NetRay(g,eye,aim,.75f,radius,out var cover,out var point,out var normal))
+        {ResolveNetImpact(kind,cover,point,g,normal);return;}
+        var origin=eye+aim*.75f;
+        if(kind==5)LaunchIceCream(origin,aim*IceCreamSpeed+Vector3.up*3,g);
+        else if(kind==4)LaunchSlime(origin,aim*18+Vector3.up*3,g);
+        else if(kind==9)LaunchFountainPen(origin,aim,48,g);
+        else if(kind==2)
+        {
+            var model=Instantiate(Resources.Load<GameObject>("DeliveryItems/Plunger"));model.name="NetworkThrownPlunger";model.transform.SetPositionAndRotation(origin,Quaternion.LookRotation(aim)*Quaternion.Euler(-90,0,0));
+            netPlungers.Add(new NetPlunger{source=g,model=model,velocity=aim*PlungerSpeed});
+        }
+    }
+    void ResolveNetImpact(int kind,Collider hit,Vector3 point,int source,Vector3 normal)
+    {
+        if(kind==5)IceCreamImpact(hit,point,source,normal);
+        if(kind==4)SlimeImpact(hit,point,source,normal);
+        if(kind==9)FountainPenImpact(hit,point,source,normal);
+        ReplicateNetImpact((WeaponKind)kind,point,normal,hit);
+    }
+    void UpdateNetMelee()
+    {
+        foreach(var attack in netMelee.Where(a=>Time.time>=a.at).ToArray())
+        {
+            netMelee.Remove(attack);int g=attack.source;var p=netPlayers[g];
+            if(!p.connected||ActorState(g).Stunned(Time.time)||p.selected!=attack.slot||p.items[attack.slot]!=attack.kind||p.actionAt!=attack.started||p.actionKind!=attack.kind||Time.time<p.dashUntil)continue;
+            ConsumeNetItem(g,attack.slot,true);
+            var origin=NetEye(g);var aim=NetAim(g);
+            if(!NetRay(g,origin,aim,attack.kind==1?5:3.5f,attack.kind==1?.01f:.32f,out var hit,out _,out _))continue;
+            for(int target=0;target<4;target++)if(ActorController(target)==hit&&NetCanHit(g,target))
+            {
+                if(attack.kind==3)ApplyItemHit(target,new DeliveryItemHit(stunSeconds:HammerStun));
+                else {var toward=ActorController(target).transform.position-ActorController(g).transform.position;toward.y=0;ApplyItemHit(target,new DeliveryItemHit(toward.normalized*GlovePushSpeed+Vector3.up*GloveLiftSpeed));}
+            }
+        }
+    }
+    void UpdateNetPlungers()
+    {
+        foreach(var shot in netPlungers.ToArray())
+        {
+            if(!shot.model||!netPlayers[shot.source].connected){if(shot.model)Destroy(shot.model);netPlungers.Remove(shot);continue;}
+            var from=shot.model.transform.position;var origin=NetEye(shot.source);
+            if(shot.returning)
+            {shot.model.transform.position=Vector3.MoveTowards(from,origin,PlungerReturnSpeed*Time.deltaTime);shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);if(Vector3.Distance(from,origin)<.5f){Destroy(shot.model);netPlungers.Remove(shot);}continue;}
+            var aim=NetAim(shot.source);float step=Mathf.Min(PlungerSpeed*Time.deltaTime,PlungerRange-shot.distance);
+            // Flight direction is fixed on release, independent of later mouse movement.
+            aim=shot.model.transform.rotation*Quaternion.Euler(90,0,0)*Vector3.forward;
+            if(NetRay(shot.source,from,aim,step,.16f,out var hit,out var point,out _))
+            {
+                shot.model.transform.position=point;shot.returning=true;
+                for(int id=0;id<4;id++)if(ActorController(id)==hit&&NetCanHit(shot.source,id))
+                {
+                    var actor=ActorController(id);var source=ActorController(shot.source);var direction=source.transform.position-actor.transform.position;direction.y=0;
+                    if(ApplyControl(id,direction.normalized*14))
+                    {var state=ActorState(id);state.pullSpeed=PlungerReturnSpeed*state.force.magnitude/14;state.force=Vector3.zero;state.pendingLift=0;state.pullSource=source.transform;state.pullStandOff=1.6f;state.pullUntil=Time.time+2;}
+                }
+            }
+            else {shot.model.transform.position+=aim*step;shot.distance+=step;if(shot.distance>=PlungerRange)shot.returning=true;}
+            shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);
+        }
+    }
+    void ClearNetPlungers()
+    {foreach(var p in netPlungers)if(p.model)Destroy(p.model);netPlungers.Clear();netMelee.Clear();netHandThrows.Clear();}
+    void PoseNetworkPlayers()
+    {
+        if(!NetworkScreens)return;
+        for(int g=0;g<4;g++)
+        {
+            var p=netPlayers[g];int local=NetLocal(g);if(p==null||!p.connected||!NetPlaying){if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+            var actor=ActorController(local);var visual=local==0?playerVisual:botVisuals[local-1];var kind=(WeaponKind)p.items[p.selected];
+            if((actor.transform.position-netLastPositions[g]).sqrMagnitude>.00001f)netWalkingUntil[g]=Time.time+.1f;
+            netLastPositions[g]=actor.transform.position;
+            visual.SmoothNetworkPosition(NetServer&&local>0,Time.deltaTime);
+            visual.SetMotion(Time.time<netWalkingUntil[g]&&!p.controlLocked&&!ActorState(local).KnockedBack&&!ActorState(local).Stunned(Time.time),HasHeldModel(kind));
+            float age=Time.time-p.actionAt;
+            float throwAge=p.actionKind==(int)kind&&p.actionSlot==p.selected&&!ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? age : float.PositiveInfinity;
+            float punch=kind==WeaponKind.BoxingGloves&&p.actionKind==(int)kind&&p.actionSlot==p.selected&&
+                !ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? GlovePushAt(age) : 0;
+            float hammer=kind==WeaponKind.ToyHammer ? HammerSwingAt(throwAge) : 0;
+            bool rightHand=(p.boxingPunches&1)!=0;
+            bool plungerAway=kind==WeaponKind.Plunger&&(NetServer?netPlungers.Any(s=>s.source==g&&s.model):p.plungerFlying);
+            if(local==0)
+            {
+                if(heldWeapon&&heldItem)
+                {
+                    if(IsHandThrown(kind))
+                    {PoseThrownItem(heldWeapon,heldItem,visual,throwAge,p.throwReleased,!thirdPersonPreview);continue;}
+                    if(kind==WeaponKind.ToyHammer)
+                    {heldWeapon.SetActive(true);PoseHammerSwing(heldItem,visual,hammer,!thirdPersonPreview);continue;}
+                    heldWeapon.SetActive(!plungerAway&&(kind==WeaponKind.BoxingGloves||age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes));
+                    if(!thirdPersonPreview)
+                    {
+                        heldItem.FirstPerson();
+                        if(kind==WeaponKind.BoxingGloves)heldItem.PushFirstPerson(punch,rightHand);
+                        else if(age<.36f)heldItem.transform.localPosition+=Vector3.down*(.12f*(1-age/.36f));
+                    }
+                    else if(kind==WeaponKind.BoxingGloves)
+                    {if(punch!=0)visual.PushArm(punch,rightHand);heldItem.FollowBones();}
+                }
+                continue;
+            }
+            if(netHeld[g]&&netHeldKinds[g]!=kind){Destroy(netHeld[g].gameObject);netHeld[g]=null;}
+            if(!HasHeldModel(kind)) {if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+            if(!netHeld[g]){netHeld[g]=Instantiate(Resources.Load<GameObject>("DeliveryItems/"+kind),visual.transform,false).GetComponent<DeliveryHeldItem>();netHeld[g].Bind(visual);netHeldKinds[g]=kind;}
+            if(IsHandThrown(kind))PoseThrownItem(netHeld[g].gameObject,netHeld[g],visual,throwAge,p.throwReleased,false);
+            else if(kind==WeaponKind.ToyHammer){netHeld[g].gameObject.SetActive(true);PoseHammerSwing(netHeld[g],visual,hammer,false);}
+            else {netHeld[g].gameObject.SetActive(!plungerAway);if(punch!=0)visual.PushArm(punch,rightHand);netHeld[g].FollowBones();}
+        }
+    }
+}

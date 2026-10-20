@@ -34,7 +34,7 @@ public sealed partial class MonsterDeliveryPrototype
 
     bool PrepareExplorationRivalTarget()
     {
-        if (botTarget[0] >= 0 && owner[botTarget[0]] != 1) return true;
+        if (botTarget[0] >= 0 && owner[botTarget[0]] != 1 && MailboxProtectionRemaining(botTarget[0]) <= 0) return true;
         botTarget[0] = -1;
         if (Time.time < nextExplorationPlan) return false;
         nextExplorationPlan = Time.time + 1;
@@ -43,7 +43,7 @@ public sealed partial class MonsterDeliveryPrototype
         var path = new NavMeshPath();
         for (int i = 0; i < HouseCount; i++)
         {
-            if (!mailboxes[i] || owner[i] == 1 ||
+            if (!mailboxes[i] || owner[i] == 1 || MailboxProtectionRemaining(i) > 0 ||
                 !NavMesh.SamplePosition(mailboxes[i].transform.position, out var end, 2, NavMesh.AllAreas) ||
                 !NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, path) ||
                 path.status != NavMeshPathStatus.PathComplete) continue;

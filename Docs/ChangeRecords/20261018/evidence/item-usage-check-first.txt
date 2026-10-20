@@ -1,0 +1,190 @@
+2026-10-18T02:53:54.0029954+09:00
+Real Play use/cancel/depletion paths. Network uses real host initialization, controlled player records and serialized participant frames; not separate network processes.
+PASS BoxingGloves offline grant and HUD match limit 3
+PASS BoxingGloves windup does not spend before release/hit 1
+PASS BoxingGloves offline spends exactly one use 1
+PASS BoxingGloves stays through current motion/return 1
+PASS BoxingGloves windup does not spend before release/hit 2
+PASS BoxingGloves offline spends exactly one use 2
+PASS BoxingGloves stays through current motion/return 2
+PASS BoxingGloves windup does not spend before release/hit 3
+PASS BoxingGloves offline spends exactly one use 3
+PASS BoxingGloves stays through current motion/return 3
+PASS BoxingGloves offline slot clears on final completion
+PASS Plunger offline grant and HUD match limit 3
+PASS Plunger windup does not spend before release/hit 1
+PASS Plunger offline spends exactly one use 1
+PASS Plunger stays through current motion/return 1
+PASS Plunger windup does not spend before release/hit 2
+PASS Plunger offline spends exactly one use 2
+PASS Plunger stays through current motion/return 2
+PASS Plunger windup does not spend before release/hit 3
+PASS Plunger offline spends exactly one use 3
+PASS Plunger stays through current motion/return 3
+PASS Plunger offline slot clears on final completion
+PASS ToyHammer offline grant and HUD match limit 2
+PASS ToyHammer windup does not spend before release/hit 1
+PASS ToyHammer offline spends exactly one use 1
+PASS ToyHammer stays through current motion/return 1
+PASS ToyHammer windup does not spend before release/hit 2
+PASS ToyHammer offline spends exactly one use 2
+PASS ToyHammer stays through current motion/return 2
+PASS ToyHammer offline slot clears on final completion
+PASS Slime offline grant and HUD match limit 2
+PASS Slime windup does not spend before release/hit 1
+PASS Slime offline spends exactly one use 1
+PASS Slime stays through current motion/return 1
+PASS Slime windup does not spend before release/hit 2
+PASS Slime offline spends exactly one use 2
+PASS Slime stays through current motion/return 2
+PASS Slime offline slot clears on final completion
+PASS IceCream offline grant and HUD match limit 2
+PASS IceCream windup does not spend before release/hit 1
+PASS IceCream offline spends exactly one use 1
+PASS IceCream stays through current motion/return 1
+PASS IceCream windup does not spend before release/hit 2
+PASS IceCream offline spends exactly one use 2
+PASS IceCream stays through current motion/return 2
+PASS IceCream offline slot clears on final completion
+PASS RunningShoes offline grant and HUD match limit 1
+PASS RunningShoes offline spends exactly one use 1
+PASS RunningShoes offline slot clears on final completion
+PASS RunningShoes active effect survives item consumption
+PASS BubbleWrap offline grant and HUD match limit 1
+PASS BubbleWrap offline spends exactly one use 1
+PASS BubbleWrap offline slot clears on final completion
+PASS BubbleWrap active effect survives item consumption
+PASS WorkGloves offline grant and HUD match limit 1
+PASS FountainPen offline grant and HUD match limit 2
+PASS FountainPen windup does not spend before release/hit 1
+PASS FountainPen offline spends exactly one use 1
+PASS FountainPen stays through current motion/return 1
+PASS FountainPen windup does not spend before release/hit 2
+PASS FountainPen offline spends exactly one use 2
+PASS FountainPen stays through current motion/return 2
+PASS FountainPen offline slot clears on final completion
+PASS BoxingGloves interrupted windup preserves use
+PASS Plunger interrupted windup preserves use
+PASS ToyHammer interrupted windup preserves use
+PASS Slime interrupted windup preserves use
+PASS IceCream interrupted windup preserves use
+PASS FountainPen interrupted windup preserves use
+PASS offline work gloves preserve use during incomplete capture
+PASS offline work gloves consume only after successful capture
+PASS network round starts with empty items and zero counters
+PASS server player0 grants BoxingGloves with correct uses
+PASS server player0 BoxingGloves spends once 1
+PASS server final action/return is retained 0 BoxingGloves 1
+PASS server player0 BoxingGloves spends once 2
+PASS server final action/return is retained 0 BoxingGloves 2
+PASS server player0 BoxingGloves spends once 3
+PASS server final action/return is retained 0 BoxingGloves 3
+PASS server clears final slot 0 BoxingGloves
+PASS depleted item cannot be reused 0 BoxingGloves
+PASS server player0 grants Plunger with correct uses
+PASS server player0 Plunger spends once 1
+PASS server final action/return is retained 0 Plunger 1
+PASS server player0 Plunger spends once 2
+PASS server final action/return is retained 0 Plunger 2
+PASS server player0 Plunger spends once 3
+PASS server final action/return is retained 0 Plunger 3
+PASS server clears final slot 0 Plunger
+PASS depleted item cannot be reused 0 Plunger
+PASS server player0 grants ToyHammer with correct uses
+PASS server player0 ToyHammer spends once 1
+PASS server final action/return is retained 0 ToyHammer 1
+PASS server player0 ToyHammer spends once 2
+PASS server final action/return is retained 0 ToyHammer 2
+PASS server clears final slot 0 ToyHammer
+PASS depleted item cannot be reused 0 ToyHammer
+PASS server player0 grants Slime with correct uses
+PASS server player0 Slime spends once 1
+PASS server final action/return is retained 0 Slime 1
+PASS server player0 Slime spends once 2
+PASS server final action/return is retained 0 Slime 2
+PASS server clears final slot 0 Slime
+PASS depleted item cannot be reused 0 Slime
+PASS server player0 grants IceCream with correct uses
+PASS server player0 IceCream spends once 1
+PASS server final action/return is retained 0 IceCream 1
+PASS server player0 IceCream spends once 2
+PASS server final action/return is retained 0 IceCream 2
+PASS server clears final slot 0 IceCream
+PASS depleted item cannot be reused 0 IceCream
+PASS server player0 grants RunningShoes with correct uses
+PASS server player0 RunningShoes spends once 1
+PASS server clears final slot 0 RunningShoes
+PASS depleted item cannot be reused 0 RunningShoes
+PASS server player0 grants BubbleWrap with correct uses
+PASS server player0 BubbleWrap spends once 1
+PASS server clears final slot 0 BubbleWrap
+PASS depleted item cannot be reused 0 BubbleWrap
+PASS server player0 grants WorkGloves with correct uses
+PASS work gloves click is passive and does not spend
+PASS server player0 grants FountainPen with correct uses
+PASS server player0 FountainPen spends once 1
+PASS server final action/return is retained 0 FountainPen 1
+PASS server player0 FountainPen spends once 2
+PASS server final action/return is retained 0 FountainPen 2
+PASS server clears final slot 0 FountainPen
+PASS depleted item cannot be reused 0 FountainPen
+PASS server player1 grants BoxingGloves with correct uses
+PASS server player1 BoxingGloves spends once 1
+PASS server final action/return is retained 1 BoxingGloves 1
+PASS server player1 BoxingGloves spends once 2
+PASS server final action/return is retained 1 BoxingGloves 2
+PASS server player1 BoxingGloves spends once 3
+PASS server final action/return is retained 1 BoxingGloves 3
+PASS server clears final slot 1 BoxingGloves
+PASS depleted item cannot be reused 1 BoxingGloves
+PASS server player1 grants Plunger with correct uses
+PASS server player1 Plunger spends once 1
+PASS server final action/return is retained 1 Plunger 1
+PASS server player1 Plunger spends once 2
+PASS server final action/return is retained 1 Plunger 2
+PASS server player1 Plunger spends once 3
+PASS server final action/return is retained 1 Plunger 3
+PASS server clears final slot 1 Plunger
+PASS depleted item cannot be reused 1 Plunger
+PASS server player1 grants ToyHammer with correct uses
+PASS server player1 ToyHammer spends once 1
+PASS server final action/return is retained 1 ToyHammer 1
+PASS server player1 ToyHammer spends once 2
+PASS server final action/return is retained 1 ToyHammer 2
+PASS server clears final slot 1 ToyHammer
+PASS depleted item cannot be reused 1 ToyHammer
+PASS server player1 grants Slime with correct uses
+PASS server player1 Slime spends once 1
+PASS server final action/return is retained 1 Slime 1
+PASS server player1 Slime spends once 2
+PASS server final action/return is retained 1 Slime 2
+PASS server clears final slot 1 Slime
+PASS depleted item cannot be reused 1 Slime
+PASS server player1 grants IceCream with correct uses
+PASS server player1 IceCream spends once 1
+PASS server final action/return is retained 1 IceCream 1
+PASS server player1 IceCream spends once 2
+PASS server final action/return is retained 1 IceCream 2
+PASS server clears final slot 1 IceCream
+PASS depleted item cannot be reused 1 IceCream
+PASS server player1 grants RunningShoes with correct uses
+PASS server player1 RunningShoes spends once 1
+PASS server clears final slot 1 RunningShoes
+PASS depleted item cannot be reused 1 RunningShoes
+PASS server player1 grants BubbleWrap with correct uses
+PASS server player1 BubbleWrap spends once 1
+PASS server clears final slot 1 BubbleWrap
+PASS depleted item cannot be reused 1 BubbleWrap
+PASS server player1 grants WorkGloves with correct uses
+PASS work gloves click is passive and does not spend
+PASS server player1 grants FountainPen with correct uses
+PASS server player1 FountainPen spends once 1
+PASS server final action/return is retained 1 FountainPen 1
+PASS server player1 FountainPen spends once 2
+PASS server final action/return is retained 1 FountainPen 2
+PASS server clears final slot 1 FountainPen
+PASS depleted item cannot be reused 1 FountainPen
+PASS server incomplete capture does not spend work gloves
+PASS server successful capture spends work gloves
+PASS serialized participant frame restores remaining uses 2/1/1
+PASS participant HUD shows finite server counters

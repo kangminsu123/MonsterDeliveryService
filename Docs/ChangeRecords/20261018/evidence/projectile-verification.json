@@ -1,0 +1,35 @@
+{
+  "results": {
+    "projectile-display-before.txt": {
+      "pass": 2,
+      "fail": 19,
+      "recorded_at": "2026-10-18T01:25:10.2674631+09:00"
+    },
+    "projectile-display-after.txt": {
+      "pass": 26,
+      "fail": 0,
+      "recorded_at": "2026-10-18T01:29:26.9795864+09:00"
+    },
+    "projectile-connected-host.txt": {
+      "pass": 9,
+      "fail": 0,
+      "recorded_at": "2026-10-18T01:30:22.7932133+09:00"
+    },
+    "projectile-connected-client.txt": {
+      "pass": 12,
+      "fail": 0,
+      "recorded_at": "2026-10-18T01:30:25.4714599+09:00"
+    },
+    "throw-regression-after-projectile.txt": {
+      "pass": 98,
+      "fail": 0,
+      "recorded_at": "2026-10-18T01:31:14.4164267+09:00"
+    }
+  },
+  "actual_network": "same PC two MPPM processes, localhost, no artificial delay",
+  "controlled_sampling": "30Hz plus one skipped sample interval",
+  "prediction_limit_ms": 100,
+  "correction_decay_per_s": 25,
+  "snap_error_m": 6,
+  "preexisting_diagnostic": "Player2 UnityPipeline Unsafe DLL missing path; game checks passed"
+}

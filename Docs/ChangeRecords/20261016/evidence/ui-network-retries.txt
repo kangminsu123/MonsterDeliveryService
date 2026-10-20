@@ -1,0 +1,4 @@
+2026-10-16 재시도 이력
+1. 수정 전 숨김 D3D12 창은 ScreenshotAsTexture 결과가 검은색이었다. 로그/초기 PNG는 latency/before에 보존했다. 화면 비교는 D3D11 일반 창으로 before-visible/after-final을 재실행해 실제 게임/UI가 보이는지 열어 확인했다. 숨김 창 수치를 최종 비교에 사용하지 않았다.
+2. 압축 코드의 CompressionLevel 이름이 UnityEngine/System.IO.Compression 사이에서 모호해 컴파일1회 실패했다. System.IO.Compression.CompressionLevel.Fastest로 명시 후 컴파일 통과했다.
+3. 첫 수정본에서 라운드 시작 시 스냅샷 순번까지0으로 돌려, 대기방의 높은 순번을 기억하던 참가자가 초반 경기 프레임을 거부했다. after-visible의 호스트 결과/참가자 화면/로그를 보존했다. 순번은 새 방에서만 초기화하고 새 판에서는 계속 증가시키도록 수정했다. 최종 after-final에서는 양측7초 측정 저장 및 위치 수렴을 확인했고 Editor18개 검사에 새 판 순번 검사를 포함했다.

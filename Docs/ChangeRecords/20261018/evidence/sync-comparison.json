@@ -1,0 +1,281 @@
+{
+  "before": {
+    "benchmark": {
+      "server_capture_ms_per_call": 0.013255,
+      "server_capture_allocation_counter_available": 0,
+      "unchanged_parcels_ms_per_call": 0.002347,
+      "unchanged_parcels_allocation_counter_available": 0,
+      "apply_frame_ms_per_call": 0.008931,
+      "apply_frame_allocation_counter_available": 0,
+      "serialize_compress_ms_per_call": 0.074782,
+      "serialize_compress_allocation_counter_available": 0,
+      "json_bytes": 2586,
+      "compressed_bytes": 536
+    },
+    "host": {
+      "frame_ms": {
+        "mean": 16.66457,
+        "p95": 17.805
+      },
+      "ping_ms": {
+        "mean": 18.1,
+        "p95": 33.0
+      },
+      "ack_ms": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "receive_hz": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "work_ms": {
+        "mean": 0.1970844761904762,
+        "p95": 0.20901
+      },
+      "send_kb": {
+        "mean": 10.632972380952381,
+        "p95": 11.2871
+      },
+      "receive_kb": {
+        "mean": 3.0197804761904763,
+        "p95": 3.2764
+      },
+      "measurement_window": "3.0 to6.5s before equipment changes",
+      "seven_second_movement_proof": {
+        "label": "before-loss",
+        "role": "host",
+        "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+        "players": 2,
+        "movingFrames": 79,
+        "stationaryFrames": 0,
+        "sentBytes": 110511,
+        "frames": 414,
+        "pendingCommands": 0,
+        "inputAck": 0,
+        "droppedMessages": 47,
+        "finalPosition": {
+          "x": 0.0,
+          "y": 151.0,
+          "z": 11.689547538757324
+        },
+        "serverPosition": {
+          "x": 0.0,
+          "y": 151.0,
+          "z": 11.689547538757324
+        },
+        "simulatedOneWayMs": 60.0,
+        "firstMovementMs": 0.67901611328125,
+        "averageFrameMs": 16.881847381591797,
+        "p95FrameMs": 17.845104217529297,
+        "maximumStep": 0.970001220703125
+      }
+    },
+    "client": {
+      "frame_ms": {
+        "mean": 16.770505263157894,
+        "p95": 17.867
+      },
+      "ping_ms": {
+        "mean": 106.0,
+        "p95": 106.0
+      },
+      "ack_ms": {
+        "mean": 162.5973062200957,
+        "p95": 183.498
+      },
+      "receive_hz": {
+        "mean": 18.329760765550237,
+        "p95": 19.901
+      },
+      "work_ms": {
+        "mean": 0.25209531100478466,
+        "p95": 0.26041
+      },
+      "send_kb": {
+        "mean": 2.8149215311004783,
+        "p95": 3.1448
+      },
+      "receive_kb": {
+        "mean": 11.026117703349282,
+        "p95": 12.0058
+      },
+      "measurement_window": "3.0 to6.5s before equipment changes",
+      "seven_second_movement_proof": {
+        "label": "before-loss",
+        "role": "client-1",
+        "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+        "players": 2,
+        "movingFrames": 79,
+        "stationaryFrames": 3,
+        "sentBytes": 19437,
+        "frames": 392,
+        "pendingCommands": 13,
+        "inputAck": 387,
+        "droppedMessages": 30,
+        "finalPosition": {
+          "x": 1.399999976158142,
+          "y": 151.0,
+          "z": 15.591667175292969
+        },
+        "serverPosition": {
+          "x": 1.399999976158142,
+          "y": 151.0,
+          "z": 15.591667175292969
+        },
+        "simulatedOneWayMs": 60.0,
+        "firstMovementMs": 0.2803802490234375,
+        "averageFrameMs": 16.841516494750977,
+        "p95FrameMs": 17.901098251342773,
+        "maximumStep": 0.3249998092651367
+      }
+    }
+  },
+  "after": {
+    "benchmark": {
+      "server_capture_ms_per_call": 0.01114,
+      "server_capture_allocation_counter_available": 0,
+      "unchanged_parcels_ms_per_call": 0.000173,
+      "unchanged_parcels_allocation_counter_available": 0,
+      "apply_frame_ms_per_call": 0.029847,
+      "apply_frame_allocation_counter_available": 0,
+      "serialize_compress_ms_per_call": 0.236447,
+      "serialize_compress_allocation_counter_available": 0,
+      "json_bytes": 2137,
+      "compressed_bytes": 491
+    },
+    "host": {
+      "frame_ms": {
+        "mean": 16.665369523809524,
+        "p95": 17.582
+      },
+      "ping_ms": {
+        "mean": 16.9,
+        "p95": 18.0
+      },
+      "ack_ms": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "receive_hz": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "work_ms": {
+        "mean": 0.12073666666666667,
+        "p95": 0.13337
+      },
+      "send_kb": {
+        "mean": 12.415381428571429,
+        "p95": 13.0746
+      },
+      "receive_kb": {
+        "mean": 3.835112857142857,
+        "p95": 3.981
+      },
+      "measurement_window": "3.0 to6.5s before equipment changes",
+      "seven_second_movement_proof": {
+        "label": "after-loss",
+        "role": "host",
+        "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+        "players": 2,
+        "movingFrames": 79,
+        "stationaryFrames": 0,
+        "sentBytes": 115798,
+        "frames": 413,
+        "pendingCommands": 0,
+        "inputAck": 0,
+        "droppedMessages": 54,
+        "finalPosition": {
+          "x": 0.0,
+          "y": 151.0,
+          "z": 11.743474960327148
+        },
+        "serverPosition": {
+          "x": 0.0,
+          "y": 151.0,
+          "z": 11.743474960327148
+        },
+        "simulatedOneWayMs": 60.0,
+        "firstMovementMs": 0.3223419189453125,
+        "averageFrameMs": 16.896373748779297,
+        "p95FrameMs": 17.685501098632812,
+        "maximumStep": 0.6968388557434082
+      }
+    },
+    "client": {
+      "frame_ms": {
+        "mean": 16.753267942583733,
+        "p95": 17.6171
+      },
+      "ping_ms": {
+        "mean": 96.0,
+        "p95": 96.0
+      },
+      "ack_ms": {
+        "mean": 162.72488995215312,
+        "p95": 183.884
+      },
+      "receive_hz": {
+        "mean": 23.966617224880384,
+        "p95": 24.608
+      },
+      "work_ms": {
+        "mean": 0.23528167464114833,
+        "p95": 0.25844
+      },
+      "send_kb": {
+        "mean": 3.701423923444976,
+        "p95": 3.7997
+      },
+      "receive_kb": {
+        "mean": 12.913534449760766,
+        "p95": 13.2564
+      },
+      "measurement_window": "3.0 to6.5s before equipment changes",
+      "seven_second_movement_proof": {
+        "label": "after-loss",
+        "role": "client-1",
+        "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+        "players": 2,
+        "movingFrames": 82,
+        "stationaryFrames": 0,
+        "sentBytes": 25965,
+        "frames": 413,
+        "pendingCommands": 12,
+        "inputAck": 409,
+        "droppedMessages": 41,
+        "finalPosition": {
+          "x": 1.399999976158142,
+          "y": 151.0,
+          "z": 15.700000762939453
+        },
+        "serverPosition": {
+          "x": 1.399999976158142,
+          "y": 151.0,
+          "z": 15.700000762939453
+        },
+        "simulatedOneWayMs": 60.0,
+        "firstMovementMs": 0.2956390380859375,
+        "averageFrameMs": 16.788864135742188,
+        "p95FrameMs": 17.550800323486328,
+        "maximumStep": 0.3249998092651367
+      }
+    }
+  },
+  "cpu_change_percent": {
+    "server_capture": -15.956242927197273,
+    "unchanged_parcels": -92.62888794205368,
+    "apply_frame": 234.19549882431977,
+    "serialize_compress": 216.1817014789655
+  },
+  "measurement_limits": [
+    "Two real Editor processes on same PC; no physical WAN.",
+    "60ms delayed application frame/input messages each way, every fifth omitted; transport ping excludes this artificial application queue.",
+    "Per-thread GC allocation counter returns0 on this runtime; reported as unavailable, not zero allocations.",
+    "One warmed benchmark and one 34s delayed run per version; percentages are descriptive samples, not repeated confidence intervals.",
+    "Traffic rate may increase because30Hz schedule drift is corrected; packet size and bytes/s are different metrics.",
+    "Render model columns in this first audit were sampled before LateUpdate; do not use them to claim final rendered smoothing.",
+    "The before/after connected CSV ping fields predate final server-ID RTT lookup correction; do not use their ping values as an improvement comparison. Final movement logs contain corrected RTT lookup."
+  ]
+}

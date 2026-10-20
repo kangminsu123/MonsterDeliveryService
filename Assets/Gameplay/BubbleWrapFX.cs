@@ -18,7 +18,7 @@ public sealed partial class MonsterDeliveryPrototype
     void UpdateBubbleWrapFX()
     {
         bool playing = started && !finished && !mapEditMode;
-        if (playing && mapExploreMode && rivalBubblePlaytest && bots[0] && Time.time >= nextRivalBubbleTest)
+        if (playing && !NetworkScreens && mapExploreMode && rivalBubblePlaytest && bots[0] && Time.time >= nextRivalBubbleTest)
         { ActivateBubbleWrap(1); nextRivalBubbleTest = Time.time + 12; }
         bubbleScreenBlend = Mathf.MoveTowards(bubbleScreenBlend, BubbleWrapActive ? 1 : 0, Time.deltaTime * 5);
         for (int id = 0; id <= BotCount; id++)

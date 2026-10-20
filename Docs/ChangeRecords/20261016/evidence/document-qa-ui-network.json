@@ -1,0 +1,7 @@
+{
+  "date": "2026-10-16",
+  "pages": 7,
+  "method": "render_docx.py failed (LibreOffice absent, temp cleanup permission); hidden read-only Word COM PDF export then bundled Poppler",
+  "review": "All7 final PNGs visually reviewed. Native game captures7 and measured CSV plot1; Korean text, captions, tables and footer fit. No blank pages. An initial orphan paragraph/blank page was repaired by moving short UI cause to the introduction and resizing the plot; text size was preserved.",
+  "scope": "Case01 historical captures preserved. Case02 uses real native visible Windows captures; diagnostic overlays use opt-in synthetic input/delay. CSV figures are measured plots, not game captures."
+}

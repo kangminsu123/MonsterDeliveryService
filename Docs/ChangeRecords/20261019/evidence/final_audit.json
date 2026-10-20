@@ -1,0 +1,124 @@
+{
+  "scene": "MDS_SpecialItems_Design_v1",
+  "version": "5.1.0",
+  "fps": 24,
+  "frame_range": [
+    1,
+    144
+  ],
+  "preview_size": [
+    1800,
+    1400
+  ],
+  "original_scene_preserved": true,
+  "active_path_unchanged": true,
+  "proxy_count": 0,
+  "mesh_defects": [],
+  "assets": {
+    "HERO_AirCannon": {
+      "parts": 17,
+      "dimensions_m": [
+        1.0514,
+        1.42,
+        1.67
+      ],
+      "contact_gap_m": 0.0,
+      "angles_rad": [
+        -0.2,
+        -0.098351,
+        0.01,
+        -0.41,
+        -0.2
+      ],
+      "anchor_fixed": true,
+      "loop_closes": true,
+      "motion_visible": true,
+      "evaluated_triangles_including_bevels": 4900
+    },
+    "HERO_Broadcaster": {
+      "parts": 12,
+      "dimensions_m": [
+        1.08,
+        1.24,
+        1.56
+      ],
+      "contact_gap_m": 0.0,
+      "angles_rad": [
+        0.12,
+        0.221649,
+        0.33,
+        -0.09,
+        0.12
+      ],
+      "anchor_fixed": true,
+      "loop_closes": true,
+      "motion_visible": true,
+      "evaluated_triangles_including_bevels": 3856
+    },
+    "HERO_PackingMachine": {
+      "parts": 33,
+      "dimensions_m": [
+        1.65,
+        1.24,
+        1.5
+      ],
+      "contact_gap_m": 0.0,
+      "angles_rad": [
+        -0.1,
+        0.001649,
+        0.11,
+        -0.31,
+        -0.1
+      ],
+      "anchor_fixed": true,
+      "loop_closes": true,
+      "motion_visible": true,
+      "evaluated_triangles_including_bevels": 5564
+    },
+    "HERO_LifeJacket": {
+      "parts": 15,
+      "dimensions_m": [
+        1.22,
+        0.555,
+        1.6092
+      ],
+      "contact_gap_m": 0.0,
+      "angles_rad": [
+        -0.12,
+        -0.018351,
+        0.09,
+        -0.33,
+        -0.12
+      ],
+      "anchor_fixed": true,
+      "loop_closes": true,
+      "motion_visible": true,
+      "evaluated_triangles_including_bevels": 2000
+    },
+    "HERO_ExpressBattery": {
+      "parts": 22,
+      "dimensions_m": [
+        1.235,
+        0.827,
+        1.31
+      ],
+      "contact_gap_m": 0.0,
+      "angles_rad": [
+        0.12,
+        0.221649,
+        0.33,
+        -0.09,
+        0.12
+      ],
+      "anchor_fixed": true,
+      "loop_closes": true,
+      "motion_visible": true,
+      "evaluated_triangles_including_bevels": 3232
+    }
+  },
+  "camera_outside": [],
+  "valid": true,
+  "visual_audit": "passed; native viewport and final camera render viewed; isolated lighting and grayscale viewed; motion1/24/48/96/144 viewed",
+  "unity_imported": false,
+  "final_checkpoint": "C:\\Users\\xlfhf\\Documents\\Codex\\2026-10-17\\dbslx\\work\\blender-special-items\\checkpoint_final_audited_design_20261019.blend"
+}

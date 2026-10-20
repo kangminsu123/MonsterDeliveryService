@@ -1,0 +1,62 @@
+{
+  "completed": "2026-10-19",
+  "current_item_pages": 2,
+  "cumulative_pages": 27,
+  "unchanged_old_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "different_old_pages": [],
+  "visually_reviewed_current_pages": [
+    1,
+    2
+  ],
+  "visually_reviewed_new_change_pages": [
+    25,
+    26,
+    27
+  ],
+  "actual_network_images_visually_reviewed": 4,
+  "renderer": "Packaged render_docx.py unavailable: bundled LibreOffice missing and sandbox temporary profile denied; Word COM PDF export + bundled Poppler successful.",
+  "checks": {
+    "enhanced-combat-check.txt": {
+      "passed": 25,
+      "failed": 0
+    },
+    "item-usage-enhanced-check.txt": {
+      "passed": 161,
+      "failed": 0
+    },
+    "enhanced-connected/host.txt": {
+      "passed": 10,
+      "failed": 0
+    },
+    "enhanced-connected/client.txt": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "output_copies_byte_identical": true
+}

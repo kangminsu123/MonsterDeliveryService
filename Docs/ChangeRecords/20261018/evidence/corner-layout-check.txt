@@ -1,0 +1,4 @@
+PASS Spawn_SouthWest (-69.441, 0.750, -70.802) floor=Layer_00_GrassBase
+PASS Spawn_NorthWest (-70.691, 0.750, 64.450) floor=Layer_00_GrassBase
+PASS Spawn_NorthEast (77.147, 0.750, 49.450) floor=Layer_00_GrassBase
+PASS Spawn_SouthEast (67.147, 0.750, -69.552) floor=Layer_00_GrassBase

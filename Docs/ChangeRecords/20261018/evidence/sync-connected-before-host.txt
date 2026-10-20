@@ -1,0 +1,16 @@
+2026-10-18T01:58:23.5395778+09:00
+Actual MPPM localhost. Existing diagnostic delays each outgoing frame/input by60ms and drops every fifth; no physical WAN. Scripted equipment and input.
+PASS both local and remote walk animation activates during movement
+PASS both local and remote return to idle after stopping
+PASS host receives own accepted action or passive equipment for BoxingGloves
+PASS host receives own accepted action or passive equipment for Plunger
+PASS host receives own accepted action or passive equipment for ToyHammer
+PASS host receives own accepted action or passive equipment for Slime
+PASS host receives own accepted action or passive equipment for IceCream
+PASS host receives own accepted action or passive equipment for RunningShoes
+PASS host receives own accepted action or passive equipment for BubbleWrap
+PASS host receives own accepted action or passive equipment for WorkGloves
+PASS host receives own accepted action or passive equipment for FountainPen
+PASS host receives actual ice cream freeze for global 0
+PASS host receives actual ice cream freeze for global 1
+PASS host receives authoritative boxing knockback on guest

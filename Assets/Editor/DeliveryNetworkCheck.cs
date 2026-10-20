@@ -3,6 +3,12 @@ using UnityEngine;
 
 public static class DeliveryNetworkCheck
 {
+    [MenuItem("Tools/Gameplay/Network/Verify Prediction and HUD")]
+    public static void VerifyPrediction()
+    {
+        if(!EditorApplication.isPlaying)throw new System.InvalidOperationException("Play Mode required");
+        var game=Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(game.VerifyNetPredictionAndHud());
+    }
     [MenuItem("Tools/Gameplay/Network/Verify Four Players")]
     public static void Verify()
     {

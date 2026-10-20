@@ -1,0 +1,26 @@
+2026-10-18T03:22:17.9881437+09:00
+Actual authored scene and Play initialization. Multiplayer rounds use controlled connected player records and a serialized participant frame, not separate processes.
+PASS fresh Play player starts at one of the saved map corners
+PASS four saved spawn regions cover all map quadrants
+PASS corner has supported floor and vegetation/capsule clearance (-71.94, 0.75, -69.55)
+PASS corner has supported floor and vegetation/capsule clearance (-70.69, 0.75, 65.70)
+PASS corner has supported floor and vegetation/capsule clearance (77.15, 0.75, 50.70)
+PASS corner has supported floor and vegetation/capsule clearance (68.40, 0.75, -69.55)
+PASS 400 allocations use saved corner positions without overlapping players
+PASS player0 samples all four corners across400 seeded allocations
+PASS player1 samples all four corners across400 seeded allocations
+PASS player2 samples all four corners across400 seeded allocations
+PASS player3 samples all four corners across400 seeded allocations
+PASS 40 actual offline restarts place actors at distinct corners with empty inventory and matching safe position
+PASS corner1 remains grounded through60 native movement updates; actual=(-71.941, 0.750, -69.552) expected=(-71.941, 0.750, -69.552)
+FAIL corner2 remains grounded through60 native movement updates; actual=(-70.691, -0.220, 65.700) expected=(-70.691, 0.750, 65.700)
+PASS corner3 remains grounded through60 native movement updates; actual=(77.147, 0.750, 50.700) expected=(77.147, 0.750, 50.700)
+PASS corner4 remains grounded through60 native movement updates; actual=(68.397, 0.750, -69.552) expected=(68.397, 0.750, -69.552)
+PASS 2-player80 actual host rounds keep distinct corner positions, yaw and empty inventory
+PASS 2-player host rounds select all four map corners
+PASS 4-player80 actual host rounds keep distinct corner positions, yaw and empty inventory
+PASS 4-player host rounds select all four map corners
+PASS participant frame uses the server corner, not an independent local random choice
+PASS participant camera input starts with the server inward yaw
+PASS participant fall recovery starts at the server corner
+PASS participant frame applies the full50-parcel layout

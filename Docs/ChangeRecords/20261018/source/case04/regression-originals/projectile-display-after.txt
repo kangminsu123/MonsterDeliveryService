@@ -1,0 +1,28 @@
+2026-10-18T01:29:26.9795864+09:00
+Controlled Unity Play display check; scripted snapshots at 30Hz including one lost interval.
+PASS local plunger remains absent while airborne after 0.4 seconds
+PASS opponent plunger remains absent while airborne
+PASS third-person local plunger also remains absent
+PASS held plungers return when authoritative flight ends
+PASS snapshot retains plunger flight state
+PASS Plunger moves on every render frame between snapshots: moving=100 stationary=0
+PASS Plunger trajectory error below 0.15m including skipped snapshot: 0.03065
+PASS Plunger velocity survives snapshot JSON
+PASS Slime moves on every render frame between snapshots: moving=138 stationary=0
+PASS Slime trajectory error below 0.15m including skipped snapshot: 0.00003
+PASS Slime velocity survives snapshot JSON
+PASS IceCream moves on every render frame between snapshots: moving=110 stationary=0
+PASS IceCream trajectory error below 0.15m including skipped snapshot: 0.00003
+PASS IceCream velocity survives snapshot JSON
+PASS FountainPen moves on every render frame between snapshots: moving=72 stationary=0
+PASS FountainPen trajectory error below 0.15m including skipped snapshot: 0.00000
+PASS FountainPen velocity survives snapshot JSON
+PASS prediction stops after 100ms without authoritative samples
+PASS empty authoritative snapshot removes projectile immediately
+PASS LaunchSlime uses physics interpolation for host view
+PASS LaunchIceCream uses physics interpolation for host view
+PASS LaunchFountainPen uses physics interpolation for host view
+PASS LaunchSlime still hits real solid cover with interpolation enabled
+PASS LaunchIceCream still hits real solid cover with interpolation enabled
+PASS LaunchFountainPen still hits real solid cover with interpolation enabled
+PASS session cleanup clears models and prediction state

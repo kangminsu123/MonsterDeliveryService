@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-18",
+  "pages": 8,
+  "visual_review": "All 8 pages inspected; changed pages 4 and 8 re-inspected after final text update. Korean glyphs, image and caption placement, and page fit passed.",
+  "renderer": "Hidden read-only Word COM PDF export and bundled Poppler. Default renderer failure preserved in renderer-throws.log.",
+  "docx_sha256": "83da82e3b6739c2332a353f668ec7ad43507e0d24aadae22032a80e77efdfb58",
+  "output_copy_identical": true,
+  "requests": 5,
+  "image_links": 9,
+  "html_embedded_images": 9,
+  "source_and_readme_links_exist": true,
+  "rendered_page_sha256": {
+    "page-1.png": "93f48d2a49a10f86432c7b9ef788d3a341cab907a3c7e3faf9a0454aca82b49a",
+    "page-2.png": "67185409b7b3badacbe9e3f14ca4b614f3e880133bc1fca0c1a6f1b4431c4dd4",
+    "page-3.png": "dbe3f54de973b37624ef00635af5c4919eb2cc4e8a6286725a7018c75e99ac3f",
+    "page-4.png": "64bbf196acbe40e8dde8df0137300aa70595209fc57f4613f89d0e8347d9b051",
+    "page-5.png": "aa9d597e909d0c4122d34168c88fa32cbe8765c27558c21f5aad1ddfd03d7be7",
+    "page-6.png": "a27f456704ad6d49a38452d3920b72b32e6bb3101b66dad249ca63269ddfdc54",
+    "page-7.png": "1bd76df35c593b91ad5fa92eaf22f4ee3db872393667ebea470e51d03e4b4df4",
+    "page-8.png": "59fb4ac6ea90e9c09a8fef8c3b4882bf8abb023481aa3b674f2a88bd1ea80b3a"
+  }
+}

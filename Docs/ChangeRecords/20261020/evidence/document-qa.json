@@ -1,0 +1,10 @@
+{
+  "renderer": "Word COM read-only PDF and Poppler",
+  "consoleErrors": 0,
+  "siteBrowserQA": "local loopback timed out; build and data checks passed",
+  "regressionPass": 45,
+  "pages": 5,
+  "visualReview": "all pages checked; final logs fit on page5",
+  "fallback": "render_docx.py failed because LibreOffice is not installed",
+  "unityPass": 15
+}

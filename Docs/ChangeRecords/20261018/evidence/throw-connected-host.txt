@@ -1,0 +1,27 @@
+2026-10-18T00:52:23.2506902+09:00
+Actual MPPM two Editor processes via localhost NGO, scripted item selection and use commands.
+CAPTURE 0_4 raised actionAge=0.1338 released=False
+CAPTURE 0_4 released actionAge=0.2914 released=True
+CAPTURE 1_4 raised actionAge=0.1354 released=False
+CAPTURE 1_4 released actionAge=0.2694 released=True
+CAPTURE 0_5 raised actionAge=0.1335 released=False
+CAPTURE 0_5 released actionAge=0.2712 released=True
+CAPTURE 1_5 raised actionAge=0.1329 released=False
+CAPTURE 1_5 released actionAge=0.2594 released=True
+CAPTURE 0_9 raised actionAge=0.1361 released=False
+CAPTURE 0_9 released actionAge=0.2788 released=True
+CAPTURE 1_9 raised actionAge=0.1316 released=False
+CAPTURE 1_9 released actionAge=0.2727 released=True
+PASS host receives 0_4 windup with model in hand
+PASS host receives 0_4 release with model leaving hand
+PASS host receives 0_5 windup with model in hand
+PASS host receives 0_5 release with model leaving hand
+PASS host receives 0_9 windup with model in hand
+PASS host receives 0_9 release with model leaving hand
+PASS host receives 1_4 windup with model in hand
+PASS host receives 1_4 release with model leaving hand
+PASS host receives 1_5 windup with model in hand
+PASS host receives 1_5 release with model leaving hand
+PASS host receives 1_9 windup with model in hand
+PASS host receives 1_9 release with model leaving hand
+PASS host sees six real projectile identities/source-kind pairs: 6

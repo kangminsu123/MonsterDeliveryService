@@ -1,0 +1,46 @@
+2026-10-20T13:35:46.5199634+09:00
+Actual Play calls, controlled inventory and unobstructed movement fixture. Network prediction uses production SimulateNetMovement. Separate peers verified separately.
+PASS one special parcel plus all five fixed item pickups
+PASS five pickups saved in one straight horizontal park row
+PASS fixed test pickups respawn after two seconds
+PASS stable pickup IDs for cross-peer snapshot ordering
+PASS AirCannon replaces selected full slot and immediately equips one use
+PASS AirCannon model and collider hidden until authoritative two-second respawn
+PASS AirCannon held prefab and icon load
+PASS AirCannon ordinary use click spends exactly one use
+PASS AirCannon last-use slot clears after presentation
+PASS Broadcaster replaces selected full slot and immediately equips one use
+PASS Broadcaster model and collider hidden until authoritative two-second respawn
+PASS Broadcaster held prefab and icon load
+PASS Broadcaster ordinary use click spends exactly one use
+PASS Broadcaster last-use slot clears after presentation
+PASS PackingMachine replaces selected full slot and immediately equips one use
+PASS PackingMachine model and collider hidden until authoritative two-second respawn
+PASS PackingMachine held prefab and icon load
+PASS remote delivery invalid aim keeps its single use; successful capture verified by RemoteDeliveryCheck
+PASS LifeJacket replaces selected full slot and immediately equips one use
+PASS LifeJacket model and collider hidden until authoritative two-second respawn
+PASS LifeJacket held prefab and icon load
+PASS LifeJacket ordinary use click spends exactly one use
+PASS life jacket activates five seconds
+PASS LifeJacket last-use slot clears after presentation
+PASS ExpressBattery replaces selected full slot and immediately equips one use
+PASS ExpressBattery model and collider hidden until authoritative two-second respawn
+PASS ExpressBattery held prefab and icon load
+PASS ExpressBattery ordinary use click spends exactly one use
+PASS battery activates eight seconds and full stamina
+PASS ExpressBattery last-use slot clears after presentation
+PASS life jacket ignores repeated incoming hit including unshieldable area; payload 0/0/0
+PASS life jacket ignores repeated incoming hit including unshieldable area; payload 5/0/0
+PASS life jacket ignores repeated incoming hit including unshieldable area; payload 0/5/0
+PASS life jacket ignores repeated incoming hit including unshieldable area; payload 0/0/5
+PASS life jacket ignores repeated incoming hit including unshieldable area; payload 0/0/0
+PASS life jacket does not consume underlying one-hit aircap; difference=9.536743E-07
+PASS incoming effects resume after five-second immunity expires
+PASS battery gives exactly thirty percent speed and expires at eight seconds
+PASS running shoes and battery use stronger speed rather than multiplying buffs
+PASS network authoritative walking travels8.45m in one second under thirty-percent boost
+PASS five authoritative network dashes keep full battery stamina
+PASS real offline Shift input dashes without stamina cost during battery
+PASS offline rival demo cannot grant aircap to a network opponent
+PASS offline rival demo cannot grant running-shoes buff in network mode

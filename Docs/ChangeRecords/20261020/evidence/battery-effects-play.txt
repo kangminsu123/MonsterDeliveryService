@@ -1,0 +1,18 @@
+2026-10-20T10:39:18.6914882+09:00
+Actual Editor Play with controlled inventory and positions; not separate network peers.
+PASS held battery front faces the player after180degree rotation
+PASS normal battery use grants eight seconds and spends exactly once
+PASS battery retains30percent movement bonus
+PASS active battery restores stamina in production update
+PASS battery alone never activates running-shoes screen wind
+PASS battery world effect has six arcs,two circuits,battery icon and three cells
+PASS battery alone has no running-shoes world aura
+PASS electricity has no collision or gameplay impulse
+PASS repeated presentation reuses one aura
+PASS overlapping shoes and battery keep independent world effects
+PASS overlap keeps strongest movement multiplier without stacking
+PASS ending shoes leaves only electricity while battery persists
+PASS slot clears after use but battery status persists
+PASS third-person self also gets electricity
+PASS round finish hides all electric effects
+PASS real eight-second expiry hides electricity and restores normal speed

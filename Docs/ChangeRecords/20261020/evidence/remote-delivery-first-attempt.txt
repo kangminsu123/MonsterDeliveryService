@@ -1,0 +1,20 @@
+2026-10-20T13:33:46.0208299+09:00
+Actual Editor Play; controlled rays, inventory, and server records. Not separate peers or WAN.
+PASS display name is remote delivery while original asset ID is retained
+PASS original model and icon still load
+PASS normal offline click instantly captures neutral mailbox and spends one use
+PASS remote capture starts a fresh twenty-second protection
+PASS consumed model and slot clear after the existing short action
+PASS ordinary capture still cannot bypass a protected enemy mailbox
+PASS remote use steals a protected enemy mailbox and renews protection
+PASS own mailbox does not consume,rearm protection,or start cooldown
+PASS beyond eighteen metres is rejected without consumption
+PASS wall blocks remote capture and keeps the item
+PASS empty aim does not consume the item
+FAIL character blocks the ray but is never stunned or packed
+FAIL stunned player cannot use remote capture
+PASS server command source0 steals locked enemy mailbox once
+PASS server command source0 cannot steal teammate mailbox
+PASS server command source1 steals locked enemy mailbox once
+PASS server command source1 cannot steal teammate mailbox
+FAIL authored mailbox has a clear eight-metre production aim for capture review

@@ -1,0 +1,14 @@
+2026-10-18T01:30:25.4714599+09:00
+Actual two MPPM processes, localhost NGO; scripted loadouts, positions and use inputs. No synthetic network delay.
+PASS client hides airborne held plunger for global player 0
+PASS client restores held plunger after return for global player 0
+PASS client hides airborne held plunger for global player 1
+PASS client restores held plunger after return for global player 1
+PASS client sees actual Plunger projectile
+PASS Plunger movement between real packets: moving=145 stationary=2
+PASS client sees actual Slime projectile
+PASS Slime movement between real packets: moving=218 stationary=0
+PASS client sees actual IceCream projectile
+PASS IceCream movement between real packets: moving=218 stationary=0
+PASS client sees actual FountainPen projectile
+PASS FountainPen movement between real packets: moving=130 stationary=0

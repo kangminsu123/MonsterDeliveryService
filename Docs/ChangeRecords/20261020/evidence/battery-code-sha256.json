@@ -1,0 +1,9 @@
+{
+  "Assets/Gameplay/BatteryChargeFX.cs": "cf8fa94ab9620e852b1ca2df2e67a73dbb4dcdab1da96a67f82fb3ed125fd39a",
+  "Assets/Gameplay/RunningShoesFX.cs": "31950f9ebdadab085a09701715fc534e5d1a7a9b64e3749fa74345ee43d83f0a",
+  "Assets/Gameplay/MonsterDeliveryPrototype.cs": "b7cbda9dc22522df1175cde8095cc8e79f821aeaa1a65e7f53ea2a8ab05a2cb8",
+  "Assets/Gameplay/MonsterDeliveryHUD.cs": "b1e392e248cfa3e550234e13e29029abe19916b26df782f337fc3fe855c49d8c",
+  "Assets/Editor/SpecialDeliverySetup.cs": "14222638bf196f5c0d495a5e0b7ae76eefacf562aefd00a80dbb5d4c1bd3fe48",
+  "Assets/Editor/BatteryEffectsCheck.cs": "1b6304bf34eda2afb693e11319e288ef5d5c84b49848335adb62d3a833c6bfb5",
+  "Assets/Resources/DeliveryItems/ExpressBattery.prefab": "6cadf7bd4bd7b9e0b1f7d062a2addefb7bd42827c0b95b5600b07ea383b1a242"
+}

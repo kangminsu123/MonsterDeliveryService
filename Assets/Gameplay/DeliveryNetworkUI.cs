@@ -49,7 +49,7 @@ public sealed partial class MonsterDeliveryPrototype
                 netAddress=RoomField(new Rect(w-680,587,520,60),netAddress,"MD-… 또는 로컬 접속 주소");
                 if(RoomButton(new Rect(w-680,670,520,70),"방에 참가하기"))JoinRoom(netAddress);
                 RoomText(new Rect(w-680,770,520,62),"옷 색은 입장할 때 자동으로 배정됩니다.\n모든 참가자가 서로 다른 색으로 만나요.",20,new Color(.6f,.7f,.8f));
-                if(NetDevelopment&&RoomButton(new Rect(110,h-170,290,60),"혼자 탐색 · 개발용")){NetworkScreens=false;started=true;finished=false;for(int i=0;i<3;i++)bots[i].SetActive(i==0);PositionCamera();Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
+                if(NetDevelopment&&RoomButton(new Rect(110,h-170,290,60),"혼자 탐색 · 개발용")){NetworkScreens=false;Begin();for(int i=0;i<3;i++)bots[i].SetActive(i==0);UpdateCamera();Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
                 if(RoomButton(new Rect(425,h-170,180,60),"종료"))Application.Quit();
             }
             else if(RoomState==RoomPhase.Connecting)
@@ -65,7 +65,7 @@ public sealed partial class MonsterDeliveryPrototype
                 for(int team=0;team<2;team++)
                 {
                     float x=110+team*850;RoomPanel(new Rect(x,340,800,305),new Color(.06f,.1f,.16f,.96f));
-                    RoomText(new Rect(x+30,362,740,45),"TEAM "+(team==0?"A":"B"),30,TeamColors[team]);
+                    RoomText(new Rect(x+30,362,740,45),NetSideName(team),30,NetSideColor(team));
                     for(int n=0;n<NetTeamSize;n++)
                     {
                         int g=team+n*2;var p=netPlayers[g];float y=435+n*85;
@@ -88,7 +88,7 @@ public sealed partial class MonsterDeliveryPrototype
                 for(int team=0;team<2;team++)
                 {
                     float x=w*.5f-680+team*720;RoomPanel(new Rect(x,420,640,270),new Color(.07f,.11f,.17f));
-                    RoomText(new Rect(x,445,640,55),"TEAM "+(team==0?"A":"B")+(team==myTeam?"  ·  우리 팀":""),31,TeamColors[team],TextAnchor.MiddleCenter);
+                    RoomText(new Rect(x,445,640,55),NetSideName(team)+(team==myTeam?(IndividualMatch?"  ·  나":"  ·  우리 팀"):""),31,NetSideColor(team),TextAnchor.MiddleCenter);
                     RoomText(new Rect(x,515,640,90),(team==0?a:b)+" / 10",62,Color.white,TextAnchor.MiddleCenter);
                     string names="";for(int g=team;g<NetCapacity;g+=2)if(netPlayers[g]!=null)names+=(names==""?"":"    ·    ")+netPlayers[g].name;
                     RoomText(new Rect(x,620,640,40),names,24,new Color(.7f,.8f,.9f),TextAnchor.MiddleCenter);
@@ -109,10 +109,10 @@ public sealed partial class MonsterDeliveryPrototype
     }
     void DrawNetTeamHud(float w)
     {
-        RoomPanel(new Rect(w*.5f-260,115,520,62),new Color(.035f,.065f,.1f,.94f));
-        RoomText(new Rect(w*.5f-245,122,240,48),"A 팀  "+TeamScore(0),26,TeamColors[0],TextAnchor.MiddleCenter);
-        RoomText(new Rect(w*.5f+5,122,240,48),TeamScore(1)+"  B 팀",26,TeamColors[1],TextAnchor.MiddleCenter);
-        RoomText(new Rect(38,139,350,36),"내 팀 "+(netPlayers[netOwn]?.team==0?"A":"B")+" · "+netName,21,Color.white);
+        RoomPanel(new Rect(w*.5f-365,115,730,62),new Color(.035f,.065f,.1f,.94f));
+        RoomText(new Rect(w*.5f-350,122,335,48),NetSideName(0)+"  "+TeamScore(0),IndividualMatch?20:26,NetSideColor(0),TextAnchor.MiddleCenter);
+        RoomText(new Rect(w*.5f+15,122,335,48),TeamScore(1)+"  "+NetSideName(1),IndividualMatch?20:26,NetSideColor(1),TextAnchor.MiddleCenter);
+        RoomText(new Rect(38,139,460,36),(IndividualMatch?"나":"내 팀 "+(netPlayers[netOwn]?.team==0?"A":"B"))+" · "+(netPlayers[netOwn]?.name??netName),21,Color.white);
     }
     void DrawNetLabels(float scale)
     {
@@ -123,7 +123,7 @@ public sealed partial class MonsterDeliveryPrototype
             var screen=cam.WorldToScreenPoint(point);if(screen.z<0)continue;
             if(Physics.Linecast(cam.transform.position,actor.bounds.center,out var hit,~0,QueryTriggerInteraction.Ignore)&&hit.collider!=actor)continue;
             var rect=new Rect(screen.x/scale-130,(Screen.height-screen.y)/scale-28,260,32);
-            RoomText(rect,"["+(netPlayers[g].team==0?"A":"B")+"] "+netPlayers[g].name,20,TeamColors[netPlayers[g].team],TextAnchor.MiddleCenter);
+            RoomText(rect,(IndividualMatch?"":"["+(netPlayers[g].team==0?"A":"B")+"] ")+netPlayers[g].name,20,NetSideColor(netPlayers[g].team),TextAnchor.MiddleCenter);
         }
     }
     void DrawNetDevelopment()
@@ -131,9 +131,14 @@ public sealed partial class MonsterDeliveryPrototype
         if(!NetDevelopment)return;
         if(!netTools)return;
         var old=GUI.matrix;GUI.matrix=Matrix4x4.identity;
-        GUILayout.BeginArea(new Rect(16,210,270,400),GUI.skin.box);GUILayout.Label("개발 테스트 · F2");
+        GUILayout.BeginArea(new Rect(16,210,320,465),GUI.skin.box);GUILayout.Label("개발 테스트 · F2");
+        GUILayout.Label("핑(UTP) "+netPingMs.ToString("F0")+"ms · 입력 승인 "+netAckMs.ToString("F0")+"ms");
+        GUILayout.Label("프레임 "+(Time.smoothDeltaTime*1000).ToString("F1")+"ms · "+(1/Mathf.Max(.001f,Time.smoothDeltaTime)).ToString("F0")+"FPS");
+        GUILayout.Label("수신 "+netReceiveHz.ToString("F1")+"Hz · 간격 "+netReceiveGapMs.ToString("F0")+"ms");
+        GUILayout.Label("송/수신 "+netSendKB.ToString("F1")+" / "+netReceiveKB.ToString("F1")+"KB/s");
+        GUILayout.Label("동기화 처리 "+netWorkMs.ToString("F3")+"ms · 할당 "+(netAllocAvailable?(netWorkAlloc/1024).ToString("F1")+"KB":"N/A"));
         if(NetServer&&GUILayout.Button("경기 초기화"))StartNetRound();
-        for(int i=1;i<=9;i++){int item=i;if(GUILayout.Button(ItemName((WeaponKind)item))){if(NetServer)netPlayers[0].items[netPlayers[0].selected]=item;else SendNet("item",new NetInput{slot=item},Unity.Netcode.NetworkManager.ServerClientId);}}
+        for(int i=1;i<=9;i++){int item=i;if(GUILayout.Button(ItemName((WeaponKind)item))){if(NetServer)GiveNetItem(0,netPlayers[0].selected,item);else SendNet("item",new NetInput{slot=item},Unity.Netcode.NetworkManager.ServerClientId);}}
         GUILayout.EndArea();GUI.matrix=old;
     }
 }

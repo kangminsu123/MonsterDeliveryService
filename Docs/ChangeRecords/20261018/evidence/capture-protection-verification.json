@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-18",
+  "pass": 34,
+  "fail": 0,
+  "duration": 20,
+  "protocol": 6,
+  "stun_freeze_immunity_seconds": 2,
+  "suggested_immunity_seconds_not_applied": 5,
+  "scope": "one Editor real local/shared/bot and host paths; controlled connected records and serialized participant frames; no separate peer/WAN rerun",
+  "captures": "authored mailbox and actual DrawGameplayHUD, controlled review camera/owner/timer state",
+  "retry": "initial menu call preceded asset import; force refresh resolved missing menu, no logic failure",
+  "main_console_errors": 0,
+  "build": "source only; standalone packages unchanged",
+  "bot_scan": "one random starting offset then visit every mailbox once; sole neutral target found in100 scans"
+}

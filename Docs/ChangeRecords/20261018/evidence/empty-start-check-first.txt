@@ -1,0 +1,15 @@
+2026-10-18T02:36:31.7615815+09:00
+Fresh Editor Play; real offline/host round initialization and serialized participant frame. Four server player records are controlled fixtures, not four network connections.
+PASS fresh Start has three empty slots
+PASS fresh Start selects first empty slot
+PASS offline Begin has three empty slots
+PASS offline empty start has no held item model
+PASS existing item grant still fills an empty slot
+PASS offline restart removes previous inventory
+PASS new network player defaults to empty inventory
+PASS host round initializes all four player records empty
+PASS host inventory and input select first empty slot
+PASS network rematch clears previously acquired items for everyone
+PASS participant applies serialized empty round inventory
+PASS participant selects first empty slot
+PASS participant empty start has no held item model

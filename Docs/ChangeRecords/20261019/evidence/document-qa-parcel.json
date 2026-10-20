@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-19",
+  "current_pages": 3,
+  "previous_pages_byte_identical": [
+    1,
+    2
+  ],
+  "new_page_visually_reviewed": [
+    3
+  ],
+  "actual_parcel_close_and_group_render_viewed": true,
+  "motion_frames_viewed": [
+    1,
+    48,
+    96,
+    144
+  ],
+  "renderer": "Packaged LibreOffice missing; Word COM and bundled Poppler succeeded",
+  "blender_audit_valid": true
+}

@@ -1,0 +1,13 @@
+SCENE ADDITION 20261019
+Intent: add one recognizable fragile special delivery parcel to the existing five-item Blender design.
+Modules already read this conversation: blender-scene,scene-spec,modeling,lookdev,lighting-camera,animation,audit-finalize,volatile. Reuse existing native scene, materials, camera and light rig.
+Route: BLOCK, detailed stylized native editable mesh, zero generation spend.
+Asset: HERO_FragileParcel, dimensions approximately1.3x1.2x1.3metres, local base origin, world(2.7,-1.6,.18), Z-up/radians. Child parts PRP_Fragile_*.
+Appearance: warm cardboard shell with continuous chamfered profile, split sealed lid, yellow and charcoal diagonal warning tape, reinforced corners, red FRAGILE label and white shipping tag with raised barcode, upward arrows and a fragile-glass symbol. No image plane.
+Hierarchy: independent parent root; separate mesh and native font children. Own plinth and stage label06.
+Scope: preserve all five existing item meshes/materials/animation; shift only jacket/battery roots and their stage fixtures into a balanced3x2 display; change subtitle to five equipment plus special parcel. Original Scene/Cube/Camera/Light protected. No deletion beyond this task's own proxy.
+Camera: existing orthographic10.2,3.4,-12,11 aimed0,0,.65; keep exposure-.15,AgX, existing softbox rig. Review all-six framing and read of parcel labels.
+Motion:24fps1-144, existing item rotations unchanged. Parcel root±.21rad review sway with fixed base and matching first/last; lid remains sealed.
+Acceptance: proportions and solid-camera read before detail; correct contact; no existing item geometry change; no unintended duplicates or nonmanifold parcel meshes; viewed actual close and group renders; loop and camera bounds samples1/48/96/144. No Unity import or spawn code change.
+Save: recovery checkpoint before display rearrangement and after final audit only; active .blend path remains unchanged because save was not requested.
+Todo: checkpoint -> reviewed blockout -> detail/lookdev -> viewed render/motion and structural audit -> record case02 and handoff.

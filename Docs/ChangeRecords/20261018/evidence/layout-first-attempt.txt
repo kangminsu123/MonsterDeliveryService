@@ -1,0 +1,4 @@
+2026-10-18 first layout build attempt
+FAIL setup stopped at safe anchor94 before replacing the saved scene.
+Reason: fixed80 street/20 roof allocation exceeded valid separated positions on one selected accessible roof.
+Correction: retain10 accessible roof spots and expand street/sidewalk spots to90; support, plant clearance and4m spacing checks remain required.

@@ -1,0 +1,19 @@
+2026-10-19T21:05:47.1642518+09:00
+Actual Play; controlled positions and production use/hit/FX. Separate peers recorded separately.
+PASS visible nearby rivals receive exactly four seconds of stun
+PASS outside12m target is excluded
+PASS caster does not stun itself
+PASS two-second post-stun immunity remains
+PASS aircap blocks and consumes once
+PASS life jacket blocks broadcast
+PASS stun immunity prevents a fresh lock
+PASS wall blocks broadcast hit
+PASS normal click spends one use and starts the new effect
+PASS replayed action does not duplicate the effect
+PASS three waves, two arcs, beacon, eight sound rays, light and sparks are active
+PASS cosmetic effect cannot add collisions or gameplay hits
+PASS effect cleans up after1.3seconds while four-second stun is still active
+PASS stun actually ends after four seconds
+PASS last-use slot clears after recoil
+PASS late action starts at the replicated elapsed time
+PASS late presentation also expires at the original action deadline

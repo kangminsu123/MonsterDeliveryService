@@ -1,0 +1,100 @@
+2026-10-18T01:31:14.4164267+09:00
+SampleScene controlled local/network-state reproduction; actual release and projectile components.
+PASS local Slime raises hand before creating projectile
+PASS local Slime held model is visible and raised in right screen space
+PASS local Slime cannot release before 0.22 seconds
+PASS local Slime releases exactly one authoritative projectile
+PASS local Slime item leaves hand at release
+PASS local Slime retains existing velocity and gravity
+PASS local Slime next update does not duplicate release
+PASS local Slime returns to guard after 0.55 seconds
+PASS local Slime already released projectile survives slot change
+PASS local Slime cancels unreleased projectile on slot
+PASS local Slime cancels unreleased projectile on drop
+PASS local Slime cancels unreleased projectile on stun
+PASS local Slime cancels unreleased projectile on dash
+PASS local IceCream raises hand before creating projectile
+PASS local IceCream held model is visible and raised in right screen space
+PASS local IceCream cannot release before 0.22 seconds
+PASS local IceCream releases exactly one authoritative projectile
+PASS local IceCream item leaves hand at release
+PASS local IceCream retains existing velocity and gravity
+PASS local IceCream next update does not duplicate release
+PASS local IceCream returns to guard after 0.55 seconds
+PASS local IceCream already released projectile survives slot change
+PASS local IceCream cancels unreleased projectile on slot
+PASS local IceCream cancels unreleased projectile on drop
+PASS local IceCream cancels unreleased projectile on stun
+PASS local IceCream cancels unreleased projectile on dash
+PASS local FountainPen raises hand before creating projectile
+PASS local FountainPen held model is visible and raised in right screen space
+PASS local FountainPen cannot release before 0.22 seconds
+PASS local FountainPen releases exactly one authoritative projectile
+PASS local FountainPen item leaves hand at release
+PASS local FountainPen retains existing velocity and gravity
+PASS local FountainPen next update does not duplicate release
+PASS local FountainPen returns to guard after 0.55 seconds
+PASS local FountainPen already released projectile survives slot change
+PASS local FountainPen cancels unreleased projectile on slot
+PASS local FountainPen cancels unreleased projectile on drop
+PASS local FountainPen cancels unreleased projectile on stun
+PASS local FountainPen cancels unreleased projectile on dash
+PASS network Slime raises hand before creating projectile
+PASS network Slime held model is visible and raised in right screen space
+PASS network Slime cannot release before 0.22 seconds
+PASS network Slime releases exactly one authoritative projectile
+PASS network Slime item leaves hand at release
+PASS network Slime retains existing velocity and gravity
+PASS network Slime next update does not duplicate release
+PASS network Slime returns to guard after 0.55 seconds
+PASS network Slime already released projectile survives slot change
+PASS network Slime cancels unreleased projectile on slot
+PASS network Slime cancels unreleased projectile on drop
+PASS network Slime cancels unreleased projectile on stun
+PASS network Slime cancels unreleased projectile on dash
+PASS network IceCream raises hand before creating projectile
+PASS network IceCream held model is visible and raised in right screen space
+PASS network IceCream cannot release before 0.22 seconds
+PASS network IceCream releases exactly one authoritative projectile
+PASS network IceCream item leaves hand at release
+PASS network IceCream retains existing velocity and gravity
+PASS network IceCream next update does not duplicate release
+PASS network IceCream returns to guard after 0.55 seconds
+PASS network IceCream already released projectile survives slot change
+PASS network IceCream cancels unreleased projectile on slot
+PASS network IceCream cancels unreleased projectile on drop
+PASS network IceCream cancels unreleased projectile on stun
+PASS network IceCream cancels unreleased projectile on dash
+PASS network FountainPen raises hand before creating projectile
+PASS network FountainPen held model is visible and raised in right screen space
+PASS network FountainPen cannot release before 0.22 seconds
+PASS network FountainPen releases exactly one authoritative projectile
+PASS network FountainPen item leaves hand at release
+PASS network FountainPen retains existing velocity and gravity
+PASS network FountainPen next update does not duplicate release
+PASS network FountainPen returns to guard after 0.55 seconds
+PASS network FountainPen already released projectile survives slot change
+PASS network FountainPen cancels unreleased projectile on slot
+PASS network FountainPen cancels unreleased projectile on drop
+PASS network FountainPen cancels unreleased projectile on stun
+PASS network FountainPen cancels unreleased projectile on dash
+PASS Slime observer sees only right arm raised
+PASS Slime raised item follows right-hand bone
+PASS Slime released item is hidden on observer
+PASS Slime observer model returns after recovery
+PASS Slime aircap still blocks direct hit once
+PASS Slime unshielded direct hit retains original status effect
+PASS IceCream observer sees only right arm raised
+PASS IceCream raised item follows right-hand bone
+PASS IceCream released item is hidden on observer
+PASS IceCream observer model returns after recovery
+PASS IceCream aircap still blocks direct hit once
+PASS IceCream unshielded direct hit retains original status effect
+PASS ice cream stun immunity still preserves aircap
+PASS FountainPen observer sees only right arm raised
+PASS FountainPen raised item follows right-hand bone
+PASS FountainPen released item is hidden on observer
+PASS FountainPen observer model returns after recovery
+PASS FountainPen aircap still blocks direct hit once
+PASS FountainPen unshielded direct hit retains original status effect
+PASS snapshot retains release phase and item kind

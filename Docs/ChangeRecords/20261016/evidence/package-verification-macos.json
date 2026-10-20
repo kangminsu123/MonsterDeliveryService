@@ -1,0 +1,61 @@
+{
+  "file": "MonsterDeliveryService_macOS_20261016.zip",
+  "bytes": 116335840,
+  "sha256": "46a08eafb56def3dcad551311a35cadd913db4dae7276b5c3972c8f7005f15ef",
+  "entries": 204,
+  "crc_check": "PASS",
+  "universal_native_binaries": 6,
+  "all_native_binaries_universal": "PASS",
+  "unix_executable_modes": "PASS",
+  "mac_runtime": "NOT RUN",
+  "windows_mac_network": "NOT RUN",
+  "bundle": {
+    "date": "2026-10-16",
+    "engine": "6000.5.10f1",
+    "platform": "macOS Universal",
+    "configuration": "Release Mono LZ4",
+    "network_protocol": 3,
+    "minimum_macos": "12.0",
+    "bundle_id": "com.Unity-Technologies.com.unity.template.urp-blank",
+    "bundle_executable": "MonsterDeliveryService",
+    "architectures": [
+      "x86_64",
+      "arm64"
+    ],
+    "native_binaries": {
+      "Contents/Frameworks/libmono-native.dylib": [
+        "x86_64",
+        "arm64"
+      ],
+      "Contents/Frameworks/libmonobdwgc-2.0.dylib": [
+        "x86_64",
+        "arm64"
+      ],
+      "Contents/Frameworks/libMonoPosixHelper.dylib": [
+        "x86_64",
+        "arm64"
+      ],
+      "Contents/Frameworks/UnityPlayer.dylib": [
+        "x86_64",
+        "arm64"
+      ],
+      "Contents/MacOS/MonsterDeliveryService": [
+        "x86_64",
+        "arm64"
+      ],
+      "Contents/PlugIns/lib_burst_generated.bundle": [
+        "x86_64",
+        "arm64"
+      ]
+    },
+    "assembly_sha256": "96acff5c61c00d7ce97d787b9aba90d9ccac9bab14a7f3cfebcc81b048caae44",
+    "launcher_sha256": "52a9b4af920ed5bfa6dbcea62ea295c6199926e77ea14989b66a87a3075cb51e",
+    "base_commit": "7dbb9f1",
+    "current_changes_committed": false,
+    "apple_developer_id_signing": "not performed",
+    "notarization": "not performed",
+    "mac_runtime_test": "not run; Windows build host",
+    "cross_platform_network_test": "not run",
+    "note": "ZIP explicitly stores UNIX execute bits for Mach-O files and .command launchers."
+  }
+}

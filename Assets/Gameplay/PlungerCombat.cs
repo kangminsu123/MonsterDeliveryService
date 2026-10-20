@@ -2,7 +2,7 @@ using UnityEngine;
 
 public sealed partial class MonsterDeliveryPrototype
 {
-    const float PlungerWindup = .12f, PlungerSpeed = 36, PlungerReturnSpeed = 44, PlungerRange = 15;
+    const float PlungerWindup = .12f, PlungerSpeed = 36, PlungerReturnSpeed = 44, PlungerRange = 30;
     int plungerSlot = -1;
     float plungerStarted;
     bool plungerReturning;
@@ -189,12 +189,12 @@ public sealed partial class MonsterDeliveryPrototype
         state.pullUntil = Time.time + 2;
     }
 
-    static bool MovePulledActor(CharacterController actor, DeliveryItemState state, ref float falling)
+    static bool MovePulledActor(CharacterController actor, DeliveryItemState state, ref float falling, float dt = -1)
     {
         if (!state.Pulled(Time.time)) return false;
         var before = actor.transform.position;
         var destination = state.pullSource.position + state.pullSource.forward * state.pullStandOff;
-        var motion = Vector3.MoveTowards(before, destination, state.pullSpeed * Time.deltaTime) - before;
+        var motion = Vector3.MoveTowards(before, destination, state.pullSpeed * (dt < 0 ? Time.deltaTime : dt)) - before;
         falling = 0;
         MoveHoverActor(actor, motion, ref falling);
         var after = actor.transform.position;

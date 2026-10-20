@@ -1,0 +1,76 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+public sealed partial class MonsterDeliveryPrototype
+{
+    readonly HashSet<BrawlShot> netActiveShots=new();
+    internal void TrackNetShot(BrawlShot shot)=>netActiveShots.Add(shot);
+    internal void ForgetNetShot(BrawlShot shot)=>netActiveShots.Remove(shot);
+    void ClearActiveNetShots()
+    {
+        foreach(var shot in netActiveShots.ToArray())if(shot){shot.gameObject.SetActive(false);Destroy(shot.gameObject);}
+        netActiveShots.Clear();
+    }
+    sealed class NetShotMotion
+    {
+        public NetShot sample;
+        public float received;
+        public Vector3 correction;
+        public Vector3 Position(float now)
+        {
+            // Visual prediction only; stop after 100ms of missing snapshots. Hits remain server-owned.
+            float age=Mathf.Clamp(now-received,0,.1f);
+            return sample.position+sample.velocity*age+sample.acceleration*(.5f*age*age);
+        }
+    }
+    readonly Dictionary<string,NetShotMotion> netShotMotion=new();
+
+    static NetShot CaptureNetShot(BrawlShot shot)
+    {
+        var body=shot.GetComponent<Rigidbody>();
+        return new NetShot{id=shot.GetEntityId().ToString(),kind=(int)shot.kind,
+            position=body?body.position:shot.transform.position,rotation=body?body.rotation:shot.transform.rotation,
+            velocity=body?body.linearVelocity:Vector3.zero,acceleration=body&&body.useGravity?Physics.gravity:Vector3.zero};
+    }
+    void SyncNetShotViews(NetShot[] shots)
+    {
+        var seen=new HashSet<string>();
+        foreach(var shot in shots)
+        {
+            seen.Add(shot.id);
+            if(!netShotViews.TryGetValue(shot.id,out var model))
+            {
+                var prefab=Resources.Load<GameObject>("DeliveryItems/"+(WeaponKind)shot.kind);if(!prefab)continue;
+                model=Instantiate(prefab);model.name="RemoteProjectile";netShotViews[shot.id]=model;
+                model.transform.SetPositionAndRotation(shot.position,shot.rotation);
+                netShotMotion[shot.id]=new NetShotMotion{sample=shot,received=Time.time};
+            }
+            else
+            {
+                var motion=netShotMotion[shot.id];
+                var correction=motion.Position(Time.time)+motion.correction-shot.position;
+                motion.correction=correction.sqrMagnitude>36?Vector3.zero:correction;
+                motion.sample=shot;motion.received=Time.time;
+            }
+        }
+        foreach(var id in netShotViews.Keys.Where(id=>!seen.Contains(id)).ToArray())
+        {netShotViews[id].SetActive(false);Destroy(netShotViews[id]);netShotViews.Remove(id);netShotMotion.Remove(id);}
+    }
+    void UpdateNetShotViews(float now,float dt)
+    {
+        float decay=Mathf.Exp(-25*dt);
+        foreach(var pair in netShotMotion)
+        {
+            if(!netShotViews.TryGetValue(pair.Key,out var model)||!model)continue;
+            var motion=pair.Value;motion.correction*=decay;
+            model.transform.SetPositionAndRotation(motion.Position(now)+motion.correction,
+                Quaternion.Slerp(model.transform.rotation,motion.sample.rotation,1-decay));
+        }
+    }
+    void ClearNetShotViews()
+    {
+        foreach(var model in netShotViews.Values)if(model){model.SetActive(false);Destroy(model);}
+        netShotViews.Clear();netShotMotion.Clear();
+    }
+}

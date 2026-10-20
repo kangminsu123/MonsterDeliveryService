@@ -1,0 +1,450 @@
+--- Assets\Gameplay\DeliveryNetwork.cs before
++++ Assets\Gameplay\DeliveryNetwork.cs after
+@@ -62,11 +62,11 @@
+         public float yaw, pitch, stamina = 100, vertical, dashUntil, cooldown, captureAt, actionAt = -10;
+         public int used, dashed, dropped;
+         public int boxingPunches, actionKind, actionSlot;
+-        public bool throwReleased;
++        public bool throwReleased, plungerFlying;
+         public int[] items = { 2, 5, 7 };
+         public float stun, frozen, shield, shieldBreak = -10, speed, slow, ink, progress;
+     }
+-    [Serializable] sealed class NetShot { public string id; public int kind; public Vector3 position; public Quaternion rotation; }
++    [Serializable] sealed class NetShot { public string id; public int kind; public Vector3 position, velocity, acceleration; public Quaternion rotation; }
+     [Serializable] sealed class NetFrame
+     {
+         public int sequence;
+@@ -262,7 +262,7 @@
+         netLeaving = true; if (netManager) { netManager.Shutdown(); Destroy(netManager.gameObject); }
+         netManager = null; netTransport = null; netSlots.Clear(); netPlayers = new NetPlayer[4]; netCode = "";
+         foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
+-        foreach (var view in netShotViews.Values) if (view) Destroy(view); netShotViews.Clear();
++        ClearNetShotViews();
+         ClearNetPlungers(); ClearIceCreamMarks(); ClearSlimePuddles(); RoomState = RoomPhase.Menu; NetMenuWorld();
+     }
+     void ReturnNetLobby()
+@@ -294,7 +294,7 @@
+             netInputs[g]=new NetInput {yaw=p.team==0?90:270,slot=1};
+             p.used=p.dashed=p.dropped=p.inputAck=0;p.dashRemaining=0;
+             p.boxingPunches=p.actionKind=p.actionSlot=0;
+-            p.throwReleased=false;
++            p.throwReleased=p.plungerFlying=false;
+         }
+         ResetNetPrediction();
+         netLocalInput=new NetInput {yaw=netPlayers[0].team==0?90:270,slot=1};
+@@ -318,7 +318,7 @@
+ #endif
+             if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();UpdateItemAreas();
+                 if(Time.time>=netRoundUntil){RoomState=RoomPhase.Results;finished=true;netNotice="";NetBroadcast();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}}
+-            else {PredictNetLocalMovement();InterpolateNetRemotes();}
++            else {PredictNetLocalMovement();InterpolateNetRemotes();UpdateNetShotViews(Time.time,Time.deltaTime);}
+             SyncHostInventory(); UpdateCameraForNet(); UpdateInteraction();
+         }
+         if(NetServer&&RoomState==RoomPhase.Lobby&&NetCount==NetCapacity)StartNetCountdown(false);
+@@ -351,12 +351,13 @@
+         for(int g=0;g<4;g++)if(netPlayers[g]!=null&&netPlayers[g].connected)
+         {
+             var p=netPlayers[g];var a=ActorController(g);var s=ActorState(g);p.controlLocked=s.KnockedBack;p.position=a.transform.position;p.yaw=a.transform.eulerAngles.y;p.actionAge=Time.time-p.actionAt;
++            p.plungerFlying=netPlungers.Any(shot=>shot.source==g&&shot.model);
+             p.stun=Mathf.Max(0,s.stunUntil-Time.time);p.frozen=Mathf.Max(0,s.frozenUntil-Time.time);p.shield=Mathf.Max(0,s.shieldUntil-Time.time);
+             p.shieldBreak=Time.time-s.shieldBrokenAt;p.speed=Mathf.Max(0,s.speedUntil-Time.time);p.slow=Mathf.Max(0,s.slowUntil-Time.time);p.ink=Mathf.Max(0,s.visionBlockedUntil-Time.time);
+             p.progress=p.target<0?0:Mathf.Clamp01((Time.time-p.captureAt)/(p.items[p.selected]==8?1.5f:3));
+         }
+-        var shots=FindObjectsByType<BrawlShot>().Where(s=>s.owner==this&&s.gameObject.activeSelf).Select(s=>new NetShot{id=s.GetEntityId().ToString(),kind=(int)s.kind,position=s.transform.position,rotation=s.transform.rotation}).ToList();
+-        foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation});
++        var shots=FindObjectsByType<BrawlShot>().Where(s=>s.owner==this&&s.gameObject.activeSelf).Select(CaptureNetShot).ToList();
++        foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation,velocity=p.velocity});
+         foreach(var pair in netSlots)if(pair.Key!=NetworkManager.ServerClientId&&netManager.ConnectedClientsIds.Contains(pair.Key))
+             SendNet("frame",new NetFrame{sequence=++netFrameSequence,own=pair.Value,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice},pair.Key,NetworkDelivery.ReliableFragmentedSequenced);
+     }
+@@ -383,7 +384,7 @@
+         }
+         for(int i=0;i<10;i++){int v=f.owners[i]<0?-1:NetLocal(f.owners[i]);if(owner[i]!=v||starting){owner[i]=v;SetMailboxEffectColor(i,v<0?Color.white:CaptureColor(v));}}
+         if(parcelPool) parcelPool.ApplySnapshot(f.parcels);
+-        SyncHostInventory();SyncNetShotViews(f.shots??Array.Empty<NetShot>());
++        SyncHostInventory();SyncNetShotViews(NetPlaying?f.shots??Array.Empty<NetShot>():Array.Empty<NetShot>());
+     }
+     void SyncHostInventory()
+     {
+@@ -391,16 +392,6 @@
+         for(int i=0;i<3;i++)inventory[i]=(WeaponKind)p.items[i];selectedSlot=p.selected;stamina=p.stamina;
+         captureTarget=p.target;captureStarted=Time.time-p.progress*(Selected==WeaponKind.WorkGloves?1.5f:3);
+         for(int g=0;g<4;g++)if(netPlayers[g]!=null&&colors[NetLocal(g)]!=CoatColors[netPlayers[g].color])SetPlayerColor(NetLocal(g),CoatColors[netPlayers[g].color]);
+-    }
+-    void SyncNetShotViews(NetShot[] shots)
+-    {
+-        var seen=new HashSet<string>();foreach(var shot in shots)
+-        {
+-            seen.Add(shot.id);if(!netShotViews.TryGetValue(shot.id,out var model))
+-            {var prefab=Resources.Load<GameObject>("DeliveryItems/"+(WeaponKind)shot.kind);if(!prefab)continue;model=Instantiate(prefab);model.name="RemoteProjectile";netShotViews[shot.id]=model;}
+-            model.transform.SetPositionAndRotation(shot.position,shot.rotation);
+-        }
+-        foreach(var id in netShotViews.Keys.Where(id=>!seen.Contains(id)).ToArray()){Destroy(netShotViews[id]);netShotViews.Remove(id);}
+     }
+     public void ReplicateNetImpact(WeaponKind kind,Vector3 point,Vector3 normal,Collider hit)
+     {
+--- Assets\Gameplay\DeliveryNetworkGameplay.cs before
++++ Assets\Gameplay\DeliveryNetworkGameplay.cs after
+@@ -5,7 +5,7 @@
+ public sealed partial class MonsterDeliveryPrototype
+ {
+     sealed class NetMelee { public int source, kind; public float at; }
+-    sealed class NetPlunger { public int source; public float distance; public bool returning; public GameObject model; }
++    sealed class NetPlunger { public int source; public float distance; public bool returning; public GameObject model; public Vector3 velocity; }
+     readonly List<NetMelee> netMelee = new();
+     readonly List<NetPlunger> netPlungers = new();
+     readonly DeliveryHeldItem[] netHeld = new DeliveryHeldItem[4];
+@@ -102,7 +102,7 @@
+         else if(kind==2)
+         {
+             var model=Instantiate(Resources.Load<GameObject>("DeliveryItems/Plunger"));model.name="NetworkThrownPlunger";model.transform.SetPositionAndRotation(origin,Quaternion.LookRotation(aim)*Quaternion.Euler(-90,0,0));
+-            netPlungers.Add(new NetPlunger{source=g,model=model});
++            netPlungers.Add(new NetPlunger{source=g,model=model,velocity=aim*36});
+         }
+     }
+     void ResolveNetImpact(int kind,Collider hit,Vector3 point,int source,Vector3 normal)
+@@ -134,7 +134,7 @@
+             if(!shot.model||!netPlayers[shot.source].connected){if(shot.model)Destroy(shot.model);netPlungers.Remove(shot);continue;}
+             var from=shot.model.transform.position;var origin=NetEye(shot.source);
+             if(shot.returning)
+-            {shot.model.transform.position=Vector3.MoveTowards(from,origin,44*Time.deltaTime);if(Vector3.Distance(from,origin)<.5f){Destroy(shot.model);netPlungers.Remove(shot);}continue;}
++            {shot.model.transform.position=Vector3.MoveTowards(from,origin,44*Time.deltaTime);shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);if(Vector3.Distance(from,origin)<.5f){Destroy(shot.model);netPlungers.Remove(shot);}continue;}
+             var aim=NetAim(shot.source);float step=Mathf.Min(36*Time.deltaTime,15-shot.distance);
+             // Flight direction is fixed on release, independent of later mouse movement.
+             aim=shot.model.transform.rotation*Quaternion.Euler(90,0,0)*Vector3.forward;
+@@ -149,6 +149,7 @@
+                 }
+             }
+             else {shot.model.transform.position+=aim*step;shot.distance+=step;if(shot.distance>=15)shot.returning=true;}
++            shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);
+         }
+     }
+     void ClearNetPlungers()
+@@ -167,13 +168,14 @@
+             float punch=kind==WeaponKind.BoxingGloves&&p.actionKind==(int)kind&&p.actionSlot==p.selected&&
+                 !ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? GlovePushAt(age) : 0;
+             bool rightHand=(p.boxingPunches&1)!=0;
++            bool plungerAway=kind==WeaponKind.Plunger&&(NetServer?netPlungers.Any(s=>s.source==g&&s.model):p.plungerFlying);
+             if(local==0)
+             {
+                 if(heldWeapon&&heldItem)
+                 {
+                     if(IsHandThrown(kind))
+                     {PoseThrownItem(heldWeapon,heldItem,visual,throwAge,p.throwReleased,!thirdPersonPreview);continue;}
+-                    heldWeapon.SetActive(kind==WeaponKind.BoxingGloves||age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes);
++                    heldWeapon.SetActive(!plungerAway&&(kind==WeaponKind.BoxingGloves||age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes));
+                     if(!thirdPersonPreview)
+                     {
+                         heldItem.FirstPerson();
+@@ -189,7 +191,7 @@
+             if(!HasHeldModel(kind)) {if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+             if(!netHeld[g]){netHeld[g]=Instantiate(Resources.Load<GameObject>("DeliveryItems/"+kind),visual.transform,false).GetComponent<DeliveryHeldItem>();netHeld[g].Bind(visual);netHeldKinds[g]=kind;}
+             if(IsHandThrown(kind))PoseThrownItem(netHeld[g].gameObject,netHeld[g],visual,throwAge,p.throwReleased,false);
+-            else {if(punch!=0)visual.PushArm(punch,rightHand);netHeld[g].FollowBones();}
++            else {netHeld[g].gameObject.SetActive(!plungerAway);if(punch!=0)visual.PushArm(punch,rightHand);netHeld[g].FollowBones();}
+         }
+     }
+ }
+--- Assets\Gameplay\MonsterDeliveryPrototype.cs before
++++ Assets\Gameplay\MonsterDeliveryPrototype.cs after
+@@ -576,7 +576,7 @@
+     public int sourceId;
+     Vector3 launchPosition;
+     Rigidbody body; bool impacted;
+-    void Awake() { body = GetComponent<Rigidbody>(); launchPosition = transform.position; }
++    void Awake() { body = GetComponent<Rigidbody>(); if(body)body.interpolation=RigidbodyInterpolation.Interpolate; launchPosition = transform.position; }
+     void Start() { if (kind != WeaponKind.Slime) Destroy(gameObject, 3); }
+     void FixedUpdate()
+     {
+--- /dev/null
++++ Assets/Gameplay/DeliveryNetworkProjectiles.cs new
+@@ -0,0 +1,68 @@
++using System.Collections.Generic;
++using System.Linq;
++using UnityEngine;
++
++public sealed partial class MonsterDeliveryPrototype
++{
++    sealed class NetShotMotion
++    {
++        public NetShot sample;
++        public float received;
++        public Vector3 correction;
++        public Vector3 Position(float now)
++        {
++            // Visual prediction only; stop after 100ms of missing snapshots. Hits remain server-owned.
++            float age=Mathf.Clamp(now-received,0,.1f);
++            return sample.position+sample.velocity*age+sample.acceleration*(.5f*age*age);
++        }
++    }
++    readonly Dictionary<string,NetShotMotion> netShotMotion=new();
++
++    static NetShot CaptureNetShot(BrawlShot shot)
++    {
++        var body=shot.GetComponent<Rigidbody>();
++        return new NetShot{id=shot.GetEntityId().ToString(),kind=(int)shot.kind,
++            position=body?body.position:shot.transform.position,rotation=body?body.rotation:shot.transform.rotation,
++            velocity=body?body.linearVelocity:Vector3.zero,acceleration=body&&body.useGravity?Physics.gravity:Vector3.zero};
++    }
++    void SyncNetShotViews(NetShot[] shots)
++    {
++        var seen=new HashSet<string>();
++        foreach(var shot in shots)
++        {
++            seen.Add(shot.id);
++            if(!netShotViews.TryGetValue(shot.id,out var model))
++            {
++                var prefab=Resources.Load<GameObject>("DeliveryItems/"+(WeaponKind)shot.kind);if(!prefab)continue;
++                model=Instantiate(prefab);model.name="RemoteProjectile";netShotViews[shot.id]=model;
++                model.transform.SetPositionAndRotation(shot.position,shot.rotation);
++                netShotMotion[shot.id]=new NetShotMotion{sample=shot,received=Time.time};
++            }
++            else
++            {
++                var motion=netShotMotion[shot.id];
++                var correction=motion.Position(Time.time)+motion.correction-shot.position;
++                motion.correction=correction.sqrMagnitude>36?Vector3.zero:correction;
++                motion.sample=shot;motion.received=Time.time;
++            }
++        }
++        foreach(var id in netShotViews.Keys.Where(id=>!seen.Contains(id)).ToArray())
++        {netShotViews[id].SetActive(false);Destroy(netShotViews[id]);netShotViews.Remove(id);netShotMotion.Remove(id);}
++    }
++    void UpdateNetShotViews(float now,float dt)
++    {
++        float decay=Mathf.Exp(-25*dt);
++        foreach(var pair in netShotMotion)
++        {
++            if(!netShotViews.TryGetValue(pair.Key,out var model)||!model)continue;
++            var motion=pair.Value;motion.correction*=decay;
++            model.transform.SetPositionAndRotation(motion.Position(now)+motion.correction,
++                Quaternion.Slerp(model.transform.rotation,motion.sample.rotation,1-decay));
++        }
++    }
++    void ClearNetShotViews()
++    {
++        foreach(var model in netShotViews.Values)if(model){model.SetActive(false);Destroy(model);}
++        netShotViews.Clear();netShotMotion.Clear();
++    }
++}
+--- /dev/null
++++ Assets/Editor/ProjectileDisplayCheck.cs new
+@@ -0,0 +1,218 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using UnityEditor;
++using UnityEngine;
++
++public static class ProjectileDisplayCheck
++{
++    const string Folder="Docs/ChangeRecords/20261018/";
++    const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
++    [MenuItem("Tools/Gameplay/Projectiles/Verify Display")]
++    public static void Verify()
++    {
++        if(!EditorApplication.isPlaying)throw new Exception("Fresh Play Mode required");
++        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));
++    }
++    static IEnumerator Run(MonsterDeliveryPrototype game)
++    {
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Set(string n,object v)=>type.GetField(n,Flags).SetValue(game,v);
++        object Call(string n,params object[] a)=>type.GetMethod(n,Flags).Invoke(game,a);
++        var shotType=type.GetNestedType("NetShot",BindingFlags.NonPublic);
++        object Shot(int kind,Vector3 position,Vector3 velocity,Vector3 acceleration)
++        {
++            var shot=Activator.CreateInstance(shotType);shotType.GetField("id").SetValue(shot,"review");shotType.GetField("kind").SetValue(shot,kind);
++            shotType.GetField("position").SetValue(shot,position);shotType.GetField("rotation").SetValue(shot,Quaternion.identity);
++            shotType.GetField("velocity")?.SetValue(shot,velocity);shotType.GetField("acceleration")?.SetValue(shot,acceleration);return shot;
++        }
++        void Sync(object shot){var array=Array.CreateInstance(shotType,shot==null?0:1);if(shot!=null)array.SetValue(shot,0);Call("SyncNetShotViews",array);}
++        var motion=type.GetMethod("UpdateNetShotViews",Flags);
++        void Tick()=>motion?.Invoke(game,new object[]{Time.time,Time.deltaTime});
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Controlled Unity Play display check; scripted snapshots at 30Hz including one lost interval."};
++        void Check(bool ok,string label)=>log.Add((ok?"PASS ":"FAIL ")+label);
++        bool oldEnabled=game.enabled,oldBackground=Application.runInBackground;
++        var traces=new List<string>{"kind,time,received,position_x,position_y"};
++        string stage=motion==null?"before":"after";
++        try
++        {
++            game.enabled=false;Application.runInBackground=true;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            Set("started",true);Set("finished",false);game.NetworkScreens=true;Set("netOwn",0);Set("<RoomState>k__BackingField",MonsterDeliveryPrototype.RoomPhase.Playing);
++            var players=new[]{new MonsterDeliveryPrototype.NetPlayer{connected=true,items=new[]{2,0,0},selected=0},new MonsterDeliveryPrototype.NetPlayer{connected=true,items=new[]{2,0,0},selected=0},null,null};
++            Set("netPlayers",players);Set("selectedSlot",0);Call("SyncHostInventory");Call("UpdateHeldWeapon");
++            var actors=new[]{(CharacterController)Get("player"),((CharacterController[])Get("botControllers"))[0]};
++            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Projectile Display Review Floor";floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(60,.2f,60);
++            for(int i=0;i<2;i++){actors[i].enabled=false;actors[i].gameObject.SetActive(true);actors[i].transform.SetPositionAndRotation(new Vector3(i*1.4f,151,i*4),Quaternion.Euler(0,i*180,0));actors[i].enabled=true;players[i].actionAt=Time.time-.4f;players[i].actionKind=2;}
++            Call("PositionCamera");Call("PoseNetworkPlayers");
++            var own=(GameObject)Get("heldWeapon");var other=((DeliveryHeldItem[])Get("netHeld"))[1].gameObject;
++            var flying=typeof(MonsterDeliveryPrototype.NetPlayer).GetField("plungerFlying");
++            foreach(var p in players.Where(p=>p!=null))flying?.SetValue(p,true);
++            Call("PoseNetworkPlayers");Check(!own.activeSelf,"local plunger remains absent while airborne after 0.4 seconds");Check(!other.activeSelf,"opponent plunger remains absent while airborne");
++            yield return new WaitForEndOfFrame();Capture(Folder+"images/20261018_plunger_"+stage+"_airborne.png");
++            game.thirdPersonPreview=true;Call("UpdateHeldWeapon");Call("PoseNetworkPlayers");Check(!((GameObject)Get("heldWeapon")).activeSelf,"third-person local plunger also remains absent");
++            foreach(var p in players.Where(p=>p!=null))flying?.SetValue(p,false);
++            game.thirdPersonPreview=false;Call("UpdateHeldWeapon");Call("PoseNetworkPlayers");
++            Check(((GameObject)Get("heldWeapon")).activeSelf&&other.activeSelf,"held plungers return when authoritative flight ends");
++            var copy=JsonUtility.FromJson<MonsterDeliveryPrototype.NetPlayer>(JsonUtility.ToJson(players[0]));
++            flying?.SetValue(players[0],true);copy=JsonUtility.FromJson<MonsterDeliveryPrototype.NetPlayer>(JsonUtility.ToJson(players[0]));
++            Check(flying!=null&&(bool)flying.GetValue(copy),"snapshot retains plunger flight state");
++            foreach(int kind in new[]{2,4,5,9})
++            {
++                Sync(null);Vector3 velocity=Vector3.right*(kind==9?48:kind==2?36:18),gravity=kind==4||kind==5?Physics.gravity:Vector3.zero;
++                var origin=new Vector3(0,160,10);float began=Time.time,next=0;int packets=0,moving=0,waiting=0;float maxError=0;var previous=origin;
++                while(Time.time-began<.65f)
++                {
++                    float age=Time.time-began;bool received=age>=next;
++                    if(received){Sync(Shot(kind,origin+velocity*age+gravity*(.5f*age*age),velocity+gravity*age,gravity));packets++;next=age+(packets==5?2f/30:1f/30);}
++                    Tick();var model=((Dictionary<string,GameObject>)Get("netShotViews"))["review"];
++                    if(!received&&age>.04f){if(Vector3.Distance(model.transform.position,previous)>.0001f)moving++;else waiting++;}
++                    maxError=Mathf.Max(maxError,Vector3.Distance(model.transform.position,origin+velocity*age+gravity*(.5f*age*age)));
++                    traces.Add(FormattableString.Invariant($"{kind},{age:F5},{received},{model.transform.position.x:F5},{model.transform.position.y:F5}"));previous=model.transform.position;
++                    yield return null;
++                }
++                Check(moving>0&&waiting==0,((WeaponKind)kind)+" moves on every render frame between snapshots: moving="+moving+" stationary="+waiting);
++                Check(maxError<.15f,((WeaponKind)kind)+" trajectory error below 0.15m including skipped snapshot: "+maxError.ToString("F5"));
++                var clone=JsonUtility.FromJson(JsonUtility.ToJson(Shot(kind,origin,velocity,gravity)),shotType);
++                Check(shotType.GetField("velocity")!=null&&(Vector3)shotType.GetField("velocity").GetValue(clone)==velocity,((WeaponKind)kind)+" velocity survives snapshot JSON");
++            }
++            if(motion!=null)
++            {
++                Sync(Shot(2,new Vector3(0,160,10),Vector3.right*36,Vector3.zero));
++                var states=(IDictionary)Get("netShotMotion");var state=states["review"];state.GetType().GetField("received").SetValue(state,Time.time-.5f);
++                Tick();var model=((Dictionary<string,GameObject>)Get("netShotViews"))["review"];var pos=model.transform.position;
++                Tick();Check(Vector3.Distance(pos,model.transform.position)<.001f,"prediction stops after 100ms without authoritative samples");
++            }
++            Sync(null);Check(((Dictionary<string,GameObject>)Get("netShotViews")).Count==0,"empty authoritative snapshot removes projectile immediately");
++            foreach(var method in new[]{"LaunchSlime","LaunchIceCream","LaunchFountainPen"})
++            {
++                var shot=(BrawlShot)(method=="LaunchFountainPen"?Call(method,new Vector3(0,170,0),Vector3.forward,48f,0):Call(method,new Vector3(0,170,0),Vector3.forward*18,0));
++                Check(shot.GetComponent<Rigidbody>().interpolation==RigidbodyInterpolation.Interpolate,method+" uses physics interpolation for host view");UnityEngine.Object.Destroy(shot.gameObject);
++            }
++            var wall=GameObject.CreatePrimitive(PrimitiveType.Cube);wall.name="Projectile Sweep Review Wall";wall.transform.position=new Vector3(0,170,2);wall.transform.localScale=new Vector3(8,6,.2f);Physics.SyncTransforms();
++            foreach(var method in new[]{"LaunchSlime","LaunchIceCream","LaunchFountainPen"})
++            {
++                var shot=(BrawlShot)(method=="LaunchFountainPen"?Call(method,new Vector3(0,170,0),Vector3.forward,48f,0):Call(method,new Vector3(0,170,0),Vector3.forward*18,0));
++                yield return new WaitForSeconds(.25f);Check(!shot||!shot.gameObject.activeSelf,method+" still hits real solid cover with interpolation enabled");
++            }
++            UnityEngine.Object.Destroy(wall);Call("ClearNetShotViews");
++            Check(((IDictionary)Get("netShotMotion")).Count==0&&((Dictionary<string,GameObject>)Get("netShotViews")).Count==0,"session cleanup clears models and prediction state");
++            UnityEngine.Object.Destroy(floor);
++        }
++        finally
++        {
++            File.WriteAllLines(Folder+"evidence/projectile-display-"+stage+".txt",log);File.WriteAllLines(Folder+"evidence/projectile-display-"+stage+".csv",traces);
++            Sync(null);game.enabled=oldEnabled;Application.runInBackground=oldBackground;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
++        }
++        Debug.Log("PROJECTILE_DISPLAY_"+stage+": "+log.Count(s=>s.StartsWith("PASS"))+" PASS, "+log.Count(s=>s.StartsWith("FAIL"))+" FAIL");
++        if(stage=="after"&&log.Any(s=>s.StartsWith("FAIL")))throw new Exception("PROJECTILE_DISPLAY_FAILED");
++    }
++    static void Capture(string path)
++    {var image=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,image.EncodeToPNG());}finally{UnityEngine.Object.Destroy(image);}}
++
++    [MenuItem("Tools/Gameplay/Projectiles/Host Connected Review")]
++    public static void Host()=>BeginConnected(true);
++    [MenuItem("Tools/Gameplay/Projectiles/Join Connected Review")]
++    public static void Join()=>BeginConnected(false);
++    static void BeginConnected(bool host)
++    {
++        if(!EditorApplication.isPlaying)throw new Exception("Play Mode required");
++        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Connected(game,host));
++    }
++    static IEnumerator Connected(MonsterDeliveryPrototype game,bool host)
++    {
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Call(string n,params object[] a)=>type.GetMethod(n,Flags).Invoke(game,a);
++        string directory=Path.GetFullPath(Application.dataPath+"/..");if(!host)directory=Path.GetFullPath(directory+"/../../..");
++        string folder=Path.Combine(directory,Folder),role=host?"host":"client";
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Actual two MPPM processes, localhost NGO; scripted loadouts, positions and use inputs. No synthetic network delay."};
++        var rows=new List<string>{"time,id,kind,frame_sequence,x,y,z"};
++        var hidden=new HashSet<int>();var restored=new HashSet<int>();var returning=new HashSet<int>();var seenKinds=new HashSet<int>();var captured=new HashSet<string>();
++        var previous=new Dictionary<string,Vector3>();var stationary=new Dictionary<int,int>();var moving=new Dictionary<int,int>();
++        int lastSequence=-1,stage=-1,sent=-1;bool background=Application.runInBackground;int oldTarget=Application.targetFrameRate,oldVsync=QualitySettings.vSyncCount;
++        try
++        {
++            Application.runInBackground=true;QualitySettings.vSyncCount=0;Application.targetFrameRate=120;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            game.NetworkScreens=true;game.NetTeamSize=1;if(host)game.HostRoom();else game.JoinRoom("127.0.0.1");
++            float deadline=Time.realtimeSinceStartup+45;while(!game.NetPlaying&&Time.realtimeSinceStartup<deadline)yield return null;
++            if(!game.NetPlaying)throw new Exception("Projectile connection timeout");
++            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Connected Projectile Review Floor";floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(100,.2f,100);
++            var input=(MonsterDeliveryPrototype.NetInput)Get("netLocalInput");input.slot=0;input.yaw=host?0:180;input.pitch=-5;
++            if(host)
++            {
++                var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
++                for(int g=0;g<2;g++)
++                {
++                    players[g].items=new[]{2,0,0};players[g].selected=0;
++                    var actor=(CharacterController)type.GetMethod("ActorController",Flags).Invoke(game,new object[]{g});
++                    actor.enabled=false;actor.transform.SetPositionAndRotation(new Vector3(g==0?0:1.4f,151,g==0?0:5),Quaternion.Euler(0,g==0?0:180,0));actor.enabled=true;players[g].vertical=0;
++                }
++                Call("NetBroadcast");
++            }
++            yield return new WaitForSecondsRealtime(.8f);float began=Time.time;
++            int[] kinds={2,4,5,9};
++            while(Time.time-began<8.7f)
++            {
++                float elapsed=Time.time-began;int current=Mathf.Min(3,(int)(elapsed/2));
++                var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
++                if(host&&stage!=current)
++                {
++                    stage=current;foreach(var p in players.Where(p=>p!=null&&p.connected)){p.items=new[]{kinds[current],0,0};p.selected=0;}Call("NetBroadcast");
++                }
++                input=(MonsterDeliveryPrototype.NetInput)Get("netLocalInput");input.slot=0;
++                if(sent<current&&elapsed>current*2+(host?.35f:.8f)){input.use++;sent=current;}
++                int own=(int)Get("netOwn"),other=own==0?1:0;
++                foreach(int g in new[]{own,other})
++                {
++                    var p=players[g];if(p.items[p.selected]!=2)continue;
++                    var held=g==own?(GameObject)Get("heldWeapon"):((DeliveryHeldItem[])Get("netHeld"))[g]?.gameObject;
++                    if(!held)continue;
++                    bool flying=p.plungerFlying;
++                    if(flying&&!held.activeSelf)hidden.Add(g);
++                    if(hidden.Contains(g)&&!flying&&held.activeSelf)restored.Add(g);
++                    string capture=null;
++                    if(flying&&!held.activeSelf&&Time.time-p.actionAt>.2f&&Time.time-p.actionAt<.38f)capture="airborne_"+(g==own?"local":"opponent");
++                    if(restored.Contains(g)&&!flying&&held.activeSelf)capture="returned_"+(g==own?"local":"opponent");
++                    if(capture!=null&&captured.Add(capture))
++                    {yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_plunger_connected_"+role+"_"+capture+".png");}
++                }
++                if(host)
++                {
++                    foreach(var shot in UnityEngine.Object.FindObjectsByType<BrawlShot>().Where(s=>s.owner==game))seenKinds.Add((int)shot.kind);
++                    var plungers=(IList)Get("netPlungers");foreach(var shot in plungers){seenKinds.Add(2);if((bool)shot.GetType().GetField("returning").GetValue(shot))returning.Add((int)shot.GetType().GetField("source").GetValue(shot));}
++                }
++                else
++                {
++                    int sequence=(int)Get("netLastFrameSequence");var views=(Dictionary<string,GameObject>)Get("netShotViews");var states=(IDictionary)Get("netShotMotion");
++                    foreach(var pair in views.ToArray())
++                    {
++                        if(!pair.Value||!states.Contains(pair.Key))continue;
++                        var sample=states[pair.Key].GetType().GetField("sample").GetValue(states[pair.Key]);int kind=(int)sample.GetType().GetField("kind").GetValue(sample);seenKinds.Add(kind);
++                        var pos=pair.Value.transform.position;
++                        if(sequence==lastSequence&&previous.TryGetValue(pair.Key,out var old)&&Time.deltaTime<.09f)
++                        {var counts=Vector3.Distance(pos,old)>.0001f?moving:stationary;counts[kind]=counts.GetValueOrDefault(kind)+1;}
++                        previous[pair.Key]=pos;rows.Add(FormattableString.Invariant($"{elapsed:F5},{pair.Key},{kind},{sequence},{pos.x:F5},{pos.y:F5},{pos.z:F5}"));
++                        string capture="flight_"+kind;
++                        if(captured.Add(capture)){yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_projectile_connected_client_"+(WeaponKind)kind+".png");}
++                    }
++                    lastSequence=sequence;
++                }
++                yield return null;
++            }
++            void Check(bool ok,string detail)=>log.Add((ok?"PASS ":"FAIL ")+detail);
++            foreach(int g in new[]{0,1}){Check(hidden.Contains(g),role+" hides airborne held plunger for global player "+g);Check(restored.Contains(g),role+" restores held plunger after return for global player "+g);}
++            foreach(int kind in kinds)
++            {
++                Check(seenKinds.Contains(kind),role+" sees actual "+(WeaponKind)kind+" projectile");
++                if(!host){int m=moving.GetValueOrDefault(kind),s=stationary.GetValueOrDefault(kind);Check(m>0&&m>=(m+s)*.9f,((WeaponKind)kind)+" movement between real packets: moving="+m+" stationary="+s);}
++            }
++            if(host)Check(returning.Count==2,"both authoritative plungers complete outward and returning phases");
++            File.WriteAllLines(folder+"evidence/projectile-connected-"+role+".txt",log);File.WriteAllLines(folder+"evidence/projectile-connected-"+role+".csv",rows);
++            Debug.Log("PROJECTILE_CONNECTED_"+role+": "+string.Join("\n",log));
++            if(log.Any(s=>s.StartsWith("FAIL")))throw new Exception("CONNECTED_PROJECTILE_FAILED "+role);
++        }
++        finally{Application.runInBackground=background;Application.targetFrameRate=oldTarget;QualitySettings.vSyncCount=oldVsync;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;}
++    }
++}

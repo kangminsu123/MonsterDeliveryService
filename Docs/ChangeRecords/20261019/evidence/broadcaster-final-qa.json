@@ -1,0 +1,24 @@
+{
+  "case": "06",
+  "date": "2026-10-19",
+  "tests": {
+    "broadcaster-offline.txt": 17,
+    "broadcaster-special-regression.txt": 31,
+    "broadcaster-row-regression.txt": 45,
+    "broadcaster-connected/host.txt": 9,
+    "broadcaster-connected/client.txt": 9
+  },
+  "scope": "Two local Unity Editors; artificial60ms one-way and20% input/frame omissions; no WAN, four-player or release rebuild.",
+  "source_hashes_match": true,
+  "readme_relative_links_valid": true,
+  "html_relative_links_valid": true,
+  "report_output_identical": true,
+  "report_sha256": "5c3f9b698d0ed82d4abdd57596f8be7ebe857006477a2e28f0c4e5c9beb208ca",
+  "report_pages": 11,
+  "visual_qa": "All11 final page PNGs opened and inspected: Korean, tables, images, captions and case06 page breaks fit without clipping.",
+  "renderer": "Packaged render_docx.py attempted: LibreOffice unavailable, temp cleanup access error. Read-only hidden Word PDF export and bundled Poppler succeeded.",
+  "main_console_errors_after_return": 0,
+  "main_state": "Fresh Play; Show Five Item Row",
+  "temporary_clone_17060": "Stopped after process path and dedicated log identity verified.",
+  "focused_diff_check": "Relevant gameplay and Editor scripts passed. Full pre-existing scene diff has Unity serialized trailing spaces; unrelated content preserved."
+}

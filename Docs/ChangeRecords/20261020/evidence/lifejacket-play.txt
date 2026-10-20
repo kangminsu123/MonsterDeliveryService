@@ -1,0 +1,17 @@
+2026-10-20T10:18:29.2272262+09:00
+Actual Editor Play, controlled reproduction. Not separate network peers.
+PASS selected life jacket has no hand model in first person
+PASS selected life jacket has no hand model in third person
+PASS normal use consumes once and grants five-second immunity
+PASS immunity blocks push, lift, stun, slow and ink without spending aircap
+PASS unshieldable area also respects immunity
+PASS first-person world aura stays out of camera
+PASS protected rival has three rings and eight moving glints
+PASS aura is purely cosmetic with no collision
+PASS repeated snapshots reuse one aura
+PASS consumed slot remains only for the existing short action delay
+PASS slot clears after action while immunity persists
+PASS world aura hides at immunity expiry
+PASS attacks apply again after the real five-second timer
+PASS third-person self view also shows protection
+PASS round finish hides protection despite a remaining deadline

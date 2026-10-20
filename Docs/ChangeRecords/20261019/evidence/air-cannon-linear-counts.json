@@ -1,0 +1,22 @@
+{
+  "offline": {
+    "pass": 23,
+    "fail": 0
+  },
+  "special_regression": {
+    "pass": 31,
+    "fail": 0
+  },
+  "row_regression": {
+    "pass": 45,
+    "fail": 0
+  },
+  "host": {
+    "pass": 11,
+    "fail": 0
+  },
+  "client": {
+    "pass": 11,
+    "fail": 0
+  }
+}

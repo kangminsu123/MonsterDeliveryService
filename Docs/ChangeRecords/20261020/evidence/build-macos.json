@@ -1,0 +1,11 @@
+{
+    "platform": "StandaloneOSX",
+    "result": "Succeeded",
+    "path": "C:/Users/xlfhf/Documents/Codex/2026-10-20/durl/outputs/MonsterDeliveryService_macOS/MonsterDeliveryService.app",
+    "startedAt": "2026-10-20T18:04:15.9247837+09:00",
+    "bytes": 181436022,
+    "errors": 4,
+    "warnings": 13,
+    "seconds": 174.1785301,
+    "protocol": 15
+}

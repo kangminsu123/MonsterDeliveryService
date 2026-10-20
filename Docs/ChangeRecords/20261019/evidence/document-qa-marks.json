@@ -1,0 +1,19 @@
+{
+  "pages": 3,
+  "unchanged_old_pages": [
+    1,
+    2
+  ],
+  "visually_reviewed_current_page": 3,
+  "parcel_fonts": 0,
+  "parts": 37,
+  "triangles": 4412,
+  "mesh_errors": 0,
+  "motion_frames_viewed": [
+    1,
+    48,
+    96,
+    144
+  ],
+  "render": "Word COM + bundled Poppler; packaged LibreOffice unavailable"
+}

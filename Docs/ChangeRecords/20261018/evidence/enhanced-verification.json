@@ -1,0 +1,18 @@
+{
+  "completed": "2026-10-19",
+  "case": "20261018/case09",
+  "enhanced_checks": 25,
+  "usage_checks": 161,
+  "real_separate_peers": 2,
+  "host_checks": 10,
+  "client_checks": 9,
+  "artificial_one_way_delay_ms": 60,
+  "intentional_message_loss_percent": 20,
+  "protocol": 7,
+  "WAN_tested": false,
+  "four_players_tested": false,
+  "release_rebuilt": false,
+  "first_attempt": "participant capture coroutine stalled at WaitForEndOfFrame in hidden Editor; preserved, fixed harness and reran",
+  "gameplay_runtime_errors": 0,
+  "main_console_errors": 0
+}

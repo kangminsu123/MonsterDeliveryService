@@ -3,6 +3,8 @@ using UnityEngine;
 // Shared non-lethal state for the player and rivals. No renderer or automatic item grants.
 public sealed class DeliveryItemState
 {
+    public float immuneUntil, batteryUntil;
+    public float packedUntil;
     public float frozenUntil; // Visual marker; action lock and immunity use shared stun state.
     public bool Frozen(float now) => now < frozenUntil && Stunned(now);
     public float stunUntil, stunImmuneUntil, forceUntil, forceResistUntil, slowUntil;
@@ -16,13 +18,14 @@ public sealed class DeliveryItemState
     public bool Pulled(float now) => pullSource && now < pullUntil;
     public bool KnockedBack => force.sqrMagnitude > .01f || Time.time < pullUntil;
     public bool CanCapture(float now) => !Stunned(now) && !KnockedBack && now >= forceUntil && now >= busyUntil;
-    public float MoveMultiplier(float now) => (now < slowUntil ? .6f : 1f) * (now < speedUntil ? 1.5f : 1f);
+    public float MoveMultiplier(float now) => (now < slowUntil ? .6f : 1f) * (now < speedUntil ? 1.5f : now < batteryUntil ? 1.3f : 1f);
 
     public bool Control(float now, Vector3 impulse, float stunSeconds = 0) =>
         ReceiveHit(now, new DeliveryItemHit(impulse, stunSeconds: stunSeconds)) == DeliveryHitResult.Applied;
 
     public DeliveryHitResult ReceiveHit(float now, DeliveryItemHit hit)
     {
+        if (now < immuneUntil) return DeliveryHitResult.Ignored; // Includes unshieldable fields, slow, ink, pull and launch.
         bool stun = hit.stunSeconds > 0 && now >= stunImmuneUntil;
         bool push = hit.impulse.sqrMagnitude > .001f;
         if (!stun && !push && hit.slowSeconds <= 0 && hit.inkSeconds <= 0) return DeliveryHitResult.Ignored;

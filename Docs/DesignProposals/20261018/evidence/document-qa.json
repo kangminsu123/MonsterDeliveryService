@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-18",
+  "status": "design draft only; no gameplay changes",
+  "pages": 4,
+  "all_pages_visually_reviewed": true,
+  "tables_rows": [
+    8,
+    5,
+    10,
+    7
+  ],
+  "renderer": "Word read-only hidden COM export and Poppler",
+  "primary_renderer_failure": "render_docx.py failed because LibreOffice soffice.exe is unavailable; sandbox temp cleanup also denied",
+  "proposals": "all new names, numbers, controls and respawn policies provisional; health consumable optional",
+  "sha256": "ad28d02da12477236bec3e2b68c45d4dc70f7f82b550f4ee5df918fdc00ca0c2",
+  "page_sha256": {
+    "page-1.png": "0c795cc9a1b445b7837c6e459ad6b8046fc30ebc2e147bb2c27ff67606704664",
+    "page-2.png": "4070088110973b9ae1d0961f6d683eabf4c3643423e78985041ac5f58713baea",
+    "page-3.png": "5453cfed3f6a9fbb25fb5d6fb9b8c4619d71eb88cb49eda2ffa9288dcf549e8c",
+    "page-4.png": "de94bf2e91c42c92650ef04f6516d894772b287054aaff774f8bcf00bf25700a"
+  }
+}

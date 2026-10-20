@@ -1,0 +1,11 @@
+2026-10-19T21:07:17.7949419+09:00
+Actual two Editors over localhost with artificial60ms one-way delay and20% frame/input omissions. Controlled positions; not WAN.
+PASS host broadcast gives client four seconds; max=4
+PASS client broadcast gives host four seconds; max=4
+PASS both four-second stuns expire before the next stage
+PASS both peers spend one use and clear the final slot
+PASS life jacket still blocks broadcast stun
+PASS both peers see and capture layered waves, sparks and warning light
+PASS repeated action snapshots never duplicate an effect; peak=1
+PASS all network broadcast effects clean up
+PASS no runtime errors during connected scenario

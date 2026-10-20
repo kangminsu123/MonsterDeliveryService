@@ -1,0 +1,147 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+
+public static class CaptureProtectionCheck
+{
+    [MenuItem("Tools/Gameplay/Capture/Verify20 Second Protection")]
+    public static void Verify()
+    {
+        if(!EditorApplication.isPlaying)throw new Exception("Fresh Play required.");
+        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));
+    }
+    static IEnumerator Run(MonsterDeliveryPrototype game)
+    {
+        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        const string folder="Docs/ChangeRecords/20261018/";
+        var type=game.GetType();object Get(string name)=>type.GetField(name,flags).GetValue(game);
+        void Set(string name,object value)=>type.GetField(name,flags).SetValue(game,value);
+        object Call(string name,params object[] args)=>type.GetMethod(name,flags).Invoke(game,args);
+        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Real shared/local/bot/host capture paths. Controlled connected records and serialized participant frames; not separate peer/WAN."};
+        void Check(bool ok,string text){log.Add((ok?"PASS ":"FAIL ")+text);}
+        var owners=(int[])Get("owner");var locks=(float[])Get("mailboxProtectedUntil");
+        var mailboxes=(GameObject[])Get("mailboxes");var original=mailboxes[0];
+        var player=(CharacterController)Get("player");var cam=(Camera)Get("cam");var keyboard=Keyboard.current;
+        var state=(DeliveryItemState)Get("playerItems");bool wasEnabled=game.enabled;
+        GameObject fixture=null,view=null;
+        void E(bool down){InputSystem.QueueStateEvent(keyboard,down?new KeyboardState(Key.E):new KeyboardState());InputSystem.Update();}
+        void AgeLock(float remaining){locks[0]=Time.time+remaining;}
+        try
+        {
+            game.enabled=false;game.NetworkScreens=false;Set("started",true);Set("finished",false);
+            EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
+            Array.Fill(owners,-1);Array.Clear(locks,0,locks.Length);
+            Check((float)Call("MailboxProtectionRemaining",0)==0,"neutral mailbox is available without20s delay");
+            Check((bool)Call("Capture",0,1),"first capture succeeds");
+            Check(Mathf.Abs((float)Call("MailboxProtectionRemaining",0)-20)<.05f,"successful first capture starts20s protection");
+            Check(!(bool)Call("Capture",0,0)&&owners[0]==1,"shared guard rejects immediate enemy recapture");
+            float expiry=locks[0];Call("Capture",0,1);
+            Check(locks[0]==expiry,"same owner cannot renew protection by interacting");
+            Set("focusedTarget",original.GetComponent<InteractionTarget>());
+            Check(game.HudInteractionHint=="20초 후 점령 가능","crosshair HUD shows20-second countdown");
+            AgeLock(.2f);Check(game.HudInteractionHint=="1초 후 점령 가능","positive fractional second rounds up, never prematurely says0");
+            AgeLock(0);Check((bool)Call("Capture",0,0)&&owners[0]==0,"recapture succeeds exactly at expiry");
+            Check((float)Call("MailboxProtectionRemaining",0)>19.9f,"successful recapture starts a new20s protection");
+            owners[0]=1;AgeLock(.01f);Set("interactionReady",true);Set("captureTarget",0);Set("captureStarted",Time.time-10);
+            E(true);Call("UpdateCapture",keyboard);
+            Check(owners[0]==1&&(int)Get("captureTarget")==-1,"local E cannot precharge progress during protection");E(false);
+            for(int i=0;i<10;i++){owners[i]=0;locks[i]=Time.time+20;}
+            Check((int)Call("FindBotTarget",0)==-1,"offline bot skips all protected enemy mailboxes");
+            owners[4]=-1;Check(Enumerable.Range(0,100).All(_=>(int)Call("FindBotTarget",0)==4),"offline bot finds the sole neutral mailbox across100 target scans");
+            owners[4]=0;locks[4]=Time.time;
+            Check((int)Call("FindBotTarget",0)==4,"offline bot can target mailbox as soon as protection expires");
+            Array.Fill(locks,Time.time+20);Call("Begin");
+            Check(locks.All(t=>t==0)&&owners.All(o=>o==-1),"offline restart clears owners and all protection timers");
+            fixture=GameObject.CreatePrimitive(PrimitiveType.Cube);fixture.name="Capture protection controlled target";
+            fixture.transform.position=new Vector3(0,150,0);fixture.transform.localScale=new Vector3(.6f,.8f,.4f);
+            var target=fixture.AddComponent<InteractionTarget>();target.displayName="검수 우체통";target.actionHint="E · 점령";
+            mailboxes[0]=fixture;player.enabled=false;player.transform.position=new Vector3(0,149,-2);player.enabled=true;
+            var visual=(DeliveryRobotVisual)Get("playerVisual");fixture.transform.position=visual.EyePosition+Vector3.forward*2;
+            cam.transform.SetPositionAndRotation(visual.EyePosition,Quaternion.identity);Physics.SyncTransforms();
+            owners[0]=1;AgeLock(20);Call("UpdateInteraction");
+            Check(Get("focusedTarget")==target&&!(bool)Get("interactionReady"),"real crosshair ray focuses locked mailbox but blocks E and ready outline");
+            AgeLock(0);Call("UpdateInteraction");Check((bool)Get("interactionReady"),"crosshair becomes interactable at expiry");
+            Call("AddWeapon",WeaponKind.WorkGloves);owners[0]=1;AgeLock(10);Set("interactionReady",true);Set("focusedTarget",target);
+            Set("captureTarget",0);Set("captureStarted",Time.time-2);E(true);Call("UpdateCapture",keyboard);
+            Check(((int[])Get("weaponAmmo"))[0]==1&&owners[0]==1,"blocked capture does not consume work gloves");
+            AgeLock(0);Set("interactionReady",true);Call("UpdateCapture",keyboard);
+            Check(owners[0]==1,"expiry begins fresh progress instead of inheriting time held during lock");
+            Set("captureStarted",Time.time-1.51f);Call("UpdateCapture",keyboard);E(false);
+            Check(owners[0]==0&&((int[])Get("weaponAmmo"))[0]==0,"unlocked work-glove capture consumes one use on success");
+            mailboxes[0]=original;UnityEngine.Object.Destroy(fixture);fixture=null;
+            game.NetworkScreens=true;game.HostRoom();yield return null;
+            var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
+            for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
+            game.StartNetRound();
+            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==6,"protocol6 separates capture-lock snapshots from old builds");
+            Check(locks.All(t=>t==0)&&owners.All(o=>o==-1),"host new round clears all mailbox protection");
+            fixture=GameObject.CreatePrimitive(PrimitiveType.Cube);fixture.name="Server capture controlled target";
+            fixture.transform.localScale=new Vector3(.6f,.8f,.4f);target=fixture.AddComponent<InteractionTarget>();target.actionHint="E · 점령";
+            mailboxes[0]=fixture;
+            foreach(int g in new[]{0,1})
+            {
+                var actor=g==0?player:((CharacterController[])Get("botControllers"))[g-1];actor.enabled=false;actor.transform.SetPositionAndRotation(new Vector3(g*10,150,0),Quaternion.identity);actor.enabled=true;
+                var actorVisual=g==0?(DeliveryRobotVisual)Get("playerVisual"):((DeliveryRobotVisual[])Get("botVisuals"))[g-1];
+                fixture.transform.position=actorVisual.EyePosition+Vector3.forward*2;Physics.SyncTransforms();
+                ((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[g]=new MonsterDeliveryPrototype.NetInput();
+                var ps=players[g];ps.target=-1;ps.selected=0;Call("GiveNetItem",g,0,(int)WeaponKind.WorkGloves);
+                owners[0]=g==0?1:0;AgeLock(20);Call("NetCaptureAndPickup",g,true);
+                Check(ps.target==-1&&ps.ammo[0]==1,"server player"+g+" rejects locked capture without consuming gloves");
+                AgeLock(0);Call("NetCaptureAndPickup",g,true);Check(ps.target==0,"server player"+g+" can start progress after expiry");
+                ps.captureAt=Time.time-1.51f;Call("NetCaptureAndPickup",g,true);
+                Check(owners[0]==g&&ps.ammo[0]==0&&(float)Call("MailboxProtectionRemaining",0)>19.9f,"server player"+g+" captures once, spends gloves and renews20s lock");
+            }
+            mailboxes[0]=original;UnityEngine.Object.Destroy(fixture);fixture=null;
+            var ftype=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var frame=Activator.CreateInstance(ftype);
+            void Field(string name,object value)=>ftype.GetField(name).SetValue(frame,value);
+            Field("players",players);Field("own",1);Field("teamSize",2);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("remaining",180f);
+            var frameOwners=Enumerable.Repeat(-1,10).ToArray();frameOwners[0]=0;Field("owners",frameOwners);
+            var remaining=new float[10];remaining[0]=19.25f;Field("captureLocks",remaining);
+            Field("parcels",UnityEngine.Object.FindAnyObjectByType<ParcelSpawnPool>().CaptureSlots());
+            game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);
+            frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),ftype);Call("ApplyNetFrame",frame);
+            Check(Mathf.Abs((float)Call("MailboxProtectionRemaining",0)-19.25f)<.05f,"participant reconstructs server remaining lock without relying on equal clocks");
+            Check(owners[0]==1,"participant keeps correct global-to-local mailbox owner mapping");
+            Set("focusedTarget",original.GetComponent<InteractionTarget>());Check(game.HudInteractionHint=="20초 후 점령 가능","participant HUD uses replicated countdown");
+            Field("sequence",(int)Get("netLastFrameSequence"));remaining[0]=0;Field("captureLocks",remaining);Call("ApplyNetFrame",frame);
+            Check((float)Call("MailboxProtectionRemaining",0)>19,"stale frame cannot erase a newer protection state");
+            Field("sequence",(int)Get("netLastFrameSequence")+1);Field("captureLocks",new float[9]);int seq=(int)Get("netLastFrameSequence");Call("ApplyNetFrame",frame);
+            Check((int)Get("netLastFrameSequence")==seq,"malformed timer array rejected before state mutation");
+            Field("captureLocks",new float[10]);Field("sequence",seq+1);Call("ApplyNetFrame",frame);
+            Check((float)Call("MailboxProtectionRemaining",0)==0,"fresh expiry snapshot removes participant lock");
+            game.LeaveRoom();game.NetworkScreens=false;Call("Begin");
+            var itemState=new DeliveryItemState();itemState.Control(100,Vector3.zero,1);
+            Check(itemState.stunImmuneUntil==103,"existing shared stun and freeze recovery immunity remains2s;5s is suggestion only");
+            // Capture the authored mailbox and the real HUD with deterministic review state.
+            foreach(var bot in (GameObject[])Get("bots"))bot.SetActive(false);
+            Set("focusedTarget",original.GetComponent<InteractionTarget>());Set("captureTarget",-1);Set("interactionReady",false);
+            owners[0]=1;AgeLock(20);
+            var bounds=original.GetComponentsInChildren<Renderer>().First(r=>r.name.IndexOf("CaptureBeacon",StringComparison.OrdinalIgnoreCase)<0).bounds;
+            var look=bounds.center;cam.transform.position=look+new Vector3(0,.25f,-2.2f);cam.transform.LookAt(look);
+            view=new GameObject("Capture Protection Review HUD");var hud=view.AddComponent<CaptureProtectionReviewHud>();hud.game=game;
+            yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_capture_protected.png");
+            AgeLock(0);Set("interactionReady",true);yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_capture_available.png");
+        }
+        finally
+        {
+            E(false);mailboxes[0]=original;if(fixture)UnityEngine.Object.Destroy(fixture);if(view)UnityEngine.Object.Destroy(view);
+            File.WriteAllLines(folder+"evidence/capture-protection-check.txt",log);
+            game.LeaveRoom();game.enabled=wasEnabled;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
+        }
+        Debug.Log("CAPTURE_PROTECTION: "+log.Count(s=>s.StartsWith("PASS "))+" PASS / "+log.Count(s=>s.StartsWith("FAIL "))+" FAIL");
+        if(log.Any(s=>s.StartsWith("FAIL ")))throw new Exception("CAPTURE_PROTECTION_CHECK_FAILED");
+    }
+    static void Capture(string path){var img=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,img.EncodeToPNG());}finally{UnityEngine.Object.Destroy(img);}}
+}
+public sealed class CaptureProtectionReviewHud : MonoBehaviour
+{
+    public MonsterDeliveryPrototype game;
+    void OnGUI(){if(game)typeof(MonsterDeliveryPrototype).GetMethod("DrawGameplayHUD",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(game,null);}
+}

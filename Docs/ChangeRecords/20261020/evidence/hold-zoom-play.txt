@@ -1,0 +1,17 @@
+2026-10-20T17:06:38.0422231+09:00
+Actual Editor Play with synthetic Unity Input System right-mouse states. Shared offline/network camera path; not separate network peers.
+PASS released right button keeps the normal sixty-degree view
+PASS holding right button activates zoom even with empty hands
+PASS held zoom smoothly converges to thirty-five degrees
+PASS release restores normal view without another click
+PASS held-item camera uses the same zoom as the world camera
+PASS zoom does not spend item ammo or trigger use
+PASS zoom takes priority over shoes and battery field-of-view effects
+PASS release restores current booster view and preserves strongest movement bonus
+PASS third-person preview also supports held zoom
+PASS network camera path uses the same right-button zoom
+PASS pause prevents zoom while the right button remains held
+PASS network menu prevents gameplay zoom
+PASS finished round suppresses zoom
+PASS map editor does not use gameplay zoom
+PASS unlocked cursor suppresses zoom for UI interaction

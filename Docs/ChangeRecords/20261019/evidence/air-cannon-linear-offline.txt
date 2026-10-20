@@ -1,0 +1,26 @@
+2026-10-19T18:36:44.7547437+09:00
+Actual Play; controlled positions, production input/use, straight-shot physics and hit paths. Separate peers recorded separately.
+PASS one impact hits every in-range rival radially with60m/s horizontal and18m/s lift
+PASS outside five-metre sphere is excluded
+PASS source outside blast radius is unaffected
+PASS one rival does not occlude another rival in the same blast
+PASS aircap blocks and spends once
+PASS life jacket blocks blast
+PASS wall blocks only the covered rival
+PASS vertical distance excludes another storey beyond blast radius
+PASS participant impact replay cannot apply gameplay force
+PASS blast exactly below the source launches upward without an arbitrary horizontal shove
+PASS nearby own blast pushes the source away and upward
+PASS self blast still respects life-jacket immunity
+TRACE floor=Center: (0.00, 149.90, 10.00), Extents: (50.00, 0.10, 50.00) enabled=True simulation=FixedUpdate shotCollider=Center: (0.00, 151.82, 1.17), Extents: (0.23, 0.23, 0.23) enabled=True trigger=False floorIgnored=False
+PASS normal click does not hit immediately at launch
+PASS straight60m/s shot has no gravity, drag or upward boost; origin=(0.00, 151.82, 1.17)
+PASS normal click consumes exactly one use
+PASS real floor collision triggers one blast against both nearby rivals; remaining=none lifts=18/18
+PASS real blast leaves distant rival untouched
+PASS actual flight and impact images captured
+PASS last-use slot clears after recoil
+PASS real down-aimed normal click detonates on floor and launches source
+PASS horizontal shot holds exact height during actual flight
+PASS unhit sky shot expires at60m instead of remaining in server snapshots
+PASS muzzle cover resolves immediately without a projectile behind wall

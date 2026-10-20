@@ -1,0 +1,12 @@
+{
+  "server_capture_ms_per_call": 0.013255,
+  "server_capture_allocation_counter_available": 0,
+  "unchanged_parcels_ms_per_call": 0.002347,
+  "unchanged_parcels_allocation_counter_available": 0,
+  "apply_frame_ms_per_call": 0.008931,
+  "apply_frame_allocation_counter_available": 0,
+  "serialize_compress_ms_per_call": 0.074782,
+  "serialize_compress_allocation_counter_available": 0,
+  "json_bytes": 2586,
+  "compressed_bytes": 536
+}

@@ -1,0 +1,19 @@
+2026-10-19T18:12:45.4149062+09:00
+Actual Play; controlled positions, production input/use, ballistic physics and hit paths. Separate peers recorded separately.
+PASS one impact hits every in-range rival radially with60m/s horizontal and18m/s lift
+PASS outside five-metre sphere is excluded
+PASS source is excluded
+PASS one rival does not occlude another rival in the same blast
+PASS aircap blocks and spends once
+PASS life jacket blocks blast
+PASS wall blocks only the covered rival
+PASS vertical distance excludes another storey beyond blast radius
+PASS participant impact replay cannot apply gameplay force
+PASS normal click does not hit immediately at launch
+PASS same18m/s forward plus3m/s upward gravity as slime
+PASS normal click consumes exactly one use
+FAIL real floor collision triggers one blast against both nearby rivals
+PASS real blast leaves distant rival untouched
+FAIL actual flight and impact images captured
+PASS last-use slot clears after recoil while launched shot persists
+FAIL muzzle cover resolves immediately without a projectile behind wall

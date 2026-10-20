@@ -9,7 +9,7 @@ public sealed partial class MonsterDeliveryPrototype
     bool rivalShoesPlaytest = false; // Current opponent preview demonstrates bubble-wrap protection.
 
     bool RunningShoesActive => started && !finished && !mapEditMode && Time.time < playerItems.speedUntil;
-    float RunningShoesFieldOfView => RunningShoesActive && player &&
+    float RunningShoesFieldOfView => (RunningShoesActive || BatteryActive) && player &&
         new Vector2(player.velocity.x, player.velocity.z).sqrMagnitude > 1 ? 66 : 60;
 
     void ActivateRunningShoes(int id)
@@ -20,7 +20,7 @@ public sealed partial class MonsterDeliveryPrototype
 
     void UpdateRunningShoesFX()
     {
-        if (started && !finished && mapExploreMode && rivalShoesPlaytest && bots[0] && Time.time >= nextRivalShoesTest)
+        if (started && !finished && !NetworkScreens && mapExploreMode && rivalShoesPlaytest && bots[0] && Time.time >= nextRivalShoesTest)
         {
             ActivateRunningShoes(1); nextRivalShoesTest = Time.time + 10;
         }

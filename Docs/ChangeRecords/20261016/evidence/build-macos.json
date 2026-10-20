@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "Build Succeeded.",
+  "data": {
+    "job_id": "build-e926f216f5",
+    "result": "succeeded",
+    "platform": "StandaloneOSX",
+    "output_path": "C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_macOS_20261016/MonsterDeliveryService.app",
+    "started_at": "2026-10-16T13:20:57.5879347Z",
+    "duration_seconds": 55.921445999999996,
+    "completed_at": "2026-10-16T13:21:53.5093807Z",
+    "total_size_mb": 201.17,
+    "errors": 1,
+    "warnings": 2
+  }
+}

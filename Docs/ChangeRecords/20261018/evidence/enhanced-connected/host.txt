@@ -1,0 +1,13 @@
+2026-10-19T00:02:43.3727927+09:00
+Actual separate Unity Editor processes over localhost,60ms artificial one-way delay per outgoing frame/input and20 percent intentional drops. Controlled equipment, positions and inputs; not physical WAN.
+PASS two real peers connected with matching protocol7
+PASS client-origin boxing visibly lifts authoritative host beyond4.5m; peak=156.354
+PASS host-origin hammer reaches participant with about5s stun; max=4.979053
+PASS client-origin ice reaches host and replicates about3s freeze; max=2.949833
+PASS 30m plunger passes old15m range in network flight; furthest=24.56354
+PASS plunger physically pulls participant from25m to host
+PASS participant receives3 slime uses and consumes all3 via real input
+PASS opponent ice consumes aircap without freezing protected host
+PASS no runtime errors during connected test
+PASS authoritative ice projectile has enhanced launch speed; max=35.96798
+INFO artificial60ms one-way and20percent dropped outgoing messages; no physical WAN; source-only test, no release package rebuild.

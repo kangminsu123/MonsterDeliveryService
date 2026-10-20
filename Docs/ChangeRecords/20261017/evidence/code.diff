@@ -1,0 +1,29 @@
+diff --git a/Assets/Gameplay/DeliveryHeldItem.cs b/Assets/Gameplay/DeliveryHeldItem.cs
+index 66f3408..4463241 100644
+--- a/Assets/Gameplay/DeliveryHeldItem.cs
++++ b/Assets/Gameplay/DeliveryHeldItem.cs
+@@ -16,6 +16,7 @@ public sealed class DeliveryHeldItem : MonoBehaviour
+     Transform bone, rightBone, leftBone, rightPart, leftPart;
+     Vector3 rightViewPosition, leftViewPosition;
+     Quaternion rightViewRotation, leftViewRotation;
++    bool viewPoseInitialized;
+ 
+     public void FirstPerson()
+     {
+@@ -23,6 +24,8 @@ public sealed class DeliveryHeldItem : MonoBehaviour
+         transform.localRotation = firstPersonRotation;
+         transform.localScale = Vector3.one * firstPersonScale;
+         if (!paired) return;
++        // Network presentation calls this every frame: restore the calibrated guard, never add rotation again.
++        if (viewPoseInitialized) { PushFirstPerson(0, true); return; }
+         foreach (var part in GetComponentsInChildren<Transform>().Where(t => t.name == "Hand_R" || t.name == "Hand_L"))
+         {
+             float side = -Mathf.Sign(part.localPosition.x);
+@@ -36,6 +39,7 @@ public sealed class DeliveryHeldItem : MonoBehaviour
+         leftViewPosition = transform.parent.InverseTransformPoint(leftPart.position);
+         rightViewRotation = Quaternion.Inverse(transform.parent.rotation) * rightPart.rotation;
+         leftViewRotation = Quaternion.Inverse(transform.parent.rotation) * leftPart.rotation;
++        viewPoseInitialized = true;
+     }
+     public void PushFirstPerson(float amount, bool rightHand)
+     {

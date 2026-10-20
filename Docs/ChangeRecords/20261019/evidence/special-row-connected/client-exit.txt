@@ -1,0 +1,3 @@
+2026-10-19T08:55:48.3110958+09:00
+PASS room manager is released after graceful shutdown
+PASS no runtime error during room teardown

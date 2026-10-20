@@ -1,0 +1,18 @@
+2026-10-20T17:51:40.2901866+09:00
+Two separate Unity Editor processes connected through NGO/UTP localhost. Artificial60ms one-way delay; every fifth input/frame omitted. Clock jumps are test fixtures. Shared stage file only coordinates input timing and expected location; all asserted gameplay state is read from each peer's actual game snapshot.
+PASS five-minute match starts with no early park delivery
+PASS both inventories start empty and fixed development weapons are hidden
+PASS first-minute parcel matches the host random position
+PASS arrival notice is replicated
+PASS small light and ring render on this peer
+PASS one parcel remains stable within minute and never accumulates
+FAIL real remote E pickup awards exactly one random item across both inventories
+FAIL collected parcel remains absent past old ten-second respawn
+PASS second, third and fourth minute positions synchronize and uncollected parcel relocates
+PASS right-button hold zooms to35 degrees and releases to60 on this network peer
+PASS life-jacket immunity state synchronizes
+PASS battery duration synchronizes
+PASS both peers reach results without a fifth delivery
+PASS new network round resets clock, box and announcement
+PASS test actually omitted every fifth frame/input
+PASS no runtime or shutdown errors; count=0

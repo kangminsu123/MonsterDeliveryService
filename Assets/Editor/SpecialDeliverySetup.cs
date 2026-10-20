@@ -1,0 +1,129 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+
+public static class SpecialDeliverySetup
+{
+    const string Folder = "Assets/Art/SpecialDelivery";
+    [Serializable] sealed class Manifest { public Asset[] assets; public Mat[] materials; }
+    [Serializable] sealed class Asset { public string name; public float[] sizeBlender; public int triangles; public string[] materials; }
+    [Serializable] sealed class Mat { public string name; public float[] linearColor, emission; public float roughness, metallic, emissionStrength; }
+    static Bounds BoundsOf(GameObject go)
+    { var all=go.GetComponentsInChildren<Renderer>();var b=all[0].bounds;foreach(var r in all.Skip(1))b.Encapsulate(r.bounds);return b; }
+
+    [MenuItem("Tools/Gameplay/Special Delivery/Import FBX and Prepare Park Test")]
+    public static void Prepare()
+    {
+        if(EditorApplication.isPlaying)throw new Exception("Stop Play before preparing saved assets");
+        var manifest=JsonUtility.FromJson<Manifest>(File.ReadAllText(Folder+"/manifest.json"));
+        foreach(var path in new[]{Folder+"/Materials",Folder+"/Prefabs","Assets/Resources/SpecialDelivery"})Directory.CreateDirectory(path);
+        AssetDatabase.Refresh();
+        var materials=new Dictionary<string,Material>();
+        foreach(var source in manifest.materials)
+        {
+            string path=Folder+"/Materials/"+source.name+".mat";
+            var mat=AssetDatabase.LoadAssetAtPath<Material>(path);
+            if(!mat){mat=new Material(Shader.Find("Standard"));AssetDatabase.CreateAsset(mat,path);}
+            mat.color=new Color(source.linearColor[0],source.linearColor[1],source.linearColor[2],1).gamma;
+            mat.SetFloat("_Metallic",source.metallic);mat.SetFloat("_Glossiness",1-source.roughness);
+            mat.SetColor("_EmissionColor",mat.color*.35f);mat.EnableKeyword("_EMISSION");mat.enableInstancing=true;
+            EditorUtility.SetDirty(mat);materials[source.name]=mat;
+        }
+        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Six Blender FBX exports; static evaluated meshes, metre units, original marks-only parcel. Review rig and animation excluded."};
+        var template=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/DeliveryItems/FountainPen.prefab").GetComponent<DeliveryHeldItem>();
+        foreach(var asset in manifest.assets)
+        {
+            string path=Folder+"/Models/"+asset.name+".fbx";
+            var importer=(ModelImporter)AssetImporter.GetAtPath(path);
+            importer.importAnimation=false;importer.animationType=ModelImporterAnimationType.None;
+            importer.importNormals=ModelImporterNormals.Import;importer.isReadable=true;
+            importer.materialImportMode=ModelImporterMaterialImportMode.ImportStandard;
+            foreach(string name in asset.materials)importer.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material),name),materials[name]);
+            importer.SaveAndReimport();
+            var root=new GameObject(asset.name);
+            try
+            {
+                var model=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+                model.transform.SetParent(root.transform,false);model.name="Model";
+                var bounds=BoundsOf(root);
+                var expected=new Vector3(asset.sizeBlender[0],asset.sizeBlender[2],asset.sizeBlender[1]);
+                if(Vector3.Distance(expected,bounds.size)>.04f)throw new Exception(asset.name+" FBX dimension mismatch: "+bounds.size+" expected "+expected);
+                model.transform.localPosition-=new Vector3(bounds.center.x,bounds.min.y,bounds.center.z);
+                PrefabUtility.SaveAsPrefabAsset(root,Folder+"/Prefabs/"+asset.name+".prefab");
+                PrefabUtility.SaveAsPrefabAsset(root,"Assets/Resources/SpecialDelivery/"+asset.name+".prefab");
+                if(Enum.TryParse<WeaponKind>(asset.name,out var kind)&&kind>=WeaponKind.AirCannon&&kind<=WeaponKind.ExpressBattery)
+                {
+                    model.transform.localScale=Vector3.one*.4f;
+                    bounds=BoundsOf(root);model.transform.localPosition-=bounds.center;
+                    var pose=root.AddComponent<DeliveryHeldItem>();
+                    pose.firstPersonPosition=new Vector3(.36f,-.31f,1.2f);
+                    // These evaluated exports point forward along +Z; the older item exports used -Z.
+                    pose.firstPersonRotation=kind==WeaponKind.ExpressBattery?Quaternion.Euler(0,180,0):Quaternion.identity;pose.firstPersonScale=.75f;
+                    pose.thirdPersonBone=template.thirdPersonBone;pose.thirdPersonPosition=template.thirdPersonPosition;pose.thirdPersonRotation=template.thirdPersonRotation*Quaternion.Euler(0,180,0);
+                    PrefabUtility.SaveAsPrefabAsset(root,"Assets/Resources/DeliveryItems/"+asset.name+".prefab");
+                }
+                log.Add($"PASS {asset.name}: bounds {expected}, {asset.triangles} triangles, {asset.materials.Length} material slots, static mesh, material remaps");
+            }
+            finally{UnityEngine.Object.DestroyImmediate(root);}
+        }
+        foreach(var asset in manifest.assets.Where(a=>a.name!="FragileParcel"))
+        {
+            var importer=(TextureImporter)AssetImporter.GetAtPath("Assets/Resources/UI/InGame/item_"+asset.name+".png");
+            importer.alphaIsTransparency=true;importer.mipmapEnabled=false;importer.maxTextureSize=256;importer.SaveAndReimport();
+        }
+        var existing=UnityEngine.Object.FindObjectsByType<SpecialDeliveryParcel>(FindObjectsSortMode.None).Where(p=>p.fixedItem==WeaponKind.None).ToArray();
+        if(existing.Length>1)throw new Exception("Multiple special parcels exist; no scene replacement performed");
+        var parcel=existing.SingleOrDefault();
+        if(!parcel)
+        {
+            var go=new GameObject("Park_SpecialDelivery_TestParcel");Undo.RegisterCreatedObjectUndo(go,"Add one park test parcel");
+            parcel=go.AddComponent<SpecialDeliveryParcel>();
+            parcel.model=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Folder+"/Prefabs/FragileParcel.prefab"),go.transform);
+        }
+        parcel.testLoadout=true;parcel.respawnSeconds=10;
+        Vector3 at=new Vector3(.35f,80,13.25f);
+        var paving=GameObject.Find("Paved_Plaza_and_Four_Entrances").GetComponent<MeshCollider>();
+        if(!paving.Raycast(new Ray(at,Vector3.down),out var ground,160))throw new Exception("Special parcel must stand on actual central park paving");
+        parcel.transform.SetPositionAndRotation(ground.point+Vector3.up*.025f,Quaternion.Euler(0,180,0));
+        var box=parcel.GetComponent<BoxCollider>();var b=BoundsOf(parcel.model);box.center=parcel.transform.InverseTransformPoint(b.center);box.size=b.size;
+        var interaction=parcel.GetComponent<InteractionTarget>();interaction.displayName="취급주의 택배";interaction.actionHint="E · 강력한 아이템 획득";interaction.interactionDistance=3;
+        var sample=UnityEngine.Object.FindAnyObjectByType<FloatingParcel>();
+        if(sample){var source=sample.GetComponent<InteractionTarget>();interaction.outlineMaterial=source.outlineMaterial;interaction.visual=parcel.model.GetComponentInChildren<MeshFilter>();interaction.outlineMesh=interaction.visual.sharedMesh;}
+        EditorUtility.SetDirty(parcel);EditorUtility.SetDirty(interaction);EditorUtility.SetDirty(box);
+        var row=GameObject.Find("Park_SpecialItem_TestRow");
+        if(!row){row=new GameObject("Park_SpecialItem_TestRow");Undo.RegisterCreatedObjectUndo(row,"Add five-item park test row");}
+        for(int i=0;i<5;i++)
+        {
+            var kind=(WeaponKind)((int)WeaponKind.AirCannon+i);
+            var pickup=row.GetComponentsInChildren<SpecialDeliveryParcel>().SingleOrDefault(p=>p.fixedItem==kind);
+            if(!pickup)
+            {
+                var go=new GameObject("TestPickup_"+kind);go.transform.SetParent(row.transform,false);
+                pickup=go.AddComponent<SpecialDeliveryParcel>();pickup.fixedItem=kind;
+                pickup.model=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Folder+"/Prefabs/"+kind+".prefab"),go.transform);
+            }
+            Vector3 rayAt=new Vector3(-3.75f+i*2.1f,80,24.8f);
+            if(!paving.Raycast(new Ray(rayAt,Vector3.down),out var rowGround,160))throw new Exception(kind+" must stand on park paving");
+            pickup.transform.SetPositionAndRotation(rowGround.point+Vector3.up*.12f,Quaternion.Euler(0,180,0));
+            pickup.spawnId=i+1;pickup.respawnSeconds=2;pickup.testLoadout=false;pickup.model.transform.localScale=Vector3.one*.5f;
+            var rowBox=pickup.GetComponent<BoxCollider>();var rowBounds=BoundsOf(pickup.model);
+            rowBox.center=pickup.transform.InverseTransformPoint(rowBounds.center);rowBox.size=rowBounds.size;
+            var target=pickup.GetComponent<InteractionTarget>();
+            target.displayName=kind switch {WeaponKind.AirCannon=>"공기 대포",WeaponKind.Broadcaster=>"긴급 배송 방송기",WeaponKind.PackingMachine=>"원격 배송기",WeaponKind.LifeJacket=>"구명조끼",_=>"특급 배송 배터리"};
+            target.actionHint="E · 장착";target.interactionDistance=3;
+            target.outlineMaterial=interaction.outlineMaterial;target.visual=pickup.model.GetComponentInChildren<MeshFilter>();target.outlineMesh=target.visual.sharedMesh;
+            EditorUtility.SetDirty(pickup);EditorUtility.SetDirty(target);EditorUtility.SetDirty(rowBox);
+        }
+        EditorSceneManager.MarkSceneDirty(parcel.gameObject.scene);EditorSceneManager.SaveScene(parcel.gameObject.scene);
+        AssetDatabase.SaveAssets();Physics.SyncTransforms();
+        log.Add("PASS one saved park test parcel at "+parcel.transform.position+" on limestone paving; ten-second respawn; test loadout enabled");
+        log.Add("PASS five fixed items in a straight park row, two-second respawn, selected-slot replacement and automatic equip");
+        Directory.CreateDirectory("Docs/ChangeRecords/20261019/evidence");File.WriteAllLines("Docs/ChangeRecords/20261019/evidence/special-import.txt",log);
+        Debug.Log("SPECIAL_DELIVERY_IMPORT_OK\n"+string.Join("\n",log));
+        Selection.activeGameObject=parcel.gameObject;
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "air_cannon": {
+    "pass": 17,
+    "fail": 0
+  },
+  "special_regression": {
+    "pass": 31,
+    "fail": 0
+  },
+  "row_regression": {
+    "pass": 45,
+    "fail": 0
+  },
+  "host": {
+    "pass": 8,
+    "fail": 0
+  },
+  "client": {
+    "pass": 8,
+    "fail": 0
+  }
+}

@@ -1,0 +1,28 @@
+2026-10-18T01:56:52.7678460+09:00
+Controlled Play animation/weapon checks and same-frame warmed CPU/allocation benchmarks, not WAN.
+PASS DeliveryRobotPlayer(Clone) animator enters IDLE
+PASS DeliveryRobotPlayer(Clone) animator enters IDLE_ARMED
+PASS DeliveryRobotPlayer(Clone) animator enters WALK
+PASS DeliveryRobotPlayer(Clone) animator enters WALK_ARMED
+PASS DeliveryRobotPlayer(Clone) animator enters IDLE
+PASS DeliveryRobotPlayer(Clone) animator enters IDLE_ARMED
+PASS DeliveryRobotPlayer(Clone) animator enters WALK
+PASS DeliveryRobotPlayer(Clone) animator enters WALK_ARMED
+PASS BoxingGloves has correct local and remote held models
+PASS Plunger has correct local and remote held models
+PASS ToyHammer has correct local and remote held models
+FAIL online hammer uses full first-person swing instead of a small root bob
+FAIL online hammer moves the opponent right arm
+PASS Slime has correct local and remote held models
+PASS IceCream has correct local and remote held models
+PASS RunningShoes has correct local and remote held models
+PASS RunningShoes applies authoritative activation state without a hand model
+PASS BubbleWrap has correct local and remote held models
+PASS BubbleWrap applies authoritative activation state without a hand model
+PASS WorkGloves has correct local and remote held models
+PASS work gloves stay paired and passive without a click attack
+PASS FountainPen has correct local and remote held models
+FAIL forced displacement does not play voluntary walking animation
+PASS parcel optimization preserves 30 unique occupied anchors
+PASS duplicate parcel anchor snapshot is rejected
+PASS out of range parcel snapshot is rejected

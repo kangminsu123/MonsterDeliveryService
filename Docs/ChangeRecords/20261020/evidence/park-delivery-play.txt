@@ -1,0 +1,33 @@
+2026-10-20T17:34:49.0665713+09:00
+Actual Unity Editor Play. Match clocks are advanced by the verification tool. Host and serialized client snapshot paths are exercised in one Editor; no separate remote peer.
+PASS new normal match starts at five minutes
+PASS no special parcel before first minute
+PASS five fixed development pickups are hidden in actual matches
+PASS actual match starts empty without the old three-weapon test loadout
+PASS no early delivery before sixty seconds
+PASS first minute delivers exactly one active fragile parcel
+PASS delivery shows the requested five-second announcement
+PASS repeated frames in same minute do not respawn or move the parcel
+PASS subtle ring and low-intensity unshadowed light are visible on the parcel
+PASS actual pickup route consumes parcel and equips one random special item
+PASS two collectors cannot receive a second reward from the same delivery
+PASS light and ring disappear immediately on collection
+PASS old ten-second respawn is disabled in actual matches
+PASS collected parcel waits for the next full minute
+PASS second-minute delivery returns after collection
+PASS uncollected parcel is relocated at third minute without accumulation
+PASS fourth-minute delivery is active
+PASS no fifth delivery at match expiration
+PASS match remains playable just before five minutes
+PASS normal game loop ends the match at five minutes
+PASS finished match cannot spawn deliveries
+PASS 120 random positions lie on authored park paving with validated unoccupied footprints
+PASS five rewards sampled at equal twenty-percent probability: 2054,2029,2003,1926,1988
+PASS restart clears pending parcel and announcement
+PASS non-authoritative client cannot spawn or collect rewards itself
+PASS real NGO host starts five-minute match without test loadout
+PASS host clock drives first-minute delivery authority
+PASS real host pickup ray awards exactly one random special item
+PASS JSON frame round-trip restores authoritative random location, availability and announcement
+PASS collection snapshot hides client parcel and glow without auto-respawn
+PASS protocol fifteen prevents old snapshot clients from mixing with the new rules

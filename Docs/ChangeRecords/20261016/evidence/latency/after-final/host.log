@@ -1,0 +1,135 @@
+Mono path[0] = 'C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_20261016_UI_NetworkFix/MonsterDeliveryService_Data/Managed'
+Mono config path = 'C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_20261016_UI_NetworkFix/MonoBleedingEdge/etc'
+CodeReloadManager initialized
+Found 1 interfaces on host : 0) 172.30.1.67
+Player connection [38636]  Target information:
+
+Player connection [38636]  * "[IP] 172.30.1.67 [Port] 55000 [Flags] 2 [Guid] 1551688273 [EditorId] 2677816405 [Version] 1048832 [Id] WindowsPlayer(2,Kang) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] MonsterDeliveryService" 
+
+Player connection [38636] Started UDP target info broadcast (1) on [225.0.0.222:54997].
+
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Loading player data from C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_20261016_UI_NetworkFix/MonsterDeliveryService_Data/data.unity3d
+Initialize engine version: 6000.5.10f1 (3bd4f66ad299)
+[Subsystems] Discovering subsystems at path C:/Users/xlfhf/Documents/Codex/2026-10-15/agents-md/outputs/MonsterDeliveryService_20261016_UI_NetworkFix/MonsterDeliveryService_Data/UnitySubsystems
+Forcing GfxDevice: Direct3D 11
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 5060 Laptop GPU (ID=0x2d59)
+    Vendor:   NVIDIA
+    VRAM:     7899 MB
+    Driver:   32.0.15.9201
+Begin MonoManager ReloadAssembly
+- Finished resetting the current domain, in  0.028 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+Using Windows.Gaming.Input
+UnloadTime: 0.993400 ms
+DELIVERY connected id=0 server=True
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:<ConfigureRoom>b__81_1 (ulong) (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:154)
+Unity.Netcode.NetworkConnectionManager:InvokeOnClientConnectedCallback (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:158)
+Unity.Netcode.NetworkManager:HostServerInitialize () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1537)
+Unity.Netcode.NetworkManager:StartHost () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1483)
+MonsterDeliveryPrototype:HostRoom () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:174)
+MonsterDeliveryPrototype:InitializeNetworkScreens () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:115)
+MonsterDeliveryPrototype:Start () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/MonsterDeliveryPrototype.cs:72)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+DELIVERY host listening 7781
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:HostRoom () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:175)
+MonsterDeliveryPrototype:InitializeNetworkScreens () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:115)
+MonsterDeliveryPrototype:Start () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/MonsterDeliveryPrototype.cs:72)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+DELIVERY connected id=1 server=True
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:<ConfigureRoom>b__81_1 (ulong) (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:154)
+Unity.Netcode.NetworkConnectionManager:InvokeOnClientConnectedCallback (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:158)
+Unity.Netcode.NetworkConnectionManager:HandleConnectionApproval (ulong,bool,System.Nullable`1<uint>,System.Nullable`1<UnityEngine.Vector3>,System.Nullable`1<UnityEngine.Quaternion>) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:1063)
+Unity.Netcode.NetworkConnectionManager:ProcessPendingApprovals () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:884)
+Unity.Netcode.NetworkManager:NetworkUpdate (Unity.Netcode.NetworkUpdateStage) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:358)
+Unity.Netcode.NetworkUpdateLoop:RunNetworkUpdateStage (Unity.Netcode.NetworkUpdateStage) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkUpdateLoop.cs:191)
+Unity.Netcode.NetworkUpdateLoop/NetworkEarlyUpdate/<>c:<CreateLoopSystem>b__0_0 () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkUpdateLoop.cs:214)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+LATENCY_PROOF {"label":"after","role":"host","note":"Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.","players":2,"movingFrames":82,"stationaryFrames":0,"sentBytes":132314,"frames":420,"pendingCommands":0,"inputAck":0,"droppedMessages":0,"finalPosition":{"x":-5.0,"y":0.75,"z":10.207893371582032},"serverPosition":{"x":-5.0,"y":0.7499998807907105,"z":10.207893371582032},"simulatedOneWayMs":60.0,"firstMovementMs":0.1850128173828125,"averageFrameMs":16.714370727539064,"p95FrameMs":16.669998168945314,"maximumStep":0.2739381492137909}
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:TickLatencyProof () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetworkLatencyProof.cs:75)
+MonsterDeliveryPrototype:TickNetwork () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:326)
+MonsterDeliveryPrototype:Update () (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/MonsterDeliveryPrototype.cs:142)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+DELIVERY disconnected id=1 reason=[Disconnect Event][Client-0][TransportClientId-0][TransportShutdown] NetworkConnectionManager was shutdown. The transport was shutdown.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:<ConfigureRoom>b__81_2 (ulong) (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:163)
+Unity.Netcode.NetworkConnectionManager:InvokeOnClientDisconnectCallback (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:214)
+Unity.Netcode.NetworkConnectionManager:OnClientDisconnectFromServer (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:1567)
+Unity.Netcode.NetworkConnectionManager:DisconnectRemoteClient (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:1592)
+Unity.Netcode.NetworkConnectionManager:Shutdown () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:1715)
+Unity.Netcode.NetworkManager:ShutdownInternal () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1667)
+Unity.Netcode.NetworkManager:OnDestroy () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1754)
+Unity.Netcode.NetworkManager:OnApplicationQuit () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1740)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+DELIVERY disconnected id=0 reason=[Disconnect Event][Client-0][TransportClientId-0][TransportShutdown] NetworkConnectionManager was shutdown. The transport was shutdown.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:123)
+MonsterDeliveryPrototype:<ConfigureRoom>b__81_2 (ulong) (at C:/Users/xlfhf/Documents/Codex/2026-09-18/https-github-com-kangminsu123-monsterdeliveryservice-git/MonsterDeliveryService/Assets/Gameplay/DeliveryNetwork.cs:163)
+Unity.Netcode.NetworkConnectionManager:InvokeOnClientDisconnectCallback (ulong) (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Connection/NetworkConnectionManager.cs:214)
+Unity.Netcode.NetworkManager:ShutdownInternal () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1683)
+Unity.Netcode.NetworkManager:OnDestroy () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1754)
+Unity.Netcode.NetworkManager:OnApplicationQuit () (at ./Library/PackageCache/com.unity.netcode.gameobjects@277a288a1cea/Runtime/Core/NetworkManager.cs:1740)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 123)
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+CodeReloadManager destroyed
+PlayerConnection::Cleanup##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1792145014960,"processId":11680,"allocatedMemory":925147,"memoryLabels":[{"Default":5264},{"Thread":19200},{"Manager":548564},{"Shader":8},{"GfxDevice":72},{"GfxThread":57648},{"Animation":21112},{"Audio":752},{"Serialization":520},{"Input":2440},{"ScriptingNativeRuntime":285216},{"File":312},{"String":527},{"PoolAlloc":336},{"CodeReload":440},{"CloudService":144},{"WebRequest":3916},{"VR":1928},{"Video":144},{"NativeArray":372},{"Subsystems":96},{"CoreBusinessMetrics":128}]}

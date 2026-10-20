@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-19",
+  "case": "05 follow-up linear/self blast",
+  "pages": 9,
+  "visually_reviewed_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "review": "Korean text, historical tables, current straight-flight and actual participant self-jump images legible; no clipping, overflow, blank page or orphan caption. Current intro identifies protocol11 and self blast.",
+  "counts": {
+    "offline": {
+      "pass": 23,
+      "fail": 0
+    },
+    "special_regression": {
+      "pass": 31,
+      "fail": 0
+    },
+    "row_regression": {
+      "pass": 45,
+      "fail": 0
+    },
+    "host": {
+      "pass": 11,
+      "fail": 0
+    },
+    "client": {
+      "pass": 11,
+      "fail": 0
+    }
+  },
+  "source_hashes_match_tested_code": true,
+  "docx_output_byte_identical": true,
+  "readme_relative_links_valid": true,
+  "renderer": "Packaged renderer attempted; LibreOffice unavailable and sandbox temp cleanup denied. Hidden read-only Word PDF export plus bundled Poppler succeeded.",
+  "handoff": "Main Unity left in Play at park five-item row, normal starting three items. Task-owned hidden clone42672 closed. Main Console0 errors.",
+  "limits": [
+    "WAN not run",
+    "four-player not run",
+    "release build not rebuilt"
+  ]
+}

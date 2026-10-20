@@ -2,7 +2,7 @@ using UnityEngine;
 
 public sealed partial class MonsterDeliveryPrototype
 {
-    const float IceCreamSpeed = 18, FreezeSeconds = 1;
+    const float IceCreamSpeed = 36, FreezeSeconds = 3;
     float iceCreamThrownAt = float.NegativeInfinity;
     Material iceCreamSurfaceMaterial;
     Texture2D frostCrystal;
@@ -48,7 +48,7 @@ public sealed partial class MonsterDeliveryPrototype
             if (ApplyItemHit(id, new DeliveryItemHit(stunSeconds: FreezeSeconds)) != DeliveryHitResult.Applied) return;
             ActorState(id).frozenUntil = ActorState(id).stunUntil;
             UpdateIceCreamFX(); UpdateStunFX();
-            feedback = id == 0 ? "아이스크림 · 1초 빙결!" : "아이스크림 적중 · 상대 1초 빙결!";
+            feedback = id == 0 ? $"아이스크림 · {FreezeSeconds:0.#}초 빙결!" : $"아이스크림 적중 · 상대 {FreezeSeconds:0.#}초 빙결!";
             return;
         }
         if (collider.GetComponentInParent<CharacterController>()) return;

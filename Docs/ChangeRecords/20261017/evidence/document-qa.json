@@ -1,0 +1,10 @@
+{
+  "pages": 4,
+  "review": "All 4 final Word-rendered PNG pages opened and checked: Korean glyphs, captions, comparisons, game images and page breaks readable; no clipping or blank page.",
+  "render_method": "render_docx.py failed: LibreOffice missing/temp permission; sandbox Word COM denied; approved hidden read-only Word export + bundled Poppler succeeded.",
+  "editor_checks": 12,
+  "play_checks": 4,
+  "remote_network": "NOT RUN",
+  "build": "NOT RUN",
+  "images": "Native Unity Preview Scene before/after and actual SampleScene Game View; after captures on 2026-10-18."
+}

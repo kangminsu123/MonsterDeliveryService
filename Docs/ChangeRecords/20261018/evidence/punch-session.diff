@@ -1,0 +1,88 @@
+--- Assets/Gameplay/GloveCombat.cs (session before)
++++ Assets/Gameplay/GloveCombat.cs (after)
+@@ -8,15 +8,14 @@
+     bool boxingHit;
+     bool boxingRightHand, nextBoxingRightHand = true;
+ 
+-    float GlovePushAmount
++    float GlovePushAmount => GlovePushAt(Time.time - boxingStarted);
++
++    static float GlovePushAt(float elapsed)
+     {
+-        get
+-        {
+-            float elapsed = Time.time - boxingStarted;
+-            if (elapsed < .07f) return -.12f * Mathf.SmoothStep(0, 1, elapsed / .07f);
+-            if (elapsed < GloveHitDelay) return Mathf.Lerp(-.12f, 1, Mathf.SmoothStep(0, 1, (elapsed - .07f) / (GloveHitDelay - .07f)));
+-            return 1 - Mathf.SmoothStep(0, 1, (elapsed - GloveHitDelay) / (GlovePushDuration - GloveHitDelay));
+-        }
++        if (elapsed < 0 || elapsed >= GlovePushDuration) return 0;
++        if (elapsed < .07f) return -.12f * Mathf.SmoothStep(0, 1, elapsed / .07f);
++        if (elapsed < GloveHitDelay) return Mathf.Lerp(-.12f, 1, Mathf.SmoothStep(0, 1, (elapsed - .07f) / (GloveHitDelay - .07f)));
++        return 1 - Mathf.SmoothStep(0, 1, (elapsed - GloveHitDelay) / (GlovePushDuration - GloveHitDelay));
+     }
+ 
+     void StartGlovePush()
+--- Assets/Gameplay/DeliveryNetwork.cs (session before)
++++ Assets/Gameplay/DeliveryNetwork.cs (after)
+@@ -61,6 +61,7 @@
+         public float actionAge, dashRemaining;
+         public float yaw, pitch, stamina = 100, vertical, dashUntil, cooldown, captureAt, actionAt = -10;
+         public int used, dashed, dropped;
++        public int boxingPunches, actionKind, actionSlot;
+         public int[] items = { 2, 5, 7 };
+         public float stun, frozen, shield, shieldBreak = -10, speed, slow, ink, progress;
+     }
+@@ -291,6 +292,7 @@
+             p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new[]{2,5,7};p.selected=1;p.actionAt=-10;
+             netInputs[g]=new NetInput {yaw=p.team==0?90:270,slot=1};
+             p.used=p.dashed=p.dropped=p.inputAck=0;p.dashRemaining=0;
++            p.boxingPunches=p.actionKind=p.actionSlot=0;
+         }
+         ResetNetPrediction();
+         netLocalInput=new NetInput {yaw=netPlayers[0].team==0?90:270,slot=1};
+--- Assets/Gameplay/DeliveryNetworkGameplay.cs (session before)
++++ Assets/Gameplay/DeliveryNetworkGameplay.cs (after)
+@@ -77,6 +77,8 @@
+         var p=netPlayers[g];if(Time.time<p.cooldown||netPlungers.Any(s=>s.source==g)||ActorState(g).Stunned(Time.time))return;
+         int kind=p.items[p.selected];if(kind==0||kind==8)return;
+         p.cooldown=Time.time+(kind==3?.75f:kind==2?.7f:.6f);p.actionAt=Time.time;p.target=-1;
++        p.actionKind=kind;p.actionSlot=p.selected;
++        if(kind==(int)WeaponKind.BoxingGloves)p.boxingPunches++;
+         ActorState(g).busyUntil=Time.time+.5f;
+         if(kind==6){ActivateRunningShoes(g);return;}if(kind==7){ActivateBubbleWrap(g);return;}
+         if(kind==1||kind==3){netMelee.Add(new NetMelee{source=g,kind=kind,at=Time.time+(kind==1?.16f:.18f)});return;}
+@@ -150,19 +152,30 @@
+             var actor=ActorController(local);var visual=local==0?playerVisual:botVisuals[local-1];var kind=(WeaponKind)p.items[p.selected];
+             bool moving=(actor.transform.position-netLastPositions[g]).sqrMagnitude>.00001f;netLastPositions[g]=actor.transform.position;
+             visual.SetMotion(moving&&!ActorState(local).Stunned(Time.time),HasHeldModel(kind));
++            float age=Time.time-p.actionAt;
++            float punch=kind==WeaponKind.BoxingGloves&&p.actionKind==(int)kind&&p.actionSlot==p.selected&&
++                !ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? GlovePushAt(age) : 0;
++            bool rightHand=(p.boxingPunches&1)!=0;
+             if(local==0)
+             {
+                 if(heldWeapon&&heldItem)
+                 {
+-                    float age=Time.time-p.actionAt;
+-                    heldWeapon.SetActive(age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes);
+-                    if(!thirdPersonPreview){heldItem.FirstPerson();if(age<.36f)heldItem.transform.localPosition+=Vector3.down*(.12f*(1-age/.36f));}
++                    heldWeapon.SetActive(kind==WeaponKind.BoxingGloves||age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes);
++                    if(!thirdPersonPreview)
++                    {
++                        heldItem.FirstPerson();
++                        if(kind==WeaponKind.BoxingGloves)heldItem.PushFirstPerson(punch,rightHand);
++                        else if(age<.36f)heldItem.transform.localPosition+=Vector3.down*(.12f*(1-age/.36f));
++                    }
++                    else if(kind==WeaponKind.BoxingGloves)
++                    {if(punch!=0)visual.PushArm(punch,rightHand);heldItem.FollowBones();}
+                 }
+                 continue;
+             }
+             if(netHeld[g]&&netHeldKinds[g]!=kind){Destroy(netHeld[g].gameObject);netHeld[g]=null;}
+             if(!HasHeldModel(kind)) {if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+             if(!netHeld[g]){netHeld[g]=Instantiate(Resources.Load<GameObject>("DeliveryItems/"+kind),visual.transform,false).GetComponent<DeliveryHeldItem>();netHeld[g].Bind(visual);netHeldKinds[g]=kind;}
++            if(punch!=0)visual.PushArm(punch,rightHand);
+             netHeld[g].FollowBones();
+         }
+     }

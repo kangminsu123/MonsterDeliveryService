@@ -1,0 +1,125 @@
+Default check exit=2
+Assets/Scenes/SampleScene.unity:7459: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:7650: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:9499: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:10085: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:17398: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:17860: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:17945: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:19459: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:22767: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:22883: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:27387: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:28073: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:32393: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:33157: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:39326: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:39565: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:52812: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:69392: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:74003: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:81614: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:84993: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:92070: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:92827: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:93553: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:108714: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:115708: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:122353: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:123382: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:133880: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:134798: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:135968: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:136212: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:137067: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:137476: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:140827: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:141148: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:145643: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:149282: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:150332: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:160494: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:171803: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:174310: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:191432: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191436: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191440: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191444: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191448: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191452: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191456: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191538: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191542: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191546: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191550: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191554: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191558: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191562: trailing whitespace.
++      value: 
+Assets/Scenes/SampleScene.unity:191640: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:195824: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:196612: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:201545: trailing whitespace.
++  m_Name: 
+Assets/Scenes/SampleScene.unity:203386: trailing whitespace.
++  m_Name: 
+
+Ignoring Unity serialized blank-value trailing spaces exit=0

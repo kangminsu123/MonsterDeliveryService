@@ -1,0 +1,18 @@
+PASS all clients receive unique random coat colours
+PASS room capacity splits into equal teams
+PASS room code round trips endpoint
+PASS invalid room code is rejected
+PASS second client movement reaches host
+PASS client dash consumes authoritative stamina
+PASS real client input reaches authoritative host
+PASS client-origin ice cream physically freezes the host
+PASS team mate direct attacks do not spend aircap or freeze
+PASS opponent attack consumes aircap without freeze
+PASS authoritative E pickup grants one item and removes one parcel
+PASS authoritative pickup refills a different empty spawn anchor
+PASS authoritative gaze capture awards a team mailbox
+PASS team mailbox is marked already owned in local interaction UI
+PASS team ownership persists to results
+PASS result scores match server mailbox ownership
+PASS network snapshot delivers thirty parcels after relocation
+PASS network parcel anchors remain unique

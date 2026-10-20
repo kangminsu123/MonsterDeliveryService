@@ -1,0 +1,179 @@
+--- DeliveryNetwork.cs before case09
++++ DeliveryNetwork.cs after case09
+@@ -148,7 +148,7 @@
+         ResetNetPrediction(true);
+         ResetNetDiagnostics();
+         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
+-        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 6, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
++        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 7, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
+         netManager.ConnectionApprovalCallback = (request, response) =>
+         {
+--- DeliveryNetworkGameplay.cs before case09
++++ DeliveryNetworkGameplay.cs after case09
+@@ -123,13 +123,13 @@
+         if(NetRay(g,eye,aim,.75f,radius,out var cover,out var point,out var normal))
+         {ResolveNetImpact(kind,cover,point,g,normal);return;}
+         var origin=eye+aim*.75f;
+-        if(kind==5)LaunchIceCream(origin,aim*18+Vector3.up*3,g);
++        if(kind==5)LaunchIceCream(origin,aim*IceCreamSpeed+Vector3.up*3,g);
+         else if(kind==4)LaunchSlime(origin,aim*18+Vector3.up*3,g);
+         else if(kind==9)LaunchFountainPen(origin,aim,48,g);
+         else if(kind==2)
+         {
+             var model=Instantiate(Resources.Load<GameObject>("DeliveryItems/Plunger"));model.name="NetworkThrownPlunger";model.transform.SetPositionAndRotation(origin,Quaternion.LookRotation(aim)*Quaternion.Euler(-90,0,0));
+-            netPlungers.Add(new NetPlunger{source=g,model=model,velocity=aim*36});
++            netPlungers.Add(new NetPlunger{source=g,model=model,velocity=aim*PlungerSpeed});
+         }
+     }
+     void ResolveNetImpact(int kind,Collider hit,Vector3 point,int source,Vector3 normal)
+@@ -150,8 +150,8 @@
+             if(!NetRay(g,origin,aim,attack.kind==1?5:3.5f,attack.kind==1?.01f:.32f,out var hit,out _,out _))continue;
+             for(int target=0;target<4;target++)if(ActorController(target)==hit&&NetCanHit(g,target))
+             {
+-                if(attack.kind==3)ApplyItemHit(target,new DeliveryItemHit(stunSeconds:1.2f));
+-                else {var toward=ActorController(target).transform.position-ActorController(g).transform.position;toward.y=0;ApplyItemHit(target,new DeliveryItemHit(toward.normalized*(18*Mathf.Sqrt(3))+Vector3.up*(6*Mathf.Sqrt(3))));}
++                if(attack.kind==3)ApplyItemHit(target,new DeliveryItemHit(stunSeconds:HammerStun));
++                else {var toward=ActorController(target).transform.position-ActorController(g).transform.position;toward.y=0;ApplyItemHit(target,new DeliveryItemHit(toward.normalized*GlovePushSpeed+Vector3.up*GloveLiftSpeed));}
+             }
+         }
+     }
+@@ -162,8 +162,8 @@
+             if(!shot.model||!netPlayers[shot.source].connected){if(shot.model)Destroy(shot.model);netPlungers.Remove(shot);continue;}
+             var from=shot.model.transform.position;var origin=NetEye(shot.source);
+             if(shot.returning)
+-            {shot.model.transform.position=Vector3.MoveTowards(from,origin,44*Time.deltaTime);shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);if(Vector3.Distance(from,origin)<.5f){Destroy(shot.model);netPlungers.Remove(shot);}continue;}
+-            var aim=NetAim(shot.source);float step=Mathf.Min(36*Time.deltaTime,15-shot.distance);
++            {shot.model.transform.position=Vector3.MoveTowards(from,origin,PlungerReturnSpeed*Time.deltaTime);shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);if(Vector3.Distance(from,origin)<.5f){Destroy(shot.model);netPlungers.Remove(shot);}continue;}
++            var aim=NetAim(shot.source);float step=Mathf.Min(PlungerSpeed*Time.deltaTime,PlungerRange-shot.distance);
+             // Flight direction is fixed on release, independent of later mouse movement.
+             aim=shot.model.transform.rotation*Quaternion.Euler(90,0,0)*Vector3.forward;
+             if(NetRay(shot.source,from,aim,step,.16f,out var hit,out var point,out _))
+@@ -173,10 +173,10 @@
+                 {
+                     var actor=ActorController(id);var source=ActorController(shot.source);var direction=source.transform.position-actor.transform.position;direction.y=0;
+                     if(ApplyControl(id,direction.normalized*14))
+-                    {var state=ActorState(id);state.pullSpeed=44*state.force.magnitude/14;state.force=Vector3.zero;state.pendingLift=0;state.pullSource=source.transform;state.pullStandOff=1.6f;state.pullUntil=Time.time+2;}
++                    {var state=ActorState(id);state.pullSpeed=PlungerReturnSpeed*state.force.magnitude/14;state.force=Vector3.zero;state.pendingLift=0;state.pullSource=source.transform;state.pullStandOff=1.6f;state.pullUntil=Time.time+2;}
+                 }
+             }
+-            else {shot.model.transform.position+=aim*step;shot.distance+=step;if(shot.distance>=15)shot.returning=true;}
++            else {shot.model.transform.position+=aim*step;shot.distance+=step;if(shot.distance>=PlungerRange)shot.returning=true;}
+             shot.velocity=(shot.model.transform.position-from)/Mathf.Max(.0001f,Time.deltaTime);
+         }
+     }
+--- GloveCombat.cs before case09
++++ GloveCombat.cs after case09
+@@ -3,6 +3,8 @@
+ public sealed partial class MonsterDeliveryPrototype
+ {
+     const float GlovePushDuration = .42f, GloveHitDelay = .16f;
++    // With constant drag/gravity, sqrt(2) more impulse doubles first-hit travel and rise.
++    static readonly float GlovePushSpeed = 18 * Mathf.Sqrt(6), GloveLiftSpeed = 6 * Mathf.Sqrt(6);
+     int boxingSlot = -1;
+     float boxingStarted;
+     bool boxingHit;
+@@ -39,9 +41,7 @@
+         {
+             boxingHit = true;
+             ConsumeSelectedUse(true);
+-            // Constant horizontal drag and gravity make travel proportional to initial speed squared.
+-            float distanceScale = Mathf.Sqrt(3);
+-            HitGloveTarget(18 * distanceScale, 6 * distanceScale);
++            HitGloveTarget(GlovePushSpeed, GloveLiftSpeed);
+         }
+         if (elapsed >= GlovePushDuration) FinishGlovePush();
+     }
+--- IceCreamCombat.cs before case09
++++ IceCreamCombat.cs after case09
+@@ -2,7 +2,7 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype
+ {
+-    const float IceCreamSpeed = 18, FreezeSeconds = 1;
++    const float IceCreamSpeed = 36, FreezeSeconds = 3;
+     float iceCreamThrownAt = float.NegativeInfinity;
+     Material iceCreamSurfaceMaterial;
+     Texture2D frostCrystal;
+@@ -48,7 +48,7 @@
+             if (ApplyItemHit(id, new DeliveryItemHit(stunSeconds: FreezeSeconds)) != DeliveryHitResult.Applied) return;
+             ActorState(id).frozenUntil = ActorState(id).stunUntil;
+             UpdateIceCreamFX(); UpdateStunFX();
+-            feedback = id == 0 ? "아이스크림 · 1초 빙결!" : "아이스크림 적중 · 상대 1초 빙결!";
++            feedback = id == 0 ? $"아이스크림 · {FreezeSeconds:0.#}초 빙결!" : $"아이스크림 적중 · 상대 {FreezeSeconds:0.#}초 빙결!";
+             return;
+         }
+         if (collider.GetComponentInParent<CharacterController>()) return;
+--- ItemUsageCheck.cs before case09
++++ ItemUsageCheck.cs after case09
+@@ -26,7 +26,7 @@
+         object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
+         var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Real Play use/cancel/depletion paths. Network uses real host initialization, controlled player records and serialized participant frames; not separate network processes."};
+         void Check(bool ok,string text){log.Add((ok?"PASS ":"FAIL ")+text);}
+-        int[] limits={0,2,1,1,2,1,1,1,1,1};
++        int[] limits={0,2,1,1,3,1,1,1,1,1};
+         var inventory=(WeaponKind[])Get("inventory");var ammo=(int[])Get("weaponAmmo");
+         var player=(CharacterController)Get("player");var cam=(Camera)Get("cam");
+         var mailboxes=(GameObject[])Get("mailboxes");var originalMailbox=mailboxes[0];var owners=(int[])Get("owner");
+@@ -83,12 +83,12 @@
+             InputSystem.QueueStateEvent(keyboard,new KeyboardState());InputSystem.Update();
+             Call("ClearActiveNetShots");Call("ClearSlimePuddles");Call("ClearIceCreamMarks");
+             ClearLocal();Call("AddWeapon",WeaponKind.BoxingGloves);Call("AddWeapon",WeaponKind.IceCream);Call("AddWeapon",WeaponKind.WorkGloves);Set("selectedSlot",0);cam.transform.rotation=Quaternion.identity;Call("PositionCamera");
+-            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_balance_offline.png");game.enabled=false;
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_enhanced_offline.png");game.enabled=false;
+             game.NetworkScreens=true;game.HostRoom();yield return null;
+             var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
+             for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
+             game.StartNetRound();
+-            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==6,"protocol6 requires the same capture protection and100/50 layout");
++            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==7,"protocol7 requires the same enhanced item effects");
+             Check(players.All(p=>p.ammo.All(x=>x==0)&&p.items.All(x=>x==0)),"network round starts with empty items and zero counters");
+             for(int g=0;g<4;g++)
+             {
+@@ -155,11 +155,11 @@
+             frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),frameType);game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);Call("ApplyNetFrame",frame);Call("UpdateHeldWeapon");
+             Check(ammo.SequenceEqual(new[]{1,1,1}),"serialized participant frame restores remaining uses 1/1/1");
+             Check((string)Call("ItemRemainingText",0)=="1회"&&(string)Call("ItemRemainingText",1)=="1회","participant HUD shows finite server counters");
+-            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_balance_participant.png");game.enabled=false;
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_enhanced_participant.png");game.enabled=false;
+         }
+         finally
+         {
+-            File.WriteAllLines(folder+"evidence/item-usage-balance-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
++            File.WriteAllLines(folder+"evidence/item-usage-enhanced-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
+             if(Keyboard.current!=null){InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState());InputSystem.Update();}
+             game.LeaveRoom();game.enabled=oldEnabled;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
+         }
+--- MonsterDeliveryPrototype.cs before case09
++++ MonsterDeliveryPrototype.cs after case09
+@@ -417,7 +417,7 @@
+     };
+     string ItemRemainingText(int slot) => weaponAmmo[slot] + "회";
+     string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + ItemRemainingText(slot);
+-    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves or WeaponKind.Slime => 2, WeaponKind.None => 0, _ => 1 };
++    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves => 2, WeaponKind.Slime => 3, WeaponKind.None => 0, _ => 1 };
+     readonly int[] weaponAmmo = new int[SlotCount];
+ 
+     float CaptureSeconds => Selected == WeaponKind.WorkGloves ? 1.5f : 3;
+--- PlungerCombat.cs before case09
++++ PlungerCombat.cs after case09
+@@ -2,7 +2,7 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype
+ {
+-    const float PlungerWindup = .12f, PlungerSpeed = 36, PlungerReturnSpeed = 44, PlungerRange = 15;
++    const float PlungerWindup = .12f, PlungerSpeed = 36, PlungerReturnSpeed = 44, PlungerRange = 30;
+     int plungerSlot = -1;
+     float plungerStarted;
+     bool plungerReturning;
+--- ToyHammerCombat.cs before case09
++++ ToyHammerCombat.cs after case09
+@@ -2,7 +2,7 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype
+ {
+-    const float HammerRange = 3.5f, HammerRadius = .32f, HammerHitDelay = .18f, HammerDuration = .48f, HammerStun = 1.2f;
++    const float HammerRange = 3.5f, HammerRadius = .32f, HammerHitDelay = .18f, HammerDuration = .48f, HammerStun = 5f;
+     int hammerSlot = -1;
+     float hammerStarted;
+     bool hammerHit;

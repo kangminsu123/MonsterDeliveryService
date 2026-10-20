@@ -8,11 +8,11 @@ using UnityEngine;
 
 public static class ParcelSpawnSetup
 {
-    const string Folder = "Docs/ChangeRecords/20261016";
+    const string Folder = "Docs/ChangeRecords/20261018";
     const string Layer = "Layer_12_TestParcelDrops";
     const string Prefab = "Assets/Art/DeliveryProps/parcel.prefab";
 
-    [MenuItem("Tools/Gameplay/Test Parcels/Build 50 Spawn Points")]
+    [MenuItem("Tools/Gameplay/Test Parcels/Build 100 Spawn Points")]
     public static void Build()
     {
         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -26,8 +26,9 @@ public static class ParcelSpawnSetup
         var points = new List<Vector3>();
         for (int i = 0; i < ParcelSpawnPool.SpawnCount; i++)
         {
-            bool roof = i >= 40;
-            var bounds = roof ? roofs[(i - 40) % roofs.Length].GetComponent<Renderer>().bounds : area;
+            int streetCount = ParcelSpawnPool.SpawnCount - 10;
+            bool roof = i >= streetCount;
+            var bounds = roof ? roofs[(i - streetCount) % roofs.Length].GetComponent<Renderer>().bounds : area;
             bool found = false;
             for (int attempt = 0; attempt < 20000; attempt++)
             {
@@ -41,8 +42,8 @@ public static class ParcelSpawnSetup
             if (!found) throw new Exception("Cannot find safe anchor " + (i + 1) + "; existing scene preserved.");
         }
         Directory.CreateDirectory(Folder + "/source");
-        if (!File.Exists(Folder + "/source/SampleScene_before_parcel_pool.unity"))
-            EditorSceneManager.SaveScene(scene, Folder + "/source/SampleScene_before_parcel_pool.unity", true);
+        if (!File.Exists(Folder + "/source/case07/SampleScene.unity.before.txt"))
+            throw new Exception("Save the before-scene evidence before rebuilding the layout.");
         var old = GameObject.Find(Layer);
         if (old) Undo.DestroyObjectImmediate(old);
         var root = new GameObject(Layer); Undo.RegisterCreatedObjectUndo(root, "Build parcel spawn pool");
@@ -63,14 +64,14 @@ public static class ParcelSpawnSetup
         foreach (var p in pool.parcels) PrefabUtility.RecordPrefabInstancePropertyModifications(p.transform);
         EditorUtility.SetDirty(pool); EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
         VerifyLayout(); Selection.activeGameObject = root;
-        Debug.Log("PARCEL_POOL_SETUP_OK: 50 verified anchors (40 street/sidewalk, 10 accessible roofs), 30 reusable parcels saved.");
+        Debug.Log("PARCEL_POOL_SETUP_OK: 100 verified anchors (90 street/sidewalk, 10 accessible roofs), 50 reusable parcels saved.");
     }
 
     [MenuItem("Tools/Gameplay/Test Parcels/Verify Spawn Layout")]
     public static void VerifyLayout()
     {
         var pool = UnityEngine.Object.FindAnyObjectByType<ParcelSpawnPool>();
-        if (!pool || pool.spawnPoints.Length != 50 || pool.parcels.Length != 30) throw new Exception("Expected 50 anchors and 30 parcel models.");
+        if (!pool || pool.spawnPoints.Length != ParcelSpawnPool.SpawnCount || pool.parcels.Length != ParcelSpawnPool.LiveCount) throw new Exception("Expected 100 anchors and 50 parcel models.");
         Physics.SyncTransforms(); var rows = new List<string>();
         for (int i = 0; i < pool.spawnPoints.Length; i++)
         {
@@ -81,8 +82,8 @@ public static class ParcelSpawnSetup
             if (pool.spawnPoints.Where((p, j) => j != i).Any(p => (p.position - point).sqrMagnitude < 15.99f)) throw new Exception("Anchor separation below 4m.");
             rows.Add("PASS " + pool.spawnPoints[i].name + " | " + point.ToString("F3") + " | " + hit.collider.transform.root.name + "/" + hit.collider.name);
         }
-        if (pool.ActiveCount != 30 || pool.CaptureSlots().Distinct().Count() != 30) throw new Exception("Expected 30 unique occupied slots.");
-        rows.Add("PASS 30 active models occupy 30 distinct anchors; 20 anchors empty");
+        if (pool.ActiveCount != ParcelSpawnPool.LiveCount || pool.CaptureSlots().Distinct().Count() != ParcelSpawnPool.LiveCount) throw new Exception("Expected 50 unique occupied slots.");
+        rows.Add("PASS 50 active models occupy 50 distinct anchors; 50 anchors empty");
         Directory.CreateDirectory(Folder + "/evidence"); File.WriteAllLines(Folder + "/evidence/parcel-layout-check.txt", rows);
         File.WriteAllText(Folder + "/source/parcel-spawn-points.json", JsonUtility.ToJson(new SpawnLayout { points = pool.spawnPoints.Select(p => p.position).ToArray() }, true));
         Debug.Log("PARCEL_LAYOUT_OK: " + rows.Count + " checks passed.");

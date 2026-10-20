@@ -1,0 +1,675 @@
+--- Assets\Gameplay\DeliveryNetwork.cs before
++++ Assets\Gameplay\DeliveryNetwork.cs after
+@@ -44,6 +44,7 @@
+     static readonly Color[] TeamColors = { new(.25f, .7f, 1), new(1, .48f, .22f) };
+     [Serializable] public sealed class NetInput
+     {
++        [NonSerialized] public float createdAt;
+         public int sequence;
+         public float x, z, yaw, pitch;
+         public bool jump, crouch, capture;
+@@ -59,8 +60,10 @@
+         public int team, color, selected, target = -1;
+         public Vector3 position;
+         public float actionAge, dashRemaining;
+-        public float yaw, pitch, stamina = 100, vertical, dashUntil, cooldown, captureAt, actionAt = -10;
+-        public int used, dashed, dropped;
++        public float yaw, stamina = 100, vertical;
++        [NonSerialized] public float pitch, dashUntil, cooldown, captureAt, actionAt = -10;
++        public int dashed;
++        [NonSerialized] public int used, dropped;
+         public int boxingPunches, actionKind, actionSlot;
+         public bool throwReleased, plungerFlying;
+         public int[] items = { 2, 5, 7 };
+@@ -141,6 +144,7 @@
+     {
+         netLeaving = false; netNotice = ""; netOwn = 0; netPlayers = new NetPlayer[4]; netSlots.Clear(); netLocalInput = new NetInput();
+         ResetNetPrediction(true);
++        ResetNetDiagnostics();
+         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
+         netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 3, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
+@@ -200,6 +204,7 @@
+                     if(kind=="frame"||kind=="input")
+                     {reader.ReadValueSafe(out int size);if(size<0||size>8192||size>reader.Length-reader.Position)return;var bytes=new byte[size];reader.ReadBytesSafe(ref bytes,size);json=UnpackNetJson(bytes);}
+                     else reader.ReadValueSafe(out json);
++                    netReceivedBytes+=reader.Length;
+                     ReceiveNet(kind,sender,json);
+                 }
+                 catch (Exception ex) when (ex is OverflowException || ex is ArgumentException || ex is System.IO.InvalidDataException) { Debug.LogWarning("Rejected invalid room message"); }
+@@ -228,6 +233,7 @@
+         }
+         else writer.WriteValueSafe(json);
+         netManager.CustomMessagingManager.SendNamedMessage("delivery/"+kind,recipient,writer,delivery);
++        netSentBytes+=writer.Length;
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+         if(latencyProof)latencySentBytes+=writer.Length;
+ #endif
+@@ -261,7 +267,7 @@
+     {
+         netLeaving = true; if (netManager) { netManager.Shutdown(); Destroy(netManager.gameObject); }
+         netManager = null; netTransport = null; netSlots.Clear(); netPlayers = new NetPlayer[4]; netCode = "";
+-        foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
++        ClearActiveNetShots();
+         ClearNetShotViews();
+         ClearNetPlungers(); ClearIceCreamMarks(); ClearSlimePuddles(); RoomState = RoomPhase.Menu; NetMenuWorld();
+     }
+@@ -279,7 +285,7 @@
+     {
+         if (!NetServer || NetCount < 2) return;
+         ClearSlimePuddles(); ClearIceCreamMarks(); ClearNetPlungers();
+-        foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
++        ClearActiveNetShots();
+         Array.Fill(owner,-1); for(int i=0;i<10;i++) SetMailboxEffectColor(i,Color.white);
+         if (parcelPool) parcelPool.ResetRound();
+         for(int g=0;g<4;g++)
+@@ -306,6 +312,7 @@
+     bool TickNetwork()
+     {
+         if(!NetworkScreens||mapEditMode)return false;
++        TickNetDiagnostics();
+         if(RoomState==RoomPhase.Connecting && Time.unscaledTime-netConnectedAt>10){LeaveRoom();netNotice="접속 시간이 초과되었습니다. 방 코드와 네트워크를 확인하세요.";}
+         var kb=Keyboard.current;
+         if(NetDevelopment&&kb!=null&&kb.f2Key.wasPressedThisFrame)netTools=!netTools;
+@@ -324,7 +331,14 @@
+         if(NetServer&&RoomState==RoomPhase.Lobby&&NetCount==NetCapacity)StartNetCountdown(false);
+         if(NetServer&&RoomState==RoomPhase.Countdown&&Time.time>=netPhaseUntil)StartNetRound();
+         if(netManager&&netManager.IsListening&&Time.unscaledTime>=netNextSend)
+-        {netNextSend=Time.unscaledTime+1f/30;if(NetServer)NetBroadcast();else if(NetPlaying&&netPendingInputs.Count>0)SendNet("input",new NetInputBatch{commands=netPendingInputs.Skip(Mathf.Max(0,netPendingInputs.Count-32)).ToArray()},NetworkManager.ServerClientId,NetworkDelivery.UnreliableSequenced);}
++        {
++            netNextSend+=1f/30;if(netNextSend<Time.unscaledTime)netNextSend=Time.unscaledTime+1f/30;
++            if(NetServer)NetBroadcast();else if(NetPlaying&&netPendingInputs.Count>0)
++            {
++                int count=Mathf.Min(32,netPendingInputs.Count);var commands=new NetInput[count];netPendingInputs.CopyTo(netPendingInputs.Count-count,commands,0,count);
++                SendNet("input",new NetInputBatch{commands=commands},NetworkManager.ServerClientId,NetworkDelivery.UnreliableSequenced);
++            }
++        }
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+         TickNetworkProof();
+         TickLatencyProof();
+@@ -348,6 +362,7 @@
+     void NetBroadcast()
+     {
+         if(!NetServer||netManager.CustomMessagingManager==null)return;
++        long workAt=System.Diagnostics.Stopwatch.GetTimestamp(),workAlloc=GC.GetAllocatedBytesForCurrentThread();
+         for(int g=0;g<4;g++)if(netPlayers[g]!=null&&netPlayers[g].connected)
+         {
+             var p=netPlayers[g];var a=ActorController(g);var s=ActorState(g);p.controlLocked=s.KnockedBack;p.position=a.transform.position;p.yaw=a.transform.eulerAngles.y;p.actionAge=Time.time-p.actionAt;
+@@ -356,15 +371,18 @@
+             p.shieldBreak=Time.time-s.shieldBrokenAt;p.speed=Mathf.Max(0,s.speedUntil-Time.time);p.slow=Mathf.Max(0,s.slowUntil-Time.time);p.ink=Mathf.Max(0,s.visionBlockedUntil-Time.time);
+             p.progress=p.target<0?0:Mathf.Clamp01((Time.time-p.captureAt)/(p.items[p.selected]==8?1.5f:3));
+         }
+-        var shots=FindObjectsByType<BrawlShot>().Where(s=>s.owner==this&&s.gameObject.activeSelf).Select(CaptureNetShot).ToList();
++        var shots=netActiveShots.Where(s=>s&&s.gameObject.activeSelf).Select(CaptureNetShot).ToList();
+         foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation,velocity=p.velocity});
++        var frame=new NetFrame{sequence=++netFrameSequence,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice};
+         foreach(var pair in netSlots)if(pair.Key!=NetworkManager.ServerClientId&&netManager.ConnectedClientsIds.Contains(pair.Key))
+-            SendNet("frame",new NetFrame{sequence=++netFrameSequence,own=pair.Value,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice},pair.Key,NetworkDelivery.ReliableFragmentedSequenced);
++        {frame.own=pair.Value;SendNet("frame",frame,pair.Key,NetworkDelivery.ReliableFragmentedSequenced);}
++        RecordNetWork(workAt,workAlloc);
+     }
+     void ApplyNetFrame(NetFrame f)
+     {
+         if(f.players==null||f.players.Length!=4||f.owners==null||f.owners.Length!=10||f.own<0||f.own>3)return;
+         if(f.sequence<=netLastFrameSequence)return;netLastFrameSequence=f.sequence;
++        long workAt=System.Diagnostics.Stopwatch.GetTimestamp(),workAlloc=GC.GetAllocatedBytesForCurrentThread();RecordNetFrameReceived();
+         bool starting=(RoomPhase)f.phase==RoomPhase.Playing&&RoomState!=RoomPhase.Playing;
+         NetTeamSize=f.teamSize==1?1:2;netOwn=f.own;netPlayers=f.players;RoomState=(RoomPhase)f.phase;netNotice=f.notice;netRoundUntil=Time.time+f.remaining;netPhaseUntil=Time.time+f.remaining;
+         started=NetPlaying;finished=RoomState==RoomPhase.Results;
+@@ -385,6 +403,7 @@
+         for(int i=0;i<10;i++){int v=f.owners[i]<0?-1:NetLocal(f.owners[i]);if(owner[i]!=v||starting){owner[i]=v;SetMailboxEffectColor(i,v<0?Color.white:CaptureColor(v));}}
+         if(parcelPool) parcelPool.ApplySnapshot(f.parcels);
+         SyncHostInventory();SyncNetShotViews(NetPlaying?f.shots??Array.Empty<NetShot>():Array.Empty<NetShot>());
++        RecordNetWork(workAt,workAlloc);
+     }
+     void SyncHostInventory()
+     {
+--- Assets\Gameplay\DeliveryNetworkGameplay.cs before
++++ Assets\Gameplay\DeliveryNetworkGameplay.cs after
+@@ -11,6 +11,7 @@
+     readonly DeliveryHeldItem[] netHeld = new DeliveryHeldItem[4];
+     readonly WeaponKind[] netHeldKinds = new WeaponKind[4];
+     readonly Vector3[] netLastPositions = new Vector3[4];
++    readonly float[] netWalkingUntil = new float[4];
+ 
+     Vector3 NetAim(int g) { var input=netInputs[g];return Quaternion.Euler(input?.pitch??0,input?.yaw??0,0)*Vector3.forward; }
+     Vector3 NetEye(int g) => (g==0?playerVisual:botVisuals[g-1]).EyePosition;
+@@ -161,12 +162,15 @@
+         {
+             var p=netPlayers[g];int local=NetLocal(g);if(p==null||!p.connected||!NetPlaying){if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+             var actor=ActorController(local);var visual=local==0?playerVisual:botVisuals[local-1];var kind=(WeaponKind)p.items[p.selected];
+-            bool moving=(actor.transform.position-netLastPositions[g]).sqrMagnitude>.00001f;netLastPositions[g]=actor.transform.position;
+-            visual.SetMotion(moving&&!ActorState(local).Stunned(Time.time),HasHeldModel(kind));
++            if((actor.transform.position-netLastPositions[g]).sqrMagnitude>.00001f)netWalkingUntil[g]=Time.time+.1f;
++            netLastPositions[g]=actor.transform.position;
++            visual.SmoothNetworkPosition(NetServer&&local>0,Time.deltaTime);
++            visual.SetMotion(Time.time<netWalkingUntil[g]&&!p.controlLocked&&!ActorState(local).KnockedBack&&!ActorState(local).Stunned(Time.time),HasHeldModel(kind));
+             float age=Time.time-p.actionAt;
+             float throwAge=p.actionKind==(int)kind&&p.actionSlot==p.selected&&!ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? age : float.PositiveInfinity;
+             float punch=kind==WeaponKind.BoxingGloves&&p.actionKind==(int)kind&&p.actionSlot==p.selected&&
+                 !ActorState(local).Stunned(Time.time)&&p.dashRemaining<=0 ? GlovePushAt(age) : 0;
++            float hammer=kind==WeaponKind.ToyHammer ? HammerSwingAt(throwAge) : 0;
+             bool rightHand=(p.boxingPunches&1)!=0;
+             bool plungerAway=kind==WeaponKind.Plunger&&(NetServer?netPlungers.Any(s=>s.source==g&&s.model):p.plungerFlying);
+             if(local==0)
+@@ -175,6 +179,8 @@
+                 {
+                     if(IsHandThrown(kind))
+                     {PoseThrownItem(heldWeapon,heldItem,visual,throwAge,p.throwReleased,!thirdPersonPreview);continue;}
++                    if(kind==WeaponKind.ToyHammer)
++                    {heldWeapon.SetActive(true);PoseHammerSwing(heldItem,visual,hammer,!thirdPersonPreview);continue;}
+                     heldWeapon.SetActive(!plungerAway&&(kind==WeaponKind.BoxingGloves||age>=.16f||kind==WeaponKind.BubbleWrap||kind==WeaponKind.RunningShoes));
+                     if(!thirdPersonPreview)
+                     {
+@@ -191,6 +197,7 @@
+             if(!HasHeldModel(kind)) {if(netHeld[g])Destroy(netHeld[g].gameObject);netHeld[g]=null;continue;}
+             if(!netHeld[g]){netHeld[g]=Instantiate(Resources.Load<GameObject>("DeliveryItems/"+kind),visual.transform,false).GetComponent<DeliveryHeldItem>();netHeld[g].Bind(visual);netHeldKinds[g]=kind;}
+             if(IsHandThrown(kind))PoseThrownItem(netHeld[g].gameObject,netHeld[g],visual,throwAge,p.throwReleased,false);
++            else if(kind==WeaponKind.ToyHammer){netHeld[g].gameObject.SetActive(true);PoseHammerSwing(netHeld[g],visual,hammer,false);}
+             else {netHeld[g].gameObject.SetActive(!plungerAway);if(punch!=0)visual.PushArm(punch,rightHand);netHeld[g].FollowBones();}
+         }
+     }
+--- Assets\Gameplay\DeliveryNetworkPrediction.cs before
++++ Assets\Gameplay\DeliveryNetworkPrediction.cs after
+@@ -26,7 +26,7 @@
+         for(int g=0;g<4;g++){netMovementInputs[g].Clear();netMovementBudget[g]=0;netLastQueuedInput[g]=0;}
+     }
+     static NetInput CopyNetInput(NetInput i,int sequence) => new() {
+-        sequence=sequence,x=i.x,z=i.z,yaw=i.yaw,pitch=i.pitch,jump=i.jump,crouch=i.crouch,
++        sequence=sequence,createdAt=Time.unscaledTime,x=i.x,z=i.z,yaw=i.yaw,pitch=i.pitch,jump=i.jump,crouch=i.crouch,
+         capture=i.capture,slot=i.slot,use=i.use,dash=i.dash,drop=i.drop
+     };
+     static bool ValidNetInput(NetInput i) => i!=null&&i.sequence>0&&float.IsFinite(i.x)&&float.IsFinite(i.z)&&float.IsFinite(i.yaw)&&float.IsFinite(i.pitch);
+@@ -55,6 +55,8 @@
+     }
+     void ReconcileNetLocal(NetPlayer p)
+     {
++        for(int n=netPendingInputs.Count-1;n>=0;n--)if(netPendingInputs[n].sequence<=p.inputAck)
++        {if(netPendingInputs[n].createdAt>0)netAckMs=(Time.unscaledTime-netPendingInputs[n].createdAt)*1000;break;}
+         netPendingInputs.RemoveAll(i=>i.sequence<=p.inputAck);
+         player.enabled=false;player.transform.position=p.position;player.enabled=true;
+         foreach(var input in netPendingInputs)
+--- Assets\Gameplay\DeliveryNetworkProjectiles.cs before
++++ Assets\Gameplay\DeliveryNetworkProjectiles.cs after
+@@ -4,6 +4,14 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype
+ {
++    readonly HashSet<BrawlShot> netActiveShots=new();
++    internal void TrackNetShot(BrawlShot shot)=>netActiveShots.Add(shot);
++    internal void ForgetNetShot(BrawlShot shot)=>netActiveShots.Remove(shot);
++    void ClearActiveNetShots()
++    {
++        foreach(var shot in netActiveShots.ToArray())if(shot){shot.gameObject.SetActive(false);Destroy(shot.gameObject);}
++        netActiveShots.Clear();
++    }
+     sealed class NetShotMotion
+     {
+         public NetShot sample;
+--- Assets\Gameplay\DeliveryNetworkUI.cs before
++++ Assets\Gameplay\DeliveryNetworkUI.cs after
+@@ -131,7 +131,12 @@
+         if(!NetDevelopment)return;
+         if(!netTools)return;
+         var old=GUI.matrix;GUI.matrix=Matrix4x4.identity;
+-        GUILayout.BeginArea(new Rect(16,210,270,400),GUI.skin.box);GUILayout.Label("개발 테스트 · F2");
++        GUILayout.BeginArea(new Rect(16,210,320,465),GUI.skin.box);GUILayout.Label("개발 테스트 · F2");
++        GUILayout.Label("핑(UTP) "+netPingMs.ToString("F0")+"ms · 입력 승인 "+netAckMs.ToString("F0")+"ms");
++        GUILayout.Label("프레임 "+(Time.smoothDeltaTime*1000).ToString("F1")+"ms · "+(1/Mathf.Max(.001f,Time.smoothDeltaTime)).ToString("F0")+"FPS");
++        GUILayout.Label("수신 "+netReceiveHz.ToString("F1")+"Hz · 간격 "+netReceiveGapMs.ToString("F0")+"ms");
++        GUILayout.Label("송/수신 "+netSendKB.ToString("F1")+" / "+netReceiveKB.ToString("F1")+"KB/s");
++        GUILayout.Label("동기화 처리 "+netWorkMs.ToString("F3")+"ms · 할당 "+(netAllocAvailable?(netWorkAlloc/1024).ToString("F1")+"KB":"N/A"));
+         if(NetServer&&GUILayout.Button("경기 초기화"))StartNetRound();
+         for(int i=1;i<=9;i++){int item=i;if(GUILayout.Button(ItemName((WeaponKind)item))){if(NetServer)netPlayers[0].items[netPlayers[0].selected]=item;else SendNet("item",new NetInput{slot=item},Unity.Netcode.NetworkManager.ServerClientId);}}
+         GUILayout.EndArea();GUI.matrix=old;
+--- Assets\Gameplay\DeliveryRobotVisual.cs before
++++ Assets\Gameplay\DeliveryRobotVisual.cs after
+@@ -13,10 +13,13 @@
+     MaterialPropertyBlock colorBlock;
+     bool firstPerson;
+     Transform[] arms;
++    Vector3 modelLocalPosition,networkPosition;
++    bool networkPositionReady;
+ 
+     void Awake()
+     {
+         animator = model.GetComponent<Animator>();
++        modelLocalPosition=model.localPosition;
+         colorBlock = new MaterialPropertyBlock();
+         renderers = model.GetComponentsInChildren<Renderer>();
+         arms = System.Array.FindAll(model.GetComponentsInChildren<Transform>(), t => t.name == "Arm.R" || t.name == "Arm.L");
+@@ -26,6 +29,13 @@
+     {
+         animator.SetBool("Moving", moving);
+         animator.SetBool("Holding", holding);
++    }
++    public void SmoothNetworkPosition(bool smooth,float dt)
++    {
++        var target=transform.TransformPoint(modelLocalPosition);
++        networkPosition=!smooth||!networkPositionReady||Vector3.Distance(networkPosition,target)>3
++            ? target : Vector3.Lerp(networkPosition,target,1-Mathf.Exp(-25*dt));
++        model.position=networkPosition;networkPositionReady=smooth;
+     }
+     public void SetFirstPerson(bool value)
+     {
+--- Assets\Gameplay\MonsterDeliveryPrototype.cs before
++++ Assets\Gameplay\MonsterDeliveryPrototype.cs after
+@@ -571,12 +571,19 @@
+ // Legacy component name retained for existing collision-check tooling, now carries no damage.
+ public sealed class BrawlShot : MonoBehaviour
+ {
+-    public MonsterDeliveryPrototype owner; public WeaponKind kind;
++    MonsterDeliveryPrototype shotOwner;
++    public MonsterDeliveryPrototype owner
++    {
++        get=>shotOwner;
++        set {if(shotOwner)shotOwner.ForgetNetShot(this);shotOwner=value;if(shotOwner)shotOwner.TrackNetShot(this);}
++    }
++    public WeaponKind kind;
+     public float maxDistance = float.PositiveInfinity;
+     public int sourceId;
+     Vector3 launchPosition;
+     Rigidbody body; bool impacted;
+     void Awake() { body = GetComponent<Rigidbody>(); if(body)body.interpolation=RigidbodyInterpolation.Interpolate; launchPosition = transform.position; }
++    void OnDestroy(){if(shotOwner)shotOwner.ForgetNetShot(this);}
+     void Start() { if (kind != WeaponKind.Slime) Destroy(gameObject, 3); }
+     void FixedUpdate()
+     {
+--- Assets\Gameplay\ParcelSpawnPool.cs before
++++ Assets\Gameplay\ParcelSpawnPool.cs after
+@@ -70,8 +70,14 @@
+     }
+     public bool ApplySnapshot(int[] state)
+     {
+-        if (state == null || state.Length != LiveCount || state.Any(s => s < -1 || s >= SpawnCount) ||
+-            state.Where(s => s >= 0).Distinct().Count() != state.Count(s => s >= 0)) return false;
++        if (state == null || state.Length != LiveCount) return false;
++        ulong occupied=0;
++        for(int i=0;i<state.Length;i++)
++        {
++            int slot=state[i];if(slot < -1||slot>=SpawnCount)return false;
++            if(slot<0)continue;
++            ulong bit=1UL<<slot;if((occupied&bit)!=0)return false;occupied|=bit;
++        }
+         for (int i = 0; i < state.Length; i++)
+             if(slots[i]!=state[i])Place(i, state[i]);
+         return true;
+--- Assets\Gameplay\ToyHammerCombat.cs before
++++ Assets\Gameplay\ToyHammerCombat.cs after
+@@ -8,15 +8,13 @@
+     bool hammerHit;
+     readonly DeliveryStunEffect[] stunEffects = new DeliveryStunEffect[BotCount + 1];
+ 
+-    float HammerSwingAmount
++    float HammerSwingAmount=>HammerSwingAt(Time.time-hammerStarted);
++    static float HammerSwingAt(float age)
+     {
+-        get
+-        {
+-            float age = Time.time - hammerStarted;
+-            if (age < .09f) return Mathf.Lerp(0, -.3f, Mathf.SmoothStep(0, 1, age / .09f));
+-            if (age < HammerHitDelay) return Mathf.Lerp(-.3f, 1, Mathf.SmoothStep(0, 1, (age - .09f) / (HammerHitDelay - .09f)));
+-            return 1 - Mathf.SmoothStep(0, 1, (age - HammerHitDelay) / (HammerDuration - HammerHitDelay));
+-        }
++        if(age<0||age>=HammerDuration)return 0;
++        if (age < .09f) return Mathf.Lerp(0, -.3f, Mathf.SmoothStep(0, 1, age / .09f));
++        if (age < HammerHitDelay) return Mathf.Lerp(-.3f, 1, Mathf.SmoothStep(0, 1, (age - .09f) / (HammerHitDelay - .09f)));
++        return 1 - Mathf.SmoothStep(0, 1, (age - HammerHitDelay) / (HammerDuration - HammerHitDelay));
+     }
+ 
+     void StartToyHammerSwing()
+@@ -58,16 +56,20 @@
+     {
+         if (heldKind != WeaponKind.ToyHammer || !heldItem) return;
+         float amount = hammerSlot >= 0 ? HammerSwingAmount : 0;
+-        if (!thirdPersonPreview)
++        PoseHammerSwing(heldItem,playerVisual,amount,!thirdPersonPreview);
++    }
++    static void PoseHammerSwing(DeliveryHeldItem item,DeliveryRobotVisual visual,float amount,bool firstPerson)
++    {
++        if (firstPerson)
+         {
+-            heldItem.FirstPerson();
+-            heldItem.transform.localPosition += new Vector3(-.25f, .15f, .12f) * amount;
+-            heldItem.transform.localRotation *= Quaternion.Euler(95 * amount, 0, -25 * amount);
++            item.FirstPerson();
++            item.transform.localPosition += new Vector3(-.25f, .15f, .12f) * amount;
++            item.transform.localRotation *= Quaternion.Euler(95 * amount, 0, -25 * amount);
+         }
+-        else if (hammerSlot >= 0)
++        else
+         {
+-            playerVisual.PushArm(amount * 2.8f, true); heldItem.FollowBones();
+-            heldItem.transform.localRotation *= Quaternion.Euler(75 * amount, 0, -20 * amount);
++            if(amount!=0)visual.PushArm(amount * 2.8f, true);item.FollowBones();
++            item.transform.localRotation *= Quaternion.Euler(75 * amount, 0, -20 * amount);
+         }
+     }
+ 
+--- /dev/null
++++ Assets/Gameplay/DeliveryNetworkDiagnostics.cs new
+@@ -0,0 +1,42 @@
++using System;
++using System.Diagnostics;
++using Unity.Netcode;
++using UnityEngine;
++
++public sealed partial class MonsterDeliveryPrototype
++{
++    float netStatsAt,netPingMs,netAckMs,netReceiveHz,netReceiveGapMs,netLastReceive;
++    float netSendKB,netReceiveKB,netWorkMs,netWorkAlloc;
++    int netSentBytes,netReceivedBytes,netReceivedFrames;
++    bool netAllocAvailable;
++    void ResetNetDiagnostics()
++    {
++        netStatsAt=Time.unscaledTime;netLastReceive=0;
++        netPingMs=netAckMs=netReceiveHz=netReceiveGapMs=netSendKB=netReceiveKB=netWorkMs=netWorkAlloc=0;
++        netSentBytes=netReceivedBytes=netReceivedFrames=0;
++        long allocated=GC.GetAllocatedBytesForCurrentThread();GC.KeepAlive(new byte[128]);netAllocAvailable=GC.GetAllocatedBytesForCurrentThread()>allocated;
++    }
++    void TickNetDiagnostics()
++    {
++        float age=Time.unscaledTime-netStatsAt;if(age<1)return;
++        netSendKB=netSentBytes/(1024f*age);netReceiveKB=netReceivedBytes/(1024f*age);netReceiveHz=netReceivedFrames/age;
++        netSentBytes=netReceivedBytes=netReceivedFrames=0;netStatsAt=Time.unscaledTime;
++        if(!netTransport||!netManager||!netManager.IsListening)return;
++        if(!NetServer){netPingMs=netTransport.GetCurrentRtt(NetworkManager.ServerClientId);return;}
++        ulong rtt=0;
++        foreach(var id in netManager.ConnectedClientsIds)
++            if(id!=NetworkManager.ServerClientId)rtt=Math.Max(rtt,netTransport.GetCurrentRtt(id));
++        netPingMs=rtt;
++    }
++    void RecordNetFrameReceived()
++    {
++        if(netLastReceive>0)netReceiveGapMs=(Time.unscaledTime-netLastReceive)*1000;
++        netLastReceive=Time.unscaledTime;netReceivedFrames++;
++    }
++    void RecordNetWork(long ticks,long allocated)
++    {
++        float ms=(float)((Stopwatch.GetTimestamp()-ticks)*1000.0/Stopwatch.Frequency);
++        float bytes=GC.GetAllocatedBytesForCurrentThread()-allocated;
++        netWorkMs=Mathf.Lerp(netWorkMs,ms,.1f);netWorkAlloc=Mathf.Lerp(netWorkAlloc,bytes,.1f);
++    }
++}
+--- /dev/null
++++ Assets/Editor/NetSyncAuditCheck.cs new
+@@ -0,0 +1,279 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using UnityEditor;
++using UnityEngine;
++using UnityEngine.InputSystem;
++using UnityEngine.InputSystem.LowLevel;
++using Stopwatch=System.Diagnostics.Stopwatch;
++
++public static class NetSyncAuditCheck
++{
++    const string Folder="Docs/ChangeRecords/20261018/";
++    const BindingFlags Flags=BindingFlags.NonPublic|BindingFlags.Instance;
++    static string Label=>typeof(MonsterDeliveryPrototype).GetMethod("HammerSwingAt",BindingFlags.NonPublic|BindingFlags.Static)==null?"before":"after";
++    [MenuItem("Tools/Gameplay/Network Audit/Verify and Benchmark")]
++    public static void Verify()
++    {if(!EditorApplication.isPlaying)throw new Exception("Fresh Play required");var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));}
++    static IEnumerator Run(MonsterDeliveryPrototype game)
++    {
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Set(string n,object v)=>type.GetField(n,Flags).SetValue(game,v);
++        object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
++        string label=Label;var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Controlled Play animation/weapon checks and same-frame warmed CPU/allocation benchmarks, not WAN."};
++        void Check(bool ok,string text)=>log.Add((ok?"PASS ":"FAIL ")+text);
++        bool oldEnabled=game.enabled,background=Application.runInBackground;
++        var metrics=new Dictionary<string,object>();
++        try
++        {
++            game.enabled=false;Application.runInBackground=true;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            Set("started",true);Set("finished",false);game.NetworkScreens=true;Set("<RoomState>k__BackingField",MonsterDeliveryPrototype.RoomPhase.Playing);Set("netOwn",0);
++            var players=new[]{new MonsterDeliveryPrototype.NetPlayer{connected=true,team=0,color=0},new MonsterDeliveryPrototype.NetPlayer{connected=true,team=1,color=1},null,null};Set("netPlayers",players);
++            var visual=(DeliveryRobotVisual)Get("playerVisual");var remote=((DeliveryRobotVisual[])Get("botVisuals"))[0];
++            ((CharacterController)Get("player")).gameObject.SetActive(true);((CharacterController[])Get("botControllers"))[0].gameObject.SetActive(true);
++            foreach(var rig in new[]{visual,remote})foreach(bool moving in new[]{false,true})foreach(bool holding in new[]{false,true})
++            {
++                rig.gameObject.SetActive(true);var animator=rig.model.GetComponent<Animator>();rig.SetMotion(moving,holding);for(int n=0;n<16;n++)animator.Update(.05f);
++                string state=(moving?"WALK":"IDLE")+(holding?"_ARMED":"");
++                Check(animator.GetCurrentAnimatorStateInfo(0).IsName(state),rig.name+" animator enters "+state);
++            }
++            var actors=new[]{(CharacterController)Get("player"),((CharacterController[])Get("botControllers"))[0]};
++            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Network Audit Review Floor";floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(100,.2f,100);
++            for(int g=0;g<2;g++){actors[g].enabled=false;actors[g].gameObject.SetActive(true);actors[g].transform.SetPositionAndRotation(new Vector3(g*1.4f,151,g*3),Quaternion.Euler(0,g*180,0));actors[g].enabled=true;}
++            var cam=(Camera)Get("cam");cam.transform.rotation=Quaternion.identity;Call("PositionCamera");
++            for(int kind=1;kind<=9;kind++)
++            {
++                foreach(var p in players.Where(p=>p!=null)){p.items=new[]{kind,0,0};p.selected=0;p.actionAt=Time.time-2;p.actionKind=kind;p.actionSlot=0;p.plungerFlying=false;p.throwReleased=false;}
++                Call("SyncHostInventory");Call("UpdateHeldWeapon");Call("PoseNetworkPlayers");
++                bool held=kind!=6&&kind!=7;var own=(DeliveryHeldItem)Get("heldItem");var other=((DeliveryHeldItem[])Get("netHeld"))[1];
++                Check((bool)own==held&&(bool)other==held,((WeaponKind)kind)+" has correct local and remote held models");
++                if(kind==8)
++                {float at=players[0].actionAt;Call("UseNetWeapon",0);Check(own.paired&&other.paired&&players[0].actionAt==at,"work gloves stay paired and passive without a click attack");}
++                if(kind==6||kind==7)
++                {
++                    players[0].cooldown=0;Call("UseNetWeapon",0);var state=(DeliveryItemState)Get("playerItems");
++                    Check(kind==6?state.speedUntil>Time.time:state.shieldUntil>Time.time,((WeaponKind)kind)+" applies authoritative activation state without a hand model");
++                }
++                if(kind==3)
++                {
++                    var animator=remote.model.GetComponent<Animator>();animator.Play("IDLE_ARMED",0,0);animator.Update(0);
++                    var arm=remote.model.GetComponentsInChildren<Transform>().Single(t=>(t.name=="Arm.R"||t.name=="Arm.L")&&remote.transform.InverseTransformPoint(t.position).x>0);var rotation=arm.rotation;
++                    foreach(var p in players.Where(p=>p!=null))p.actionAt=Time.time-.17f;
++                    Call("PoseNetworkPlayers");Check(own.gameObject.activeSelf&&Quaternion.Angle(own.firstPersonRotation,own.transform.localRotation)>60,"online hammer uses full first-person swing instead of a small root bob");
++                    Check(Quaternion.Angle(rotation,arm.rotation)>40,"online hammer moves the opponent right arm");
++                    yield return new WaitForEndOfFrame();Capture(Folder+"images/20261018_audit_"+label+"_hammer.png");
++                }
++            }
++            players[0].items=new[]{1,0,0};Call("SyncHostInventory");Call("UpdateHeldWeapon");
++            players[0].controlLocked=true;actors[0].transform.position+=Vector3.forward;Call("PoseNetworkPlayers");
++            Check(!visual.model.GetComponent<Animator>().GetBool("Moving"),"forced displacement does not play voluntary walking animation");
++            players[0].controlLocked=false;
++            game.LeaveRoom();game.HostRoom();yield return null;
++            players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
++            for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
++            game.NetTeamSize=2;game.StartNetRound();
++            double Bench(string name,Action action,int count=100)
++            {
++                for(int i=0;i<10;i++)action();long allocated=GC.GetAllocatedBytesForCurrentThread(),began=Stopwatch.GetTimestamp();
++                for(int i=0;i<count;i++)action();double ms=(Stopwatch.GetTimestamp()-began)*1000.0/Stopwatch.Frequency/count;
++                metrics[name+"_ms_per_call"]=ms;metrics[name+"_allocation_counter_available"]=GC.GetAllocatedBytesForCurrentThread()>allocated?1:0;return ms;
++            }
++            var broadcast=type.GetMethod("NetBroadcast",Flags);Bench("server_capture",()=>broadcast.Invoke(game,null),40);
++            var pool=(ParcelSpawnPool)Get("parcelPool");var slots=pool.CaptureSlots();Bench("unchanged_parcels",()=>pool.ApplySnapshot(slots),200);
++            var frameType=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var shotType=type.GetNestedType("NetShot",BindingFlags.NonPublic);var frame=Activator.CreateInstance(frameType);
++            void Field(string n,object value)=>frameType.GetField(n).SetValue(frame,value);
++            Field("players",players);Field("owners",Get("owner"));Field("own",0);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("teamSize",2);Field("parcels",slots);Field("shots",Array.CreateInstance(shotType,0));Field("remaining",100f);
++            int sequence=(int)Get("netLastFrameSequence")+1;var apply=type.GetMethod("ApplyNetFrame",Flags);var args=new[]{frame};
++            Bench("apply_frame",()=>{Field("sequence",sequence++);apply.Invoke(game,args);});
++            var pack=type.GetMethod("PackNetJson",BindingFlags.Static|BindingFlags.NonPublic);string json=JsonUtility.ToJson(frame);byte[] compressed=null;
++            Bench("serialize_compress",()=>{json=JsonUtility.ToJson(frame);compressed=(byte[])pack.Invoke(null,new object[]{json});});
++            metrics["json_bytes"]=System.Text.Encoding.UTF8.GetByteCount(json);metrics["compressed_bytes"]=compressed.Length;
++            Check(pool.ActiveCount==30&&slots.Distinct().Count()==30,"parcel optimization preserves 30 unique occupied anchors");
++            var invalid=(int[])slots.Clone();invalid[1]=invalid[0];Check(!pool.ApplySnapshot(invalid),"duplicate parcel anchor snapshot is rejected");
++            invalid=(int[])slots.Clone();invalid[0]=99;Check(!pool.ApplySnapshot(invalid),"out of range parcel snapshot is rejected");
++            var shot=(BrawlShot)Call("LaunchFountainPen",new Vector3(0,170,0),Vector3.forward,48f,0);
++            var registry=type.GetField("netActiveShots",Flags);
++            if(registry!=null)
++            {
++                bool Tracked()=>((IEnumerable)registry.GetValue(game)).Cast<BrawlShot>().Contains(shot);
++                Check(Tracked(),"live projectile registers with its owner without a scene search");shot.owner=null;Check(!Tracked(),"changing projectile owner removes the old registration");shot.owner=game;game.StartNetRound();
++                Check(!Tracked()&&!shot.gameObject.activeSelf,"round reset clears registered projectiles before broadcasting");
++            }
++            else UnityEngine.Object.Destroy(shot.gameObject);
++            var smooth=typeof(DeliveryRobotVisual).GetMethod("SmoothNetworkPosition");
++            if(smooth!=null)
++            {
++                remote.SmoothNetworkPosition(false,0);var previous=remote.model.position;int movingFrames=0,stationaryFrames=0;bool colliderStable=true;float lag=0;
++                for(int n=0;n<60;n++)
++                {
++                    if(n>0&&n%4==0)actors[1].transform.position+=Vector3.forward*(6.5f/30);
++                    var rootPosition=actors[1].transform.position;remote.SmoothNetworkPosition(true,1f/120);
++                    colliderStable&=actors[1].transform.position==rootPosition;
++                    if(n>=4){if(Vector3.Distance(previous,remote.model.position)>.0001f)movingFrames++;else stationaryFrames++;}
++                    lag=Mathf.Max(lag,Mathf.Abs(actors[1].transform.position.z-remote.model.position.z));previous=remote.model.position;
++                }
++                Check(movingFrames==56&&stationaryFrames==0,"host remote visual moves every render frame between30Hz input steps");
++                Check(colliderStable,"visual smoothing never moves the authoritative collision capsule");Check(lag<.5f,"host remote visual follows within0.5m at6.5m/s");
++                remote.SmoothNetworkPosition(false,0);
++            }
++            UnityEngine.Object.Destroy(floor);
++        }
++        finally
++        {
++            File.WriteAllLines(Folder+"evidence/sync-audit-"+label+".txt",log);File.WriteAllText(Folder+"evidence/sync-benchmark-"+label+".json",MiniJson(metrics));
++            game.LeaveRoom();game.enabled=oldEnabled;Application.runInBackground=background;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
++        }
++        Debug.Log("SYNC_AUDIT_"+label+": "+log.Count(x=>x.StartsWith("PASS"))+" PASS / "+log.Count(x=>x.StartsWith("FAIL"))+" FAIL");
++        if(label=="after"&&log.Any(x=>x.StartsWith("FAIL")))throw new Exception("SYNC_AUDIT_FAILED");
++    }
++    static string MiniJson(Dictionary<string,object> values)=>"{\n"+string.Join(",\n",values.Select(p=>"  \""+p.Key+"\": "+Convert.ToString(p.Value,System.Globalization.CultureInfo.InvariantCulture)))+"\n}";
++    static void Capture(string path){var image=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,image.EncodeToPNG());}finally{UnityEngine.Object.Destroy(image);}}
++    [MenuItem("Tools/Gameplay/Network Audit/Host Movement Review")]
++    public static void HostMove()=>BeginMove(true);
++    [MenuItem("Tools/Gameplay/Network Audit/Join Movement Review")]
++    public static void JoinMove()=>BeginMove(false);
++    static void BeginMove(bool host)
++    {if(!EditorApplication.isPlaying)throw new Exception("Play required");var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Movement(game,host));}
++    static IEnumerator Movement(MonsterDeliveryPrototype game,bool host)
++    {
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Set(string n,object value)=>type.GetField(n,Flags).SetValue(game,value);
++        object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
++        string root=Path.GetFullPath(Application.dataPath+"/..");if(!host)root=Path.GetFullPath(root+"/../../..");
++        string directory=Path.Combine(root,Folder),role=host?"host":"client";
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Two real MPPM processes,60ms per-way frame/input delay and every fifth omitted. Keyboard state injection is internal to Unity Input System."};
++        var pings=new List<float>();
++        bool background=Application.runInBackground;var keyboard=Keyboard.current;var observed=new HashSet<string>();bool shift=false;
++        var player=(CharacterController)Get("player");Vector3 origin=Vector3.zero;var rows=new List<string>{"time,local_x,local_y,local_z,server_x,server_y,server_z,height,stamina,dash"};
++        try
++        {
++            Application.runInBackground=true;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            Set("latencyProof",true);Set("latencySaved",true);Set("latencyLabel","movement-loss");Set("netTools",true);game.NetworkScreens=true;game.NetTeamSize=1;
++            if(host)game.HostRoom();else game.JoinRoom("127.0.0.1");
++            float deadline=Time.realtimeSinceStartup+45;while(!game.NetPlaying&&Time.realtimeSinceStartup<deadline)yield return null;
++            if(!game.NetPlaying)throw new Exception("Movement connection timeout");
++            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Movement Review Floor";floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(160,.2f,160);
++            if(host)for(int g=0;g<2;g++)
++            {
++                var actor=(CharacterController)Call("ActorController",g);actor.enabled=false;actor.transform.position=new Vector3(g*8,151,0);actor.enabled=true;
++                var p=((MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers"))[g];p.vertical=0;p.items=new[]{0,0,0};p.selected=0;Call("NetBroadcast");
++            }
++            yield return new WaitForSecondsRealtime(.6f);origin=player.transform.position;float began=Time.time;
++            while(Time.time-began<10)
++            {
++                float age=Time.time-began;Key[] keys=age>=1&&age<2?new[]{Key.D}:age>=2&&age<3?new[]{Key.S}:age>=3&&age<3.6f?new[]{Key.C,Key.W}:age>=4&&age<4.4f?new[]{Key.LeftShift,Key.W}:age>=5&&age<5.12f?new[]{Key.Space}:age>=6&&age<7?new[]{Key.W}:Array.Empty<Key>();
++                InputSystem.QueueStateEvent(keyboard,new KeyboardState(keys));InputSystem.Update();
++                ((MonsterDeliveryPrototype.NetInput)Get("netLocalInput")).yaw=age>=6?90:0;
++                if(age>=4&&!shift){((MonsterDeliveryPrototype.NetInput)Get("netLocalInput")).dash++;shift=true;}
++                yield return new WaitForEndOfFrame();
++                var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");int own=(int)Get("netOwn");var p=players[own];var position=player.transform.position;
++                if(age>1.5f&&age<2&&position.x>origin.x+1)observed.Add("strafe");
++                if(age>2.5f&&age<3&&position.z<origin.z-1)observed.Add("backward");
++                if(age>3.1f&&age<3.6f&&player.height<1.2f)observed.Add("crouch");
++                if(age>4&&age<4.6f&&p.stamina<70)observed.Add("dash");
++                if(age>5&&age<6&&position.y>origin.y+.5f)observed.Add("jump");
++                if(age>6.4f&&age<7&&Mathf.Abs(Mathf.DeltaAngle(player.transform.eulerAngles.y,90))<1)observed.Add("turn");
++                foreach(int g in new[]{0,1})if(players[g].position.y>151.5f)observed.Add("server-jump"+g);
++                if(age>9&&Vector3.Distance(position,p.position)<.15f)observed.Add("settled");
++                if(age>3)pings.Add(Convert.ToSingle(Get("netPingMs")));
++                rows.Add(FormattableString.Invariant($"{age:F4},{position.x:F4},{position.y:F4},{position.z:F4},{p.position.x:F4},{p.position.y:F4},{p.position.z:F4},{player.height:F2},{p.stamina:F2},{p.dashRemaining:F3}"));
++                yield return null;
++            }
++            foreach(string check in new[]{"strafe","backward","crouch","dash","jump","turn","server-jump0","server-jump1","settled"})log.Add((observed.Contains(check)?"PASS ":"FAIL ")+role+" movement "+check);
++            log.Add("INFO final transport RTT mean_ms="+pings.Average().ToString("F3")+"; artificial application queue is excluded from transport RTT");Capture(directory+"images/20261018_sync_final_"+role+"_diagnostics.png");
++            File.WriteAllLines(directory+"evidence/sync-movement-"+role+".txt",log);File.WriteAllLines(directory+"evidence/sync-movement-"+role+".csv",rows);
++            Debug.Log("SYNC_MOVEMENT_"+role+": "+string.Join("\n",log));
++        }
++        finally{InputSystem.QueueStateEvent(keyboard,new KeyboardState());InputSystem.Update();Set("latencyProof",false);Set("latencySaved",false);Application.runInBackground=background;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;}
++    }
++    [MenuItem("Tools/Gameplay/Network Audit/Host Delayed Review")]
++    public static void Host()=>Connect(true);
++    [MenuItem("Tools/Gameplay/Network Audit/Join Delayed Review")]
++    public static void Join()=>Connect(false);
++    static void Connect(bool host)
++    {if(!EditorApplication.isPlaying)throw new Exception("Play required");var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Review(game,host));}
++    static IEnumerator Review(MonsterDeliveryPrototype game,bool host)
++    {
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Set(string n,object value)=>type.GetField(n,Flags).SetValue(game,value);
++        object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
++        string root=Path.GetFullPath(Application.dataPath+"/..");if(!host)root=Path.GetFullPath(root+"/../../..");
++        string directory=Path.Combine(root,Folder),label=Label,role=host?"host":"client",metricsFolder=directory+"evidence/sync-perf/";
++        Directory.CreateDirectory(metricsFolder);
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Actual MPPM localhost. Existing diagnostic delays each outgoing frame/input by60ms and drops every fifth; no physical WAN. Scripted equipment and input."};
++        var rows=new List<string>{"time,frame_ms,ping_ms,ack_ms,receive_hz,work_ms,work_alloc_counter,send_kb,receive_kb,own_x,own_y,own_z,remote_x,remote_y,remote_z,remote_visual_x,remote_visual_z,own_walk,remote_walk,own_frozen,remote_frozen,control_locked"};
++        var accepted=new HashSet<int>();var frozen=new HashSet<int>();var controlled=new HashSet<int>();var captures=new HashSet<string>();
++        bool ownWalk=false,remoteWalk=false,ownIdle=false,remoteIdle=false;int phase=-1,sent=-1;bool hit1=false,hit2=false,push=false;
++        bool background=Application.runInBackground;int fps=Application.targetFrameRate,vsync=QualitySettings.vSyncCount;
++        try
++        {
++            Application.runInBackground=true;EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            Call("BeginLatencyProof",label+"-loss",metricsFolder);Set("netTools",true);game.NetTeamSize=1;game.NetworkScreens=true;
++            if(host)game.HostRoom();else game.JoinRoom("127.0.0.1");
++            float deadline=Time.realtimeSinceStartup+45;while(!game.NetPlaying&&Time.realtimeSinceStartup<deadline)yield return null;
++            if(!game.NetPlaying)throw new Exception("Sync review connection timeout");
++            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Delayed Sync Review Floor";floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(160,.2f,160);
++            var ownActor=(CharacterController)Get("player");var otherActor=((CharacterController[])Get("botControllers"))[0];
++            void Place()
++            {
++                for(int g=0;g<2;g++)
++                {
++                    var actor=(CharacterController)Call("ActorController",g);actor.enabled=false;actor.transform.position=new Vector3(g*1.4f,151,g*4);actor.enabled=true;
++                    ((MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers"))[g].vertical=0;
++                }
++            }
++            if(host){Place();Call("NetBroadcast");}
++            float began=Time.time;
++            while(Time.time-began<34)
++            {
++                float age=Time.time-began;int own=(int)Get("netOwn"),other=own==0?1:0;
++                var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");var input=(MonsterDeliveryPrototype.NetInput)Get("netLocalInput");input.slot=0;
++                if(age>7)input.yaw=host?0:180;
++                if(age>=9&&age<27)
++                {
++                    int kind=1+Mathf.Min(8,(int)((age-9)/2));
++                    if(host&&phase!=kind){phase=kind;Place();foreach(var p in players.Where(p=>p!=null&&p.connected)){p.items=new[]{kind,0,0};p.selected=0;}Call("NetBroadcast");}
++                    if(sent<kind&&age>9+(kind-1)*2+(host?.35f:.9f)){input.use++;sent=kind;}
++                    var mine=players[own];if(kind==8&&mine.items[mine.selected]==8||mine.actionKind==kind)accepted.Add(kind);
++                    if(age>9+(kind-1)*2+1.2f&&captures.Add("item"+kind))
++                    {yield return new WaitForEndOfFrame();Capture(directory+"images/20261018_sync_"+label+"_"+role+"_item"+kind+".png");}
++                }
++                if(age>=27&&host&&phase!=10)
++                {
++                    phase=10;Place();
++                    var guest=(CharacterController)Call("ActorController",1);guest.enabled=false;guest.transform.position=new Vector3(0,151,2.8f);guest.enabled=true;
++                    foreach(var p in players.Where(p=>p!=null&&p.connected)){p.items=new[]{5,0,0};p.selected=0;p.cooldown=0;}
++                    Set("playerItems",new DeliveryItemState());((DeliveryItemState[])Get("botItems"))[0]=new DeliveryItemState();Call("NetBroadcast");
++                }
++                if(host&&age>27.4f&&!hit1){input.use++;hit1=true;}
++                if(!host&&age>29.4f&&!hit2){input.use++;hit2=true;}
++                if(host&&age>31.2f&&!push)
++                {
++                    push=true;Place();var guest=(CharacterController)Call("ActorController",1);guest.enabled=false;guest.transform.position=new Vector3(0,151,2.8f);guest.enabled=true;
++                    foreach(var p in players.Where(p=>p!=null&&p.connected)){p.items=new[]{1,0,0};p.selected=0;p.cooldown=0;}
++                    Set("playerItems",new DeliveryItemState());((DeliveryItemState[])Get("botItems"))[0]=new DeliveryItemState();Call("NetBroadcast");input.use++;
++                }
++                foreach(int g in new[]{0,1}){if(players[g].frozen>0)frozen.Add(g);if(players[g].controlLocked)controlled.Add(g);}
++                var ownRig=(DeliveryRobotVisual)Get("playerVisual");var otherRig=((DeliveryRobotVisual[])Get("botVisuals"))[0];
++                bool walk=ownRig.model.GetComponent<Animator>().GetBool("Moving"),otherMoving=otherRig.model.GetComponent<Animator>().GetBool("Moving");
++                if(age>1.4f&&age<2.5f){ownWalk|=walk;remoteWalk|=otherMoving;}
++                if(age>7.5f&&age<8.5f){ownIdle|=!walk;remoteIdle|=!otherMoving;}
++                var pos=ownActor.transform.position;var remotePos=otherActor.transform.position;var model=otherRig.model.position;
++                float Metric(string n)=>Convert.ToSingle(Get(n));
++                rows.Add(FormattableString.Invariant($"{age:F5},{Time.unscaledDeltaTime*1000:F4},{Metric("netPingMs"):F3},{Metric("netAckMs"):F3},{Metric("netReceiveHz"):F3},{Metric("netWorkMs"):F5},{Metric("netWorkAlloc"):F1},{Metric("netSendKB"):F4},{Metric("netReceiveKB"):F4},{pos.x:F5},{pos.y:F5},{pos.z:F5},{remotePos.x:F5},{remotePos.y:F5},{remotePos.z:F5},{model.x:F5},{model.z:F5},{walk},{otherMoving},{players[own].frozen>0},{players[other].frozen>0},{players[own].controlLocked}"));
++                yield return null;
++            }
++            void Check(bool ok,string detail)=>log.Add((ok?"PASS ":"FAIL ")+detail);
++            Check(ownWalk&&remoteWalk,"both local and remote walk animation activates during movement");Check(ownIdle&&remoteIdle,"both local and remote return to idle after stopping");
++            for(int k=1;k<=9;k++)Check(accepted.Contains(k),role+" receives own accepted action or passive equipment for "+(WeaponKind)k);
++            foreach(int g in new[]{0,1})Check(frozen.Contains(g),role+" receives actual ice cream freeze for global "+g);
++            Check(controlled.Contains(1),role+" receives authoritative boxing knockback on guest");
++            File.WriteAllLines(directory+"evidence/sync-connected-"+label+"-"+role+".txt",log);File.WriteAllLines(directory+"evidence/sync-connected-"+label+"-"+role+".csv",rows);
++            Debug.Log("SYNC_CONNECTED_"+label+"_"+role+": "+string.Join("\n",log));
++        }
++        finally{Set("latencyProof",false);Application.runInBackground=background;Application.targetFrameRate=fps;QualitySettings.vSyncCount=vsync;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;}
++    }
++}

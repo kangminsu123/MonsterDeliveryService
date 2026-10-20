@@ -1,0 +1,469 @@
+--- Assets/Gameplay/DeliveryNetwork.cs before request
++++ Assets/Gameplay/DeliveryNetwork.cs after request
+@@ -67,6 +67,7 @@
+         public int boxingPunches, actionKind, actionSlot;
+         public bool throwReleased, plungerFlying;
+         public int[] items = new int[SlotCount];
++        public int[] ammo = new int[SlotCount];
+         public float stun, frozen, shield, shieldBreak = -10, speed, slow, ink, progress;
+     }
+     [Serializable] sealed class NetShot { public string id; public int kind; public Vector3 position, velocity, acceleration; public Quaternion rotation; }
+@@ -146,7 +147,7 @@
+         ResetNetPrediction(true);
+         ResetNetDiagnostics();
+         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
+-        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 3, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
++        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 4, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
+         netManager.ConnectionApprovalCallback = (request, response) =>
+         {
+@@ -250,7 +251,7 @@
+         if (kind == "hello") { var n = JsonUtility.FromJson<NetInput>(json).name ?? "배달원"; netPlayers[slot].name = n.Substring(0,Mathf.Min(n.Length,16)).Replace("\n", " ").Replace("\r", " "); NetBroadcast(); }
+         if (kind == "start" && slot == 0) StartNetCountdown(true);
+         if (kind == "reset" && slot == 0 && NetDevelopment) StartNetRound();
+-        if (kind == "item" && NetDevelopment && NetPlaying) { var i = JsonUtility.FromJson<NetInput>(json); if (i.slot >= 1 && i.slot <= 9) netPlayers[slot].items[netPlayers[slot].selected] = i.slot; }
++        if (kind == "item" && NetDevelopment && NetPlaying) { var i = JsonUtility.FromJson<NetInput>(json); if (i.slot >= 1 && i.slot <= 9) GiveNetItem(slot,netPlayers[slot].selected,i.slot); }
+     }
+ 
+     void NetMenuWorld()
+@@ -296,7 +297,7 @@
+             actor.transform.rotation=Quaternion.Euler(0,p.team==0?90:270,0);
+             var state=new DeliveryItemState { safePosition=actor.transform.position };
+             if(g==0)playerItems=state;else botItems[g-1]=state;
+-            p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new int[SlotCount];p.selected=0;p.actionAt=-10;
++            p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new int[SlotCount];p.ammo=new int[SlotCount];p.selected=0;p.actionAt=-10;
+             netInputs[g]=new NetInput {yaw=p.team==0?90:270,slot=0};
+             p.used=p.dashed=p.dropped=p.inputAck=0;p.dashRemaining=0;
+             p.boxingPunches=p.actionKind=p.actionSlot=0;
+@@ -323,7 +324,7 @@
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             LatencyProofInput();
+ #endif
+-            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();UpdateItemAreas();
++            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();CleanupNetItemUses();UpdateItemAreas();
+                 if(Time.time>=netRoundUntil){RoomState=RoomPhase.Results;finished=true;netNotice="";NetBroadcast();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}}
+             else {PredictNetLocalMovement();InterpolateNetRemotes();UpdateNetShotViews(Time.time,Time.deltaTime);}
+             SyncHostInventory(); UpdateCameraForNet(); UpdateInteraction();
+@@ -408,7 +409,7 @@
+     void SyncHostInventory()
+     {
+         var p=netPlayers[netOwn];if(p==null)return;
+-        for(int i=0;i<3;i++)inventory[i]=(WeaponKind)p.items[i];selectedSlot=p.selected;stamina=p.stamina;
++        for(int i=0;i<3;i++){inventory[i]=(WeaponKind)p.items[i];weaponAmmo[i]=p.ammo[i];}selectedSlot=p.selected;stamina=p.stamina;
+         captureTarget=p.target;captureStarted=Time.time-p.progress*(Selected==WeaponKind.WorkGloves?1.5f:3);
+         for(int g=0;g<4;g++)if(netPlayers[g]!=null&&colors[NetLocal(g)]!=CoatColors[netPlayers[g].color])SetPlayerColor(NetLocal(g),CoatColors[netPlayers[g].color]);
+     }
+--- Assets/Gameplay/DeliveryNetworkGameplay.cs before request
++++ Assets/Gameplay/DeliveryNetworkGameplay.cs after request
+@@ -4,7 +4,7 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype
+ {
+-    sealed class NetMelee { public int source, kind; public float at; }
++    sealed class NetMelee { public int source, kind, slot; public float at, started; }
+     sealed class NetPlunger { public int source; public float distance; public bool returning; public GameObject model; public Vector3 velocity; }
+     readonly List<NetMelee> netMelee = new();
+     readonly List<NetPlunger> netPlungers = new();
+@@ -13,6 +13,32 @@
+     readonly Vector3[] netLastPositions = new Vector3[4];
+     readonly float[] netWalkingUntil = new float[4];
+ 
++    void GiveNetItem(int g,int slot,int kind)
++    {
++        var p=netPlayers[g];p.items[slot]=kind;p.ammo[slot]=Ammo((WeaponKind)kind);
++        if(p.actionSlot==slot)p.actionKind=0;
++    }
++    void ConsumeNetItem(int g,int slot,bool finishMotion=false)
++    {
++        var p=netPlayers[g];p.ammo[slot]=Mathf.Max(0,p.ammo[slot]-1);
++        if(p.ammo[slot]==0&&!finishMotion)p.items[slot]=0;
++    }
++    void CleanupNetItemUses()
++    {
++        for(int g=0;g<4;g++)
++        {
++            var p=netPlayers[g];if(p==null||!p.connected)continue;
++            float duration=p.actionKind==1?GlovePushDuration:p.actionKind==3?HammerDuration:IsHandThrown((WeaponKind)p.actionKind)?HandThrowDuration:0;
++            for(int slot=0;slot<SlotCount;slot++)
++            {
++                if(p.items[slot]==0||p.ammo[slot]>0)continue;
++                if(p.items[slot]==2&&netPlungers.Any(s=>s.source==g))continue;
++                if(p.actionSlot==slot&&p.actionKind==p.items[slot]&&Time.time-p.actionAt<duration)continue;
++                p.items[slot]=0;
++            }
++        }
++    }
++
+     Vector3 NetAim(int g) { var input=netInputs[g];return Quaternion.Euler(input?.pitch??0,input?.yaw??0,0)*Vector3.forward; }
+     Vector3 NetEye(int g) => (g==0?playerVisual:botVisuals[g-1]).EyePosition;
+     bool NetRay(int source,Vector3 origin,Vector3 direction,float range,float radius,out Collider collider,out Vector3 point,out Vector3 normal)
+@@ -50,7 +76,7 @@
+         var p=netPlayers[g];var state=ActorState(g);bool locked=state.Stunned(Time.time);
+         bool flying=netPlungers.Any(s=>s.source==g);
+         if(!locked&&!flying&&p.selected!=input.slot){p.selected=input.slot;p.target=-1;}
+-        if(input.drop!=p.dropped){p.dropped=input.drop;if(!locked){p.items[p.selected]=0;p.target=-1;foreach(var shot in netPlungers.Where(s=>s.source==g).ToArray()){Destroy(shot.model);netPlungers.Remove(shot);}}}
++        if(input.drop!=p.dropped){p.dropped=input.drop;if(!locked){p.items[p.selected]=0;p.ammo[p.selected]=0;p.target=-1;foreach(var shot in netPlungers.Where(s=>s.source==g).ToArray()){Destroy(shot.model);netPlungers.Remove(shot);}}}
+         SimulateNetMovement(ActorController(g),state,p,input,dt,true);
+         if(input.use!=p.used){p.used=input.use;if(!locked&&p.dashRemaining<=0)UseNetWeapon(g);}
+     }
+@@ -64,32 +90,32 @@
+         if(parcel)
+         {
+             p.target=-1;int empty=System.Array.IndexOf(p.items,0);
+-            if(empty>=0&&parcel.TryCollect()){p.items[empty]=Random.Range(1,10);p.selected=empty;}
++            if(empty>=0&&parcel.TryCollect()){GiveNetItem(g,empty,Random.Range(1,10));p.selected=empty;}
+             return;
+         }
+         int house=System.Array.FindIndex(mailboxes,m=>m==target.gameObject);
+         if(house<0||owner[house]>=0&&netPlayers[owner[house]].team==p.team){p.target=-1;return;}
+         if(p.target!=house){p.target=house;p.captureAt=Time.time;}
+         if(Time.time-p.captureAt>=(p.items[p.selected]==8?1.5f:3))
+-        {owner[house]=g;SetMailboxEffectColor(house,CaptureColor(g));p.target=-1;}
++        {owner[house]=g;SetMailboxEffectColor(house,CaptureColor(g));p.target=-1;if(p.items[p.selected]==8)ConsumeNetItem(g,p.selected);}
+     }
+     void UseNetWeapon(int g)
+     {
+         var p=netPlayers[g];if(Time.time<p.cooldown||netPlungers.Any(s=>s.source==g)||netHandThrows.Any(s=>s.source==g)||ActorState(g).Stunned(Time.time))return;
+-        int kind=p.items[p.selected];if(kind==0||kind==8)return;
++        int kind=p.items[p.selected];if(kind==0||kind==8||p.ammo[p.selected]<=0)return;
+         p.cooldown=Time.time+(kind==3?.75f:kind==2?.7f:.6f);p.actionAt=Time.time;p.target=-1;
+         p.actionKind=kind;p.actionSlot=p.selected;
+         p.throwReleased=false;
+         if(kind==(int)WeaponKind.BoxingGloves)p.boxingPunches++;
+         ActorState(g).busyUntil=Time.time+.5f;
+-        if(kind==6){ActivateRunningShoes(g);return;}if(kind==7){ActivateBubbleWrap(g);return;}
+-        if(kind==1||kind==3){netMelee.Add(new NetMelee{source=g,kind=kind,at=Time.time+(kind==1?.16f:.18f)});return;}
++        if(kind==6){ActivateRunningShoes(g);ConsumeNetItem(g,p.selected);return;}if(kind==7){ActivateBubbleWrap(g);ConsumeNetItem(g,p.selected);return;}
++        if(kind==1||kind==3){netMelee.Add(new NetMelee{source=g,kind=kind,slot=p.selected,started=p.actionAt,at=Time.time+(kind==1?.16f:.18f)});return;}
+         if(IsHandThrown((WeaponKind)kind))
+         {
+             ActorState(g).busyUntil=Time.time+HandThrowDuration;
+             netHandThrows.Add(new NetHandThrow{source=g,kind=(WeaponKind)kind,slot=p.selected,started=Time.time});return;
+         }
+-        LaunchNetProjectile(g,kind);
++        ConsumeNetItem(g,p.selected,true);LaunchNetProjectile(g,kind);
+     }
+     void LaunchNetProjectile(int g,int kind)
+     {
+@@ -118,7 +144,8 @@
+         foreach(var attack in netMelee.Where(a=>Time.time>=a.at).ToArray())
+         {
+             netMelee.Remove(attack);int g=attack.source;var p=netPlayers[g];
+-            if(!p.connected||ActorState(g).Stunned(Time.time)||p.items[p.selected]!=attack.kind||Time.time<p.dashUntil)continue;
++            if(!p.connected||ActorState(g).Stunned(Time.time)||p.selected!=attack.slot||p.items[attack.slot]!=attack.kind||p.actionAt!=attack.started||p.actionKind!=attack.kind||Time.time<p.dashUntil)continue;
++            ConsumeNetItem(g,attack.slot,true);
+             var origin=NetEye(g);var aim=NetAim(g);
+             if(!NetRay(g,origin,aim,attack.kind==1?5:3.5f,attack.kind==1?.01f:.32f,out var hit,out _,out _))continue;
+             for(int target=0;target<4;target++)if(ActorController(target)==hit&&NetCanHit(g,target))
+--- Assets/Gameplay/DeliveryNetworkLatencyProof.cs before request
++++ Assets/Gameplay/DeliveryNetworkLatencyProof.cs after request
+@@ -111,7 +111,7 @@
+         HostRoom();yield return null;
+         try
+         {
+-            ProofCheck(netManager.NetworkConfig.ProtocolVersion==3,"protocol3 separates the new input and frame format");
++            ProofCheck(netManager.NetworkConfig.ProtocolVersion==4,"protocol4 separates snapshots with finite item uses");
+             netFrameSequence=71;netLastFrameSequence=65;ResetNetPrediction();
+             ProofCheck(netFrameSequence==71&&netLastFrameSequence==65,"round reset preserves monotonic snapshot sequence");
+             NetTeamSize=1;netPlayers[0].name="Host";netPlayers[0].color=2;
+--- Assets/Gameplay/DeliveryNetworkUI.cs before request
++++ Assets/Gameplay/DeliveryNetworkUI.cs after request
+@@ -138,7 +138,7 @@
+         GUILayout.Label("송/수신 "+netSendKB.ToString("F1")+" / "+netReceiveKB.ToString("F1")+"KB/s");
+         GUILayout.Label("동기화 처리 "+netWorkMs.ToString("F3")+"ms · 할당 "+(netAllocAvailable?(netWorkAlloc/1024).ToString("F1")+"KB":"N/A"));
+         if(NetServer&&GUILayout.Button("경기 초기화"))StartNetRound();
+-        for(int i=1;i<=9;i++){int item=i;if(GUILayout.Button(ItemName((WeaponKind)item))){if(NetServer)netPlayers[0].items[netPlayers[0].selected]=item;else SendNet("item",new NetInput{slot=item},Unity.Netcode.NetworkManager.ServerClientId);}}
++        for(int i=1;i<=9;i++){int item=i;if(GUILayout.Button(ItemName((WeaponKind)item))){if(NetServer)GiveNetItem(0,netPlayers[0].selected,item);else SendNet("item",new NetInput{slot=item},Unity.Netcode.NetworkManager.ServerClientId);}}
+         GUILayout.EndArea();GUI.matrix=old;
+     }
+ }
+--- Assets/Gameplay/GloveCombat.cs before request
++++ Assets/Gameplay/GloveCombat.cs after request
+@@ -38,6 +38,7 @@
+         if (!boxingHit && elapsed >= GloveHitDelay)
+         {
+             boxingHit = true;
++            ConsumeSelectedUse(true);
+             // Constant horizontal drag and gravity make travel proportional to initial speed squared.
+             float distanceScale = Mathf.Sqrt(3);
+             HitGloveTarget(18 * distanceScale, 6 * distanceScale);
+@@ -62,7 +63,9 @@
+ 
+     void FinishGlovePush()
+     {
++        int slot = boxingSlot;
+         boxingSlot = -1;
+         if (heldItem && !thirdPersonPreview) heldItem.PushFirstPerson(0, boxingRightHand);
++        if (slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
+     }
+ }
+--- Assets/Gameplay/HandThrowMotion.cs before request
++++ Assets/Gameplay/HandThrowMotion.cs after request
+@@ -55,16 +55,22 @@
+     {
+         if (handThrowSlot < 0) return;
+         if (!started || finished || mapEditMode || selectedSlot != handThrowSlot || Selected != handThrowKind || playerItems.Stunned(Time.time) || Time.time < rollUntil)
+-        { handThrowSlot = -1; return; }
++        { FinishHandThrow(); return; }
+         float age = Time.time - handThrowStarted;
+         if (!handThrowReleased && age >= HandThrowRelease)
+         {
+             handThrowReleased = true;
+             if (handThrowKind == WeaponKind.IceCream) MakeIceCreamShot(cam.transform.forward);
+             else MakeShot(cam.transform.forward, handThrowKind == WeaponKind.FountainPen ? 48 : 18, handThrowKind);
+-            Consume();
++            ConsumeSelectedUse(true);
+         }
+-        if (age >= HandThrowDuration) handThrowSlot = -1;
++        if (age >= HandThrowDuration) FinishHandThrow();
++    }
++
++    void FinishHandThrow()
++    {
++        int slot = handThrowSlot; handThrowSlot = -1;
++        if (slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
+     }
+ 
+     void PoseHandThrow()
+@@ -89,6 +95,7 @@
+             if (Time.time - shot.started < HandThrowRelease) continue;
+             netHandThrows.Remove(shot); p.throwReleased = true;
+             LaunchNetProjectile(shot.source, (int)shot.kind);
++            ConsumeNetItem(shot.source, shot.slot, true);
+         }
+     }
+ }
+--- Assets/Gameplay/MonsterDeliveryPrototype.cs before request
++++ Assets/Gameplay/MonsterDeliveryPrototype.cs after request
+@@ -6,7 +6,7 @@
+ 
+ public sealed partial class MonsterDeliveryPrototype : MonoBehaviour
+ {
+-    static readonly bool UnlimitedItems = true; // Temporary unlimited uses/battery for item testing.
++    static readonly bool UnlimitedItems = false;
+     const int HouseCount = 10, BotCount = 3, SlotCount = 3;
+     readonly Color[] colors = { Color.yellow, new(1f, .25f, .25f), new(.95f, .75f, .1f), new(.65f, .3f, 1f) };
+     readonly GameObject[] mailboxes = new GameObject[HouseCount], houses = new GameObject[HouseCount], bots = new GameObject[BotCount], pickups = new GameObject[10];
+@@ -404,9 +404,9 @@
+         WeaponKind.BubbleWrap => "에어캡", WeaponKind.WorkGloves => "작업용 장갑",
+         WeaponKind.FountainPen => "만년필", _ => "빈손"
+     };
+-    string ItemRemainingText(int slot) => UnlimitedItems || inventory[slot] == WeaponKind.BoxingGloves ? "무제한" : weaponAmmo[slot] + "회";
++    string ItemRemainingText(int slot) => weaponAmmo[slot] + "회";
+     string SlotText(int slot) => inventory[slot] == WeaponKind.None ? "빈손" : ItemName(inventory[slot]) + " " + ItemRemainingText(slot);
+-    int Ammo(WeaponKind item) => item switch { WeaponKind.Plunger => 3, WeaponKind.ToyHammer or WeaponKind.Slime or WeaponKind.FountainPen or WeaponKind.IceCream => 2, WeaponKind.None or WeaponKind.BoxingGloves => 0, _ => 1 };
++    int Ammo(WeaponKind item) => item switch { WeaponKind.BoxingGloves or WeaponKind.Plunger => 3, WeaponKind.ToyHammer or WeaponKind.Slime or WeaponKind.FountainPen or WeaponKind.IceCream => 2, WeaponKind.None => 0, _ => 1 };
+     readonly int[] weaponAmmo = new int[SlotCount];
+ 
+     float CaptureSeconds => Selected == WeaponKind.WorkGloves ? 1.5f : 3;
+@@ -421,12 +421,14 @@
+         }
+     }
+     void ClearSlot(int slot) { if (handThrowSlot == slot) handThrowSlot = -1; if (plungerSlot == slot) FinishPlungerThrow(); inventory[slot] = WeaponKind.None; weaponAmmo[slot] = 0; weaponSeconds[slot] = 0; if (armedGloveSlot == slot) armedGloveSlot = -1; if (boxingSlot == slot) boxingSlot = -1; if (hammerSlot == slot) FinishToyHammerSwing(); if (selectedSlot == slot) { captureTarget = -1; captureStarted = 0; } }
+-    void Consume() { if (!UnlimitedItems && --weaponAmmo[selectedSlot] <= 0) ClearSlot(selectedSlot); }
++    void Consume() => ConsumeSelectedUse(false);
++    void ConsumeSelectedUse(bool finishMotion) { weaponAmmo[selectedSlot] = Mathf.Max(0, weaponAmmo[selectedSlot] - 1); if (weaponAmmo[selectedSlot] == 0 && !finishMotion) ClearSlot(selectedSlot); }
+     void DropSelectedWeapon() { if (Selected == WeaponKind.None) return; feedback = ItemName(Selected) + "을 버렸습니다."; ClearSlot(selectedSlot); }
+     void UseWeapon()
+     {
+         if ((!itemPlaytestEnabled && Selected != WeaponKind.BoxingGloves && Selected != WeaponKind.Plunger && Selected != WeaponKind.RunningShoes && Selected != WeaponKind.BubbleWrap && Selected != WeaponKind.FountainPen && Selected != WeaponKind.Slime && Selected != WeaponKind.ToyHammer && Selected != WeaponKind.IceCream) || !started || finished || playerItems.Stunned(Time.time) || Selected == WeaponKind.None || Time.time < nextAttackAt || boxingSlot >= 0 || plungerSlot >= 0 || hammerSlot >= 0) return;
+         if (handThrowSlot >= 0) return;
++        if (weaponAmmo[selectedSlot] <= 0) return;
+         var kind = Selected;
+         if (kind == WeaponKind.WorkGloves) return; // Wearing the selected gloves shortens capture without a separate click.
+         if (kind == WeaponKind.BoxingGloves) { StartGlovePush(); return; }
+--- Assets/Gameplay/ToyHammerCombat.cs before request
++++ Assets/Gameplay/ToyHammerCombat.cs after request
+@@ -32,7 +32,7 @@
+         if (!started || finished || mapEditMode || Selected != WeaponKind.ToyHammer || playerItems.Stunned(Time.time) || Time.time < rollUntil)
+         { FinishToyHammerSwing(); return; }
+         float age = Time.time - hammerStarted;
+-        if (!hammerHit && age >= HammerHitDelay) { hammerHit = true; HitToyHammerTarget(); }
++        if (!hammerHit && age >= HammerHitDelay) { hammerHit = true; ConsumeSelectedUse(true); HitToyHammerTarget(); }
+         if (age >= HammerDuration) FinishToyHammerSwing();
+     }
+ 
+@@ -75,8 +75,10 @@
+ 
+     void FinishToyHammerSwing()
+     {
++        int slot = hammerSlot;
+         hammerSlot = -1;
+         if (heldKind == WeaponKind.ToyHammer && heldItem && !thirdPersonPreview) heldItem.FirstPerson();
++        if (slot >= 0 && weaponAmmo[slot] <= 0) ClearSlot(slot);
+     }
+ 
+     void UpdateStunFX()
+--- /dev/null
++++ Assets/Editor/ItemUsageCheck.cs
+@@ -0,0 +1,170 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using UnityEditor;
++using UnityEngine;
++using UnityEngine.InputSystem;
++using UnityEngine.InputSystem.LowLevel;
++
++public static class ItemUsageCheck
++{
++    const BindingFlags Flags=BindingFlags.NonPublic|BindingFlags.Instance;
++    [MenuItem("Tools/Gameplay/Inventory/Verify Limited Uses")]
++    public static void Verify()
++    {
++        if(!EditorApplication.isPlaying)throw new InvalidOperationException("Fresh Play required");
++        var game=UnityEngine.Object.FindAnyObjectByType<MonsterDeliveryPrototype>();game.StartCoroutine(Run(game));
++    }
++    static IEnumerator Run(MonsterDeliveryPrototype game)
++    {
++        const string folder="Docs/ChangeRecords/20261018/";
++        var type=game.GetType();object Get(string n)=>type.GetField(n,Flags).GetValue(game);
++        void Set(string n,object v)=>type.GetField(n,Flags).SetValue(game,v);
++        object Call(string n,params object[] args)=>type.GetMethod(n,Flags).Invoke(game,args);
++        var log=new List<string>{DateTimeOffset.Now.ToString("O"),"Real Play use/cancel/depletion paths. Network uses real host initialization, controlled player records and serialized participant frames; not separate network processes."};
++        void Check(bool ok,string text){log.Add((ok?"PASS ":"FAIL ")+text);}
++        int[] limits={0,3,3,2,2,2,1,1,1,2};
++        var inventory=(WeaponKind[])Get("inventory");var ammo=(int[])Get("weaponAmmo");
++        var player=(CharacterController)Get("player");var cam=(Camera)Get("cam");
++        var mailboxes=(GameObject[])Get("mailboxes");var originalMailbox=mailboxes[0];var owners=(int[])Get("owner");
++        GameObject mailbox=null,floor=null;bool oldEnabled=game.enabled;
++        void ClearLocal(){for(int i=0;i<3;i++)Call("ClearSlot",i);Set("playerItems",new DeliveryItemState());Set("nextAttackAt",0f);Set("rollUntil",0f);}
++        void Equip(int kind){ClearLocal();Call("AddWeapon",(WeaponKind)kind);Call("UpdateHeldWeapon");}
++        void Age(string field,float age){Set(field,Time.time-age);}
++        void AdvanceLocal(int kind,bool finish)
++        {
++            if(kind==1){Age("boxingStarted",finish?.5f:.17f);Call("UpdateGlovePush");}
++            else if(kind==3){Age("hammerStarted",finish?.5f:.19f);Call("UpdateToyHammerSwing");}
++            else if(kind==2){if(finish)Call("FinishPlungerThrow");else{Age("plungerStarted",.13f);Call("UpdatePlungerThrow");}}
++            else if(kind==4||kind==5||kind==9){Age("handThrowStarted",finish?.56f:.23f);Call("UpdateHandThrow");}
++        }
++        try
++        {
++            game.enabled=false;game.NetworkScreens=false;game.mapEditMode=false;game.thirdPersonPreview=false;
++            Set("started",true);Set("finished",false);EditorApplication.update+=EditorApplication.QueuePlayerLoopUpdate;
++            floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=new Vector3(0,149.9f,0);floor.transform.localScale=new Vector3(100,.2f,100);
++            player.enabled=false;player.transform.SetPositionAndRotation(new Vector3(0,151,0),Quaternion.identity);player.enabled=true;
++            cam.transform.rotation=Quaternion.Euler(-30,0,0);Call("PositionCamera");
++            for(int kind=1;kind<=9;kind++)
++            {
++                Equip(kind);Check(ammo[0]==limits[kind]&&(string)Call("ItemRemainingText",0)==limits[kind]+"회",((WeaponKind)kind)+" offline grant and HUD match limit "+limits[kind]);
++                if(kind==8)continue;
++                for(int use=1;use<=limits[kind];use++)
++                {
++                    Set("nextAttackAt",0f);Call("UseWeapon");
++                    if(kind!=6&&kind!=7)Check(ammo[0]==limits[kind]-use+1,((WeaponKind)kind)+" windup does not spend before release/hit "+use);
++                    AdvanceLocal(kind,false);
++                    Check(ammo[0]==limits[kind]-use,((WeaponKind)kind)+" offline spends exactly one use "+use);
++                    if(kind!=6&&kind!=7)
++                    {
++                        Check(inventory[0]==(WeaponKind)kind,((WeaponKind)kind)+" stays through current motion/return "+use);
++                        AdvanceLocal(kind,true);
++                    }
++                }
++                Check(inventory[0]==WeaponKind.None,((WeaponKind)kind)+" offline slot clears on final completion");
++                if(kind==6||kind==7){var s=(DeliveryItemState)Get("playerItems");Check(kind==6?s.speedUntil>Time.time:s.shieldUntil>Time.time,((WeaponKind)kind)+" active effect survives item consumption");}
++            }
++            foreach(int kind in new[]{1,2,3,4,5,9})
++            {
++                Equip(kind);Call("UseWeapon");((DeliveryItemState)Get("playerItems")).stunUntil=Time.time+1;
++                AdvanceLocal(kind,false);Check(ammo[0]==limits[kind],((WeaponKind)kind)+" interrupted windup preserves use");
++            }
++            Equip(8);mailbox=GameObject.CreatePrimitive(PrimitiveType.Cube);mailbox.name="Item Usage Review Mailbox";
++            mailbox.transform.position=((DeliveryRobotVisual)Get("playerVisual")).EyePosition+Vector3.forward*2;mailbox.transform.localScale=new Vector3(.5f,.8f,.4f);
++            var interaction=mailbox.AddComponent<InteractionTarget>();mailboxes[0]=mailbox;owners[0]=-1;
++            Set("focusedTarget",interaction);Set("interactionReady",true);Set("captureTarget",0);Age("captureStarted",.7f);
++            var keyboard=Keyboard.current;InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.E));InputSystem.Update();Call("UpdateCapture",keyboard);
++            Check(ammo[0]==1&&owners[0]==-1,"offline work gloves preserve use during incomplete capture");
++            Age("captureStarted",1.51f);Call("UpdateCapture",keyboard);
++            Check(owners[0]==0&&ammo[0]==0&&inventory[0]==WeaponKind.None,"offline work gloves consume only after successful capture");
++            InputSystem.QueueStateEvent(keyboard,new KeyboardState());InputSystem.Update();
++            Call("ClearActiveNetShots");Call("ClearSlimePuddles");Call("ClearIceCreamMarks");
++            ClearLocal();Call("AddWeapon",WeaponKind.BoxingGloves);Call("AddWeapon",WeaponKind.IceCream);Call("AddWeapon",WeaponKind.WorkGloves);Set("selectedSlot",0);cam.transform.rotation=Quaternion.identity;Call("PositionCamera");
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_offline.png");game.enabled=false;
++            game.NetworkScreens=true;game.HostRoom();yield return null;
++            var players=(MonsterDeliveryPrototype.NetPlayer[])Get("netPlayers");
++            for(int g=1;g<4;g++)players[g]=new MonsterDeliveryPrototype.NetPlayer{connected=true,team=g%2,color=g,name="Review "+g};
++            game.StartNetRound();
++            Check(((Unity.Netcode.NetworkManager)Get("netManager")).NetworkConfig.ProtocolVersion==4,"protocol4 requires peers with use counters");
++            Check(players.All(p=>p.ammo.All(x=>x==0)&&p.items.All(x=>x==0)),"network round starts with empty items and zero counters");
++            for(int g=0;g<4;g++)
++            {
++                var actor=g==0?player:((CharacterController[])Get("botControllers"))[g-1];actor.enabled=false;actor.transform.position=new Vector3(g*8,151,0);actor.enabled=true;
++                ((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[g]=new MonsterDeliveryPrototype.NetInput{pitch=-40};
++            }
++            foreach(int g in new[]{0,1})for(int kind=1;kind<=9;kind++)
++            {
++                Call("ClearNetPlungers");var p=players[g];p.selected=0;p.cooldown=0;p.actionKind=0;p.actionAt=-10;
++                if(g==0)Set("playerItems",new DeliveryItemState());else ((DeliveryItemState[])Get("botItems"))[g-1]=new DeliveryItemState();
++                Call("GiveNetItem",g,0,kind);Check(p.ammo[0]==limits[kind],"server player"+g+" grants "+(WeaponKind)kind+" with correct uses");
++                if(kind==8){Call("UseNetWeapon",g);Check(p.ammo[0]==1,"work gloves click is passive and does not spend");continue;}
++                for(int use=1;use<=limits[kind];use++)
++                {
++                    p.cooldown=0;Call("UseNetWeapon",g);
++                    if(kind==1||kind==3)
++                    {
++                        foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);
++                        Call("UpdateNetMelee");Call("UpdateNetMelee");
++                    }
++                    if(kind==4||kind==5||kind==9)
++                    {
++                        p.actionAt=Time.time-.23f;
++                        foreach(var a in (IEnumerable)Get("netHandThrows"))a.GetType().GetField("started").SetValue(a,p.actionAt);
++                        Call("UpdateNetHandThrows");Call("UpdateNetHandThrows");
++                    }
++                    Check(p.ammo[0]==limits[kind]-use,"server player"+g+" "+(WeaponKind)kind+" spends once "+use);
++                    Call("CleanupNetItemUses");
++                    if(kind!=6&&kind!=7)Check(p.items[0]==kind,"server final action/return is retained "+g+" "+(WeaponKind)kind+" "+use);
++                    if(kind==2)
++                    {
++                        foreach(var a in (IEnumerable)Get("netPlungers")){var t=a.GetType();t.GetField("returning").SetValue(a,true);((GameObject)t.GetField("model").GetValue(a)).transform.position=g==0?((DeliveryRobotVisual)Get("playerVisual")).EyePosition:((DeliveryRobotVisual[])Get("botVisuals"))[g-1].EyePosition;}
++                        Call("UpdateNetPlungers");
++                    }
++                    p.actionAt=Time.time-2;Call("CleanupNetItemUses");
++                }
++                Check(p.items[0]==0,"server clears final slot "+g+" "+(WeaponKind)kind);
++                float action=p.actionAt;p.cooldown=0;Call("UseNetWeapon",g);Check(p.actionAt==action,"depleted item cannot be reused "+g+" "+(WeaponKind)kind);
++            }
++            foreach(int kind in new[]{1,3,4,5,9})
++            {
++                var p=players[1];p.cooldown=0;p.selected=0;((DeliveryItemState[])Get("botItems"))[0]=new DeliveryItemState();Call("GiveNetItem",1,0,kind);Call("UseNetWeapon",1);
++                ((DeliveryItemState[])Get("botItems"))[0].stunUntil=Time.time+1;
++                foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);
++                Call("UpdateNetMelee");Call("UpdateNetHandThrows");
++                Check(p.ammo[0]==limits[kind],"server canceled windup preserves "+(WeaponKind)kind+" uses");
++            }
++            Set("playerItems",new DeliveryItemState());var host=players[0];host.cooldown=0;host.selected=0;
++            Call("GiveNetItem",0,0,1);Call("GiveNetItem",0,1,1);Call("UseNetWeapon",0);host.selected=1;
++            foreach(var a in (IEnumerable)Get("netMelee"))a.GetType().GetField("at").SetValue(a,Time.time-1);Call("UpdateNetMelee");
++            Check(host.ammo[0]==3&&host.ammo[1]==3,"switching to a duplicate item cannot spend the wrong slot");
++            host.selected=0;host.cooldown=0;host.ammo[0]=0;float oldAction=host.actionAt;Call("UseNetWeapon",0);Check(host.actionAt==oldAction,"zero-use item cannot start a new action before cleanup");
++            Call("GiveNetItem",0,0,8);host.selected=0;host.target=0;host.captureAt=Time.time-.7f;owners[0]=-1;
++            Set("playerItems",new DeliveryItemState());var netInput=((MonsterDeliveryPrototype.NetInput[])Get("netInputs"))[0];netInput.pitch=0;netInput.yaw=0;
++            mailbox.transform.position=((DeliveryRobotVisual)Get("playerVisual")).EyePosition+Vector3.forward*2;Physics.SyncTransforms();Call("NetCaptureAndPickup",0,true);
++            Check(host.ammo[0]==1&&owners[0]==-1,"server incomplete capture does not spend work gloves");
++            host.captureAt=Time.time-1.51f;Call("NetCaptureAndPickup",0,true);
++            Check(owners[0]==0&&host.items[0]==0&&host.ammo[0]==0,"server successful capture spends work gloves");
++            Call("GiveNetItem",1,0,2);Call("ConsumeNetItem",1,0,true);Call("GiveNetItem",1,1,5);Call("ConsumeNetItem",1,1,true);Call("GiveNetItem",1,2,8);
++            Call("ClearNetPlungers");Call("ClearActiveNetShots");
++            var frameType=type.GetNestedType("NetFrame",BindingFlags.NonPublic);var frame=Activator.CreateInstance(frameType);
++            void Field(string n,object v)=>frameType.GetField(n).SetValue(frame,v);
++            Field("players",players);Field("own",1);Field("phase",(int)MonsterDeliveryPrototype.RoomPhase.Playing);Field("teamSize",2);Field("remaining",180f);Field("owners",Enumerable.Repeat(-1,10).ToArray());Field("parcels",((ParcelSpawnPool)Get("parcelPool")).CaptureSlots());
++            frame=JsonUtility.FromJson(JsonUtility.ToJson(frame),frameType);game.LeaveRoom();Field("sequence",(int)Get("netLastFrameSequence")+1);Call("ApplyNetFrame",frame);Call("UpdateHeldWeapon");
++            Check(ammo.SequenceEqual(new[]{2,1,1}),"serialized participant frame restores remaining uses 2/1/1");
++            Check((string)Call("ItemRemainingText",0)=="2회"&&(string)Call("ItemRemainingText",1)=="1회","participant HUD shows finite server counters");
++            game.enabled=true;yield return null;yield return new WaitForEndOfFrame();Capture(folder+"images/20261018_item_uses_participant.png");game.enabled=false;
++        }
++        finally
++        {
++            File.WriteAllLines(folder+"evidence/item-usage-check.txt",log);mailboxes[0]=originalMailbox;if(mailbox)UnityEngine.Object.Destroy(mailbox);if(floor)UnityEngine.Object.Destroy(floor);
++            if(Keyboard.current!=null){InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState());InputSystem.Update();}
++            game.LeaveRoom();game.enabled=oldEnabled;EditorApplication.update-=EditorApplication.QueuePlayerLoopUpdate;
++        }
++        Debug.Log("ITEM_USAGE: "+log.Count(x=>x.StartsWith("PASS "))+" PASS / "+log.Count(x=>x.StartsWith("FAIL "))+" FAIL");
++        if(log.Any(x=>x.StartsWith("FAIL ")))throw new Exception("ITEM_USAGE_FAILED");
++    }
++    static void Capture(string path){var image=ScreenCapture.CaptureScreenshotAsTexture();try{File.WriteAllBytes(path,image.EncodeToPNG());}finally{UnityEngine.Object.Destroy(image);}}
++}

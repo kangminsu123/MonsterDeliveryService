@@ -1,0 +1,22 @@
+PASS 100 saved anchors and 50 pooled models
+PASS round starts with 50 distinct occupied anchors and 50 empty anchors
+PASS 200 new rounds keep 50 unique occupied anchors
+PASS new rounds vary their subsets and exercise every saved anchor
+PASS 1000 real TryCollect/refill cycles reduce to 49 then restore 50 without overlap
+PASS collected parcel cannot grant twice before refill
+PASS refill selects a different empty anchor instead of the consumed position
+PASS five pickups in one frame leave 45 parcels
+PASS same-frame pickups refill to 50 unique anchors
+PASS all fifty simultaneous pickups are represented
+PASS empty pool refills to fifty without duplicate anchors
+PASS models are reused with no instantiate/destroy churn
+PASS duplicate network slots rejected atomically
+PASS out-of-range network slot rejected
+PASS slots0 and64 coexist without a64-bit shift collision
+PASS duplicate upper-half slot rejected atomically
+PASS invalid negative slot rejected
+PASS client/menu cannot locally collect or roll replacement positions
+PASS valid occupancy snapshot restores positions and availability
+PASS all respawned boxes retain pickup colliders and availability
+PASS normal player-loop LateUpdate automatically replaces a pickup
+PASS review pickup removes one box before replacement

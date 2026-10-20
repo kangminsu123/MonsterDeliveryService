@@ -96,9 +96,9 @@ void OnGUI()
                 DrawMarker(image, MapPosition(box.transform.position), mailboxIcon, game.GetMailboxMapColor(index), 18);
             }
             var point = MapPosition(player.position);
-            var center = new Vector2(image.x + point.x * image.width, image.y + point.y * image.height);
+            var center = MarkerCenter(image, point, 22);
             var mapMatrix = GUI.matrix;
-            GUIUtility.RotateAroundPivot(player.eulerAngles.y, center);
+            GUI.matrix = PlayerMarkerMatrix(mapMatrix, center, player.eulerAngles.y);
             DrawMarker(image, point, playerIcon, game.LocalPlayerColor, 22);
             GUI.matrix = mapMatrix; GUI.color = Color.white;
             DeliveryUIArt.Image(new Rect(panel.x + 18, image.yMax + 8, 18, 18), "map_mailbox", game.LocalMailboxColor);
@@ -109,13 +109,20 @@ void OnGUI()
 
     static void DrawMarker(Rect image, Vector2 point, Texture2D icon, Color color, float size)
     {
-        float x = Mathf.Clamp(image.x + point.x * image.width, image.x + size * .5f, image.xMax - size * .5f);
-        float y = Mathf.Clamp(image.y + point.y * image.height, image.y + size * .5f, image.yMax - size * .5f);
+        var center = MarkerCenter(image, point, size);
+        float x = center.x, y = center.y;
         GUI.color = Color.black;
         GUI.DrawTexture(new Rect(x - size * .6f, y - size * .6f, size * 1.2f, size * 1.2f), icon);
         GUI.color = color;
         GUI.DrawTexture(new Rect(x - size * .5f, y - size * .5f, size, size), icon);
     }
+
+    static Vector2 MarkerCenter(Rect image, Vector2 point, float size) => new Vector2(
+        Mathf.Clamp(image.x + point.x * image.width, image.x + size * .5f, image.xMax - size * .5f),
+        Mathf.Clamp(image.y + point.y * image.height, image.y + size * .5f, image.yMax - size * .5f));
+
+    static Matrix4x4 PlayerMarkerMatrix(Matrix4x4 basis, Vector2 center, float yaw) =>
+        basis * Matrix4x4.Translate(center) * Matrix4x4.Rotate(Quaternion.Euler(0, 0, yaw)) * Matrix4x4.Translate(-center);
 
 void OnDestroy() { if (map) Destroy(map); }
 }

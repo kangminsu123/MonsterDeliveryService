@@ -1,0 +1,145 @@
+import sys
+sys.dont_write_bytecode=True
+from pathlib import Path
+import json,html,base64,csv,shutil
+from docx import Document
+from docx.shared import Inches,Pt
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+D=Path(__file__).resolve().parent.parent
+data=json.loads((D/'source/report_data.json').read_text(encoding='utf-8'))
+doc=Document(D/'source/report_template.docx')
+for child in list(doc._element.body):
+ if child.tag!=qn('w:sectPr'):doc._element.body.remove(child)
+for section in doc.sections:
+ section.top_margin=Inches(.65);section.bottom_margin=Inches(.65);section.left_margin=Inches(.7);section.right_margin=Inches(.7)
+ for area in (section.header,section.footer):
+  for p in area.paragraphs:p.text=''
+for name in ['Normal','Title','Heading 1','Heading 2','Caption']:
+ s=doc.styles[name];s.font.name='맑은 고딕';s.element.get_or_add_rPr().rFonts.set(qn('w:eastAsia'),'맑은 고딕')
+doc.styles['Normal'].font.size=Pt(9.5)
+doc.styles['Normal'].paragraph_format.space_after=Pt(4)
+doc.styles['Normal'].paragraph_format.line_spacing=1.05
+doc.styles['Title'].font.size=Pt(23)
+doc.styles['Heading 1'].font.size=Pt(15)
+doc.styles['Caption'].font.size=Pt(9)
+def p(text):doc.add_paragraph(text)
+def section(title,key):doc.add_heading(title,1);p(data[key])
+def pic(name,caption,width=6.1):
+ doc.add_paragraph().add_run().add_picture(str(D/'images'/name),width=Inches(width));doc.add_paragraph(caption,'Caption')
+doc.add_paragraph(data['title'],'Title');p(data['date']);p(data['summary'])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정한 방법','method'),('수정 후 해결 결과','result')]:section(title,key)
+doc.add_page_break();doc.add_heading('본인 화면의 수정 전후',1);p(data['capture_note'])
+pic('20261018_punch_before_right_local.png','수정 전 · 타격 순간에도 양손의 전진량은 0m였다.',5.6)
+t=doc.add_table(rows=1,cols=2);t.autofit=False
+borders=OxmlElement('w:tblBorders')
+for edge in ['top','left','bottom','right','insideH','insideV']:
+ e=OxmlElement('w:'+edge);e.set(qn('w:val'),'single');e.set(qn('w:sz'),'4');e.set(qn('w:color'),'D9D9D9');borders.append(e)
+t._tbl.tblPr.append(borders)
+for cell,(name,caption) in zip(t.rows[0].cells,data['images'][1:3]):
+ cell.width=Inches(3.25);cell.paragraphs[0].add_run().add_picture(str(D/'images'/name),width=Inches(3.1));cell.add_paragraph(caption,'Caption')
+p('기존 동작 시간 0.42초, 타격 시점 0.16초, 재사용 0.6초를 유지한다. 전진량은 카메라 기준 최대 0.55m이며 반대 손은 준비 자세에 남는다.')
+doc.add_page_break();doc.add_heading('실제 두 에디터 연결 화면',1);p(data['network_capture_note'])
+for name,caption in data['images'][3:5]:pic(name,caption,6.0)
+doc.add_page_break()
+for title,key in [('검증 결과와 재실행','verification'),('재시도와 진단','retry'),('적용과 남은 확인','limits')]:section(title,key)
+doc.add_heading('변경 파일과 근거',1)
+p('Assets/Gameplay/GloveCombat.cs · 공통 펀치 곡선\nAssets/Gameplay/DeliveryNetwork.cs · 승인 횟수와 동작 정보, 라운드 초기화\nAssets/Gameplay/DeliveryNetworkGameplay.cs · 승인 시 기록과 1인칭 및 상대 모션\nAssets/Editor/BoxingNetworkCheck.cs · 재현 및 실제 연결 검사')
+p('evidence/punch-before.txt · 수정 전 실패 재현\nevidence/punch-after.txt · 로컬 상태 재현 25항목\nevidence/punch-connected-host.txt · 실제 호스트 3항목\nevidence/punch-connected-client.txt · 실제 참가자 3항목\n이전 회전 수정: ../20261017/README.md\n편집 원문: source/report_data.json')
+for paragraph in doc.paragraphs:paragraph.paragraph_format.keep_together=True
+from append_throw_report import append_case02
+append_case02(doc,D,data['case02'])
+from append_projectile_report import append_case03
+append_case03(doc,D,data['case03'])
+from append_sync_report import append_case04
+append_case04(doc,D,data['case04'])
+from append_empty_start_report import append_case05
+append_case05(doc,D,data['case05'])
+
+from append_usage_report import append_case06
+append_case06(doc,D,data['case06'])
+
+from append_round_layout_report import append_case07
+append_case07(doc,D,data['case07'])
+
+from append_capture_protection_report import append_case08
+append_case08(doc,D,data['case08'])
+
+from append_enhanced_report import append_case09
+append_case09(doc,D,data['case09'])
+
+doc.save(D/'ChangeReport_20261018.docx')
+parts=[f'<h1>{html.escape(data["title"])}</h1><p>{html.escape(data["date"])}</p>']
+md=['# '+data['title'],data['date'],'사례01 · 관련 요청 R01, R02 · 버그 수정 · Editor 및 localhost 실제 연결 검증 완료']
+parts.append('<p><strong>현재 강화 효과와 사용량은 사례09 및 ItemUsageReport_20261018이 기준이다. 앞선 사례의 무제한 설명은 당시 이력이다.</strong></p>');md.append('**현재 강화 효과와 사용량은 사례09 및 ItemUsageReport_20261018이 기준이다. 앞선 사례의 무제한 설명은 당시 이력이다.**')
+for title,key in [('요약','summary'),('문제와 기대 동작','problem'),('원인','cause'),('사용한 방법','method'),('해결 결과','result'),('실제 캡처 안내','capture_note'),('실제 연결 캡처 안내','network_capture_note'),('검증','verification'),('재시도','retry'),('남은 제한','limits')]:
+ text=data[key];parts.append(f'<h2>{title}</h2><p>{html.escape(text).replace(chr(10),"<br>")}</p>');md.extend(['## '+title,text])
+for name,caption in data['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+c=data['case02']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('사용한 방법','method'),('해결 결과','result'),('검증','verification'),('재시도와 진단','retry'),('남은 제한','limits'),('실제 화면 안내','capture_note'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례02 근거 링크\n\n[재현98항목](evidence/throw-motion-check.txt) · [실제 호스트13항목](evidence/throw-connected-host.txt) · [실제 참가자13항목](evidence/throw-connected-client.txt) · [복싱 회귀25항목](evidence/boxing-regression-after-throw.txt) · [이번 변경 diff](evidence/throw-session.diff) · [변경 전후](source/case02/)')
+c=data['case03']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정한 방법','method'),('해결 결과','result'),('검증','verification'),('재시도와 진단','retry'),('남은 제한','limits'),('실제 화면 안내','capture_note'),('측정 그래프 안내','metrics_note'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례03 근거 링크\n\n[수정 전 실패](evidence/projectile-display-before.txt) · [수정 후26항목](evidence/projectile-display-after.txt) · [실제 호스트9항목](evidence/projectile-connected-host.txt) · [실제 참가자12항목](evidence/projectile-connected-client.txt) · [실제 위치 추적CSV](evidence/projectile-connected-client.csv) · [기존 투척98항목 회귀](evidence/throw-regression-after-projectile.txt) · [이번 diff](evidence/projectile-session.diff) · [변경 전후](source/case03/)')
+c=data['case04']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 범위','problem'),('원인','cause'),('수정한 방법','method'),('결과','result'),('검증','verification'),('측정 조건','measurement'),('수치 해석','interpretation'),('재시도','retry'),('한계','limits'),('실제 화면 안내','capture_note'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례04 근거 링크\n\n[전후 수치JSON](evidence/sync-comparison.json) · [32항목](evidence/sync-audit-after.txt) · [지연 호스트14](evidence/sync-connected-after-host.txt) · [지연 참가자14](evidence/sync-connected-after-client.txt) · [이동 호스트9](evidence/sync-movement-host.txt) · [이동 참가자9](evidence/sync-movement-client.txt) · [복싱 회귀25](evidence/punch-regression-after-sync.txt) · [투척 회귀98](evidence/throw-regression-after-sync.txt) · [투사체 회귀26](evidence/projectile-regression-after-sync.txt) · [이번 diff](evidence/sync-session.diff) · [변경 전후](source/case04/)')
+c=data['case05']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정 방법','method'),('해결 결과','result'),('검증과 한계','verification'),('재시도','retry'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례05 근거 링크\n\n[13항목 최종 검사](evidence/empty-start-check.txt) · [첫 검사](evidence/empty-start-check-first.txt) · [이번 변경](evidence/empty-start-session.diff) · [변경 전후와 이전 보고서](source/case05/)')
+c=data['case06']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정 방법','method'),('해결 결과','result'),('검증','verification'),('재시도','retry'),('한계','limits'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례06 근거 링크\n\n[현행 아이템 사용 기준](ItemUsageReport_20261018.docx) · [현재9종 표](ItemUsageReport_20261018.md) · [196항목 최종 검사](evidence/item-usage-check.txt) · [첫188항목](evidence/item-usage-check-first.txt) · [이번 변경](evidence/item-usage-session.diff) · [변경 전후](source/case06/)')
+c=data['case07']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정 방법','method'),('해결 결과','result'),('구버전 문서 정리','cleanup'),('검증','verification'),('재시도','retry'),('한계','limits'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례07 근거 링크\n\n[사용량154항목](evidence/item-usage-balance-check.txt) · [100후보 배치101항목](evidence/parcel-layout-check.txt) · [수집과 보충22항목](evidence/parcel-respawn-check.txt) · [코너 배치4항목](evidence/corner-layout-check.txt) · [시작28항목](evidence/corner-spawn-play-check.txt) · [무작위 배정CSV](evidence/corner-random-distribution.csv) · [첫 배치 실패](evidence/layout-first-attempt.txt) · [하강 문제 수정 전](evidence/corner-spawn-play-hitch-before.txt) · [이번 변경](evidence/round-layout-session.diff) · [삭제 목록](evidence/retired-item-documents.json)')
+c=data['case08']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정 방법','method'),('해결 결과','result'),('검증','verification'),('기절과 빙결 검토','cooldown'),('한계와 재시도','limits'),('화면 안내','capture_note'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례08 근거 링크\n\n[34항목 검사](evidence/capture-protection-check.txt) · [검증 범위](evidence/capture-protection-verification.json) · [이번 변경](evidence/capture-protection-session.diff) · [변경 전후](source/case08/)')
+c=data['case09']
+parts.append('<h1>'+html.escape(c['title'])+'</h1>');md.extend(['# '+c['title'],c['date']])
+for title,key in [('문제와 기대 동작','problem'),('원인','cause'),('수정 방법','method'),('해결 결과','result'),('검증','verification'),('재시도','retry'),('한계','limits'),('실제 화면','capture_note'),('변경 파일','files')]:
+ parts.append('<h2>'+title+'</h2><p>'+html.escape(c[key]).replace(chr(10),'<br>')+'</p>');md.extend(['## '+title,c[key]])
+for name,caption in c['images']:
+ parts.append(f'<figure><img src="images/{name}" alt="{html.escape(caption)}"><figcaption>{html.escape(caption)}</figcaption></figure>');md.append(f'![{caption}](images/{name})')
+md.append('## 사례09 근거 링크\n\n[강화25항목](evidence/enhanced-combat-check.txt) · [사용량161항목](evidence/item-usage-enhanced-check.txt) · [호스트10항목](evidence/enhanced-connected/host.txt) · [참가자9항목](evidence/enhanced-connected/client.txt) · [첫 검사와 재시도](evidence/enhanced-connected/first-attempt/) · [글러브 경로](evidence/enhanced-glove-path.csv) · [변경 전후](source/case09/)')
+md.append('## 폐기한 전투 확장 초안\n\n기본 무기·체력·사망·리스폰 초안은 사용자 요청으로 폐기했다. [폐기 기록](../../DesignProposals/20261018/README.md). 현행 게임은 비살상이며 재점령20초만 이번에 적용했다.')
+md.append('## 근거 링크\n\n[Word](ChangeReport_20261018.docx) · [열람본](index.html) · [요청 대조표](requests.csv) · [수정 전](evidence/punch-before.txt) · [수정 후 25항목](evidence/punch-after.txt) · [실제 호스트](evidence/punch-connected-host.txt) · [실제 참가자](evidence/punch-connected-client.txt) · [편집 원문](source/report_data.json)')
+(D/'README.md').write_text('\n\n'.join(md)+'\n',encoding='utf-8')
+content='<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>body{max-width:1040px;margin:40px auto;padding:0 24px;font:16px/1.7 "Malgun Gothic",sans-serif;color:#172c3c}h2{margin-top:30px}img{width:100%}figure{margin:26px 0}figcaption{font-size:14px;color:#526574}</style><title>'+data['title']+'</title></head><body>'+''.join(parts)+'</body></html>'
+(D/'index.html').write_text(content,encoding='utf-8')
+with (D/'requests.csv').open('w',encoding='utf-8-sig',newline='') as f:
+ w=csv.writer(f);w.writerow(['요청 ID','대상','요청 요약','관련 사례','처리 상태']);w.writerows(data['requests'])
+if len(sys.argv)>1:
+ out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=True);shutil.copy2(D/'ChangeReport_20261018.docx',out/'ItemUsageChangeRecord.docx')
+ for name,_ in data['images']+data['case02']['images']+data['case03']['images']+data['case04']['images']+data['case05']['images']+data['case06']['images']+data['case07']['images']+data['case08']['images']+data['case09']['images']:content=content.replace('images/'+name,'data:image/png;base64,'+base64.b64encode((D/'images'/name).read_bytes()).decode())
+ (out/'ItemUsageChangeRecord.html').write_text(content,encoding='utf-8')

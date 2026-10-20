@@ -1,0 +1,13 @@
+2026-10-20T23:07:24.2928007+09:00
+Two actual NGO/UTP localhost Editor processes, 60ms artificial one-way latency and every fifth input/frame omitted. Production TickNetwork, minimap player reference and production rotation matrix. Not WAN or screen pixel tracking.
+PASS host and guest connect and enter a real match
+PASS correct assigned global own slot=0
+PASS minimap follows local actor, including guest global-to-local remapping
+PASS live network frames sampled=3005
+PASS local yaw rotates through multiple directions
+PASS stationary turning preserves actual xz position; max drift=0m
+PASS minimap anchor stays fixed across five scales; max error=0.0002729575px
+PASS walking moves actual local actor and its minimap reference
+PASS loss simulation actually omitted messages
+PASS no gameplay runtime or shutdown errors; count=0
+EDITOR_ENVIRONMENT: unrelated UnityEditor.Search initialization exceptions=0

@@ -1,0 +1,9 @@
+2026-10-18T00:34:34.3974024+09:00
+Two actual MPPM Editor processes, localhost NGO transport, scripted input commands.
+CAPTURE client_opponent_1 accepted=1 right=True age=0.0903
+CAPTURE client_local_1 accepted=1 right=True age=0.0920
+CAPTURE client_opponent_2 accepted=2 right=False age=0.0913
+CAPTURE client_local_2 accepted=2 right=False age=0.0913
+PASS client receives two accepted punches from both peers: 2,2
+PASS client visible local right/left forward maximum=0.5499,0.5499m
+PASS client captures both remote alternating punches

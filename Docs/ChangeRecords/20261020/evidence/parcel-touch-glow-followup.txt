@@ -1,0 +1,20 @@
+2026-10-20 Unity Editor Play; controlled local and server-method fixtures, no separate connected peers.
+PASS distant regular parcel is not collected by E or proximity
+PASS regular parcel has no automatic pickup instruction
+PASS contact grants one normal item without focus or E
+PASS collected parcel cannot grant twice
+PASS full inventory preserves parcel and items
+PASS freeing a slot while touching collects automatically
+PASS stun blocks automatic pickup
+PASS dash blocks automatic pickup
+PASS client without server authority cannot consume parcel
+PASS touching fragile parcel does not collect it
+PASS existing E dispatch still collects fragile parcel
+PASS server contact pickup without E for actor 0
+PASS server full slots preserve parcel for actor 0
+PASS server dash blocks contact for actor 0
+PASS server contact pickup without E for actor 1
+PASS server full slots preserve parcel for actor 1
+PASS server dash blocks contact for actor 1
+PASS actual pooled floating model contact awards item and removes parcel
+PASS actual pool occupancy is cleared for existing respawn synchronization

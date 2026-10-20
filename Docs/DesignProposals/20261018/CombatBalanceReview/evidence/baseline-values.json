@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-18",
+  "status": "proposal only; not applied",
+  "rows": [
+    [
+      "복싱 글러브 수평 넉백",
+      "약 16.2m 계산 기준",
+      "약 32.4m 목표",
+      "거리 2배"
+    ],
+    [
+      "복싱 글러브 상승 높이",
+      "약 2.7m 계산 기준",
+      "약 5.4m 검토 목표",
+      "높이 2배 제안"
+    ],
+    [
+      "뿅망치 기절 지속",
+      "1.2초",
+      "5초",
+      "약 4.17배"
+    ],
+    [
+      "압축 뚫어뻥 사거리",
+      "15m",
+      "30m",
+      "2배"
+    ],
+    [
+      "아이스크림 발사속도",
+      "조준 방향 18m/s",
+      "조준 방향 36m/s",
+      "2배"
+    ],
+    [
+      "아이스크림 빙결 지속",
+      "1초",
+      "3초",
+      "3배"
+    ],
+    [
+      "슬라임 획득당 사용량",
+      "2회",
+      "3회",
+      "50퍼센트 증가"
+    ]
+  ],
+  "knockback_reference": "v^2/(2a), initial v=18*sqrt(3), a=30;32.4m target uses v=18*sqrt(6), vertical impulse unchanged",
+  "ice_interpretation": "aim component18->36m/s; upward additive3m/s unchanged",
+  "unchanged_immunity_seconds": 2,
+  "game_files_sha256_unchanged": 99,
+  "glove_lift_revision": {
+    "direction_requested": "launch higher as well as farther",
+    "suggested_height_not_confirmed_m": 5.4,
+    "baseline_height_calculated_m": 2.7,
+    "gravity_m_per_s_squared": 20,
+    "baseline_vertical_speed_m_per_s": 10.3923,
+    "proposed_vertical_speed_m_per_s": 14.6969,
+    "airtime_seconds_ideal": [
+      1.0392,
+      1.4697
+    ],
+    "note": "ideal first hit on flat ground; no new Unity measurement"
+  }
+}

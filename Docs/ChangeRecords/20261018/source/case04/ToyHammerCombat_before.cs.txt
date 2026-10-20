@@ -1,0 +1,109 @@
+using UnityEngine;
+
+public sealed partial class MonsterDeliveryPrototype
+{
+    const float HammerRange = 3.5f, HammerRadius = .32f, HammerHitDelay = .18f, HammerDuration = .48f, HammerStun = 1.2f;
+    int hammerSlot = -1;
+    float hammerStarted;
+    bool hammerHit;
+    readonly DeliveryStunEffect[] stunEffects = new DeliveryStunEffect[BotCount + 1];
+
+    float HammerSwingAmount
+    {
+        get
+        {
+            float age = Time.time - hammerStarted;
+            if (age < .09f) return Mathf.Lerp(0, -.3f, Mathf.SmoothStep(0, 1, age / .09f));
+            if (age < HammerHitDelay) return Mathf.Lerp(-.3f, 1, Mathf.SmoothStep(0, 1, (age - .09f) / (HammerHitDelay - .09f)));
+            return 1 - Mathf.SmoothStep(0, 1, (age - HammerHitDelay) / (HammerDuration - HammerHitDelay));
+        }
+    }
+
+    void StartToyHammerSwing()
+    {
+        hammerSlot = selectedSlot; hammerStarted = Time.time; hammerHit = false;
+        captureTarget = -1; captureStarted = 0;
+        playerItems.busyUntil = Time.time + HammerDuration;
+        nextAttackAt = Time.time + .75f;
+        feedback = "뿅망치 · 휘두르기!";
+    }
+
+    void UpdateToyHammerSwing()
+    {
+        if (hammerSlot < 0) return;
+        if (!started || finished || mapEditMode || Selected != WeaponKind.ToyHammer || playerItems.Stunned(Time.time) || Time.time < rollUntil)
+        { FinishToyHammerSwing(); return; }
+        float age = Time.time - hammerStarted;
+        if (!hammerHit && age >= HammerHitDelay) { hammerHit = true; HitToyHammerTarget(); }
+        if (age >= HammerDuration) FinishToyHammerSwing();
+    }
+
+    void HitToyHammerTarget()
+    {
+        var origin = thirdPersonPreview ? playerVisual.EyePosition : cam.transform.position;
+        // Same full-body capsule and solid-cover sweep used by the plunger cup.
+        if (!SweepItemPath(origin, origin + cam.transform.forward * HammerRange, HammerRadius, out var hit, out _)) return;
+        for (int id = 1; id <= BotCount; id++)
+        {
+            if (hit != ActorController(id)) continue;
+            var result = ApplyItemHit(id, new DeliveryItemHit(stunSeconds: HammerStun));
+            if (result == DeliveryHitResult.Applied && ActorState(id).Stunned(Time.time))
+            { feedback = "뿅! · 상대 기절!"; UpdateStunFX(); }
+            else if (result == DeliveryHitResult.Ignored) feedback = "상대가 기절 면역 중입니다.";
+            return;
+        }
+    }
+
+    void PoseToyHammer()
+    {
+        if (heldKind != WeaponKind.ToyHammer || !heldItem) return;
+        float amount = hammerSlot >= 0 ? HammerSwingAmount : 0;
+        if (!thirdPersonPreview)
+        {
+            heldItem.FirstPerson();
+            heldItem.transform.localPosition += new Vector3(-.25f, .15f, .12f) * amount;
+            heldItem.transform.localRotation *= Quaternion.Euler(95 * amount, 0, -25 * amount);
+        }
+        else if (hammerSlot >= 0)
+        {
+            playerVisual.PushArm(amount * 2.8f, true); heldItem.FollowBones();
+            heldItem.transform.localRotation *= Quaternion.Euler(75 * amount, 0, -20 * amount);
+        }
+    }
+
+    void FinishToyHammerSwing()
+    {
+        hammerSlot = -1;
+        if (heldKind == WeaponKind.ToyHammer && heldItem && !thirdPersonPreview) heldItem.FirstPerson();
+    }
+
+    void UpdateStunFX()
+    {
+        for (int id = 0; id <= BotCount; id++)
+        {
+            var actor = ActorController(id);
+            bool active = started && !finished && !mapEditMode && actor && actor.gameObject.activeInHierarchy && ActorState(id).Stunned(Time.time) && !ActorState(id).Frozen(Time.time);
+            if (active && !stunEffects[id])
+            {
+                var root = new GameObject("StunDizziness"); root.transform.SetParent(actor.transform, false);
+                root.transform.localPosition = Vector3.up * 1.45f;
+                stunEffects[id] = root.AddComponent<DeliveryStunEffect>();
+            }
+            if (stunEffects[id]) stunEffects[id].gameObject.SetActive(active && (id != 0 || thirdPersonPreview));
+        }
+    }
+
+    void DrawStunScreen(float w, float h)
+    {
+        float remaining = playerItems.stunUntil - Time.time;
+        if (remaining <= 0 || !started || finished || mapEditMode) return;
+        DeliveryUIArt.Image(new Rect(w * .5f - 155, h * .64f, 310, 54), "control_panel");
+        DeliveryUIArt.Text(new Rect(w * .5f - 150, h * .64f, 300, 54), (playerItems.Frozen(Time.time) ? "빙결 · " : "기절 · ") + remaining.ToString("0.0") + "초", 29,
+            playerItems.Frozen(Time.time) ? new Color(.55f, .9f, 1) : new Color(1, .84f, .2f), TextAnchor.MiddleCenter);
+    }
+
+    void DestroyStunFX()
+    {
+        foreach (var effect in stunEffects) if (effect) Destroy(effect.gameObject);
+    }
+}

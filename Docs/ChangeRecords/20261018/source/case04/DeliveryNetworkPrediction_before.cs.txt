@@ -1,0 +1,116 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+public sealed partial class MonsterDeliveryPrototype
+{
+    const float NetInputStep = 1f/60;
+    [Serializable] sealed class NetInputBatch { public NetInput[] commands; }
+    readonly Queue<NetInput>[] netMovementInputs = { new(),new(),new(),new() };
+    readonly float[] netMovementBudget = new float[4];
+    readonly int[] netLastQueuedInput = new int[4];
+    readonly List<NetInput> netPendingInputs = new();
+    readonly Vector3[] netRemoteTargets = new Vector3[4];
+    readonly float[] netRemoteYaws = new float[4];
+    float netInputAccumulator;
+    int netInputSequence, netFrameSequence, netLastFrameSequence;
+
+    void ResetNetPrediction(bool newSession=false)
+    {
+        netPendingInputs.Clear(); netInputAccumulator=0; netInputSequence=0;
+        if(newSession)netFrameSequence=netLastFrameSequence=0;
+        for(int g=0;g<4;g++){netMovementInputs[g].Clear();netMovementBudget[g]=0;netLastQueuedInput[g]=0;}
+    }
+    static NetInput CopyNetInput(NetInput i,int sequence) => new() {
+        sequence=sequence,x=i.x,z=i.z,yaw=i.yaw,pitch=i.pitch,jump=i.jump,crouch=i.crouch,
+        capture=i.capture,slot=i.slot,use=i.use,dash=i.dash,drop=i.drop
+    };
+    static bool ValidNetInput(NetInput i) => i!=null&&i.sequence>0&&float.IsFinite(i.x)&&float.IsFinite(i.z)&&float.IsFinite(i.yaw)&&float.IsFinite(i.pitch);
+    void QueueNetInputs(int g,NetInputBatch batch)
+    {
+        if(batch?.commands==null||batch.commands.Length>32)return;
+        foreach(var i in batch.commands)
+        {
+            if(!ValidNetInput(i)||i.sequence<=netLastQueuedInput[g]||i.sequence>netPlayers[g].inputAck+180||netMovementInputs[g].Count>=120)continue;
+            i.x=Mathf.Clamp(i.x,-1,1);i.z=Mathf.Clamp(i.z,-1,1);i.slot=Mathf.Clamp(i.slot,0,2);
+            i.pitch=Mathf.Clamp(i.pitch,-80,80);i.yaw=Mathf.Repeat(i.yaw,360);
+            netMovementInputs[g].Enqueue(i);netLastQueuedInput[g]=i.sequence;
+        }
+    }
+    void PredictNetLocalMovement()
+    {
+        var p=netPlayers[netOwn];if(p==null)return;
+        netInputAccumulator=Mathf.Min(.1f,netInputAccumulator+Time.deltaTime);
+        while(netInputAccumulator>=NetInputStep)
+        {
+            netInputAccumulator-=NetInputStep;
+            var input=CopyNetInput(netLocalInput,++netInputSequence);
+            netPendingInputs.Add(input);if(netPendingInputs.Count>120)netPendingInputs.RemoveAt(0);
+            if(!p.controlLocked)SimulateNetMovement(player,playerItems,p,input,NetInputStep,false);
+        }
+    }
+    void ReconcileNetLocal(NetPlayer p)
+    {
+        netPendingInputs.RemoveAll(i=>i.sequence<=p.inputAck);
+        player.enabled=false;player.transform.position=p.position;player.enabled=true;
+        foreach(var input in netPendingInputs)
+            if(!p.controlLocked)SimulateNetMovement(player,playerItems,p,input,NetInputStep,false);
+    }
+    void InterpolateNetRemotes()
+    {
+        float blend=1-Mathf.Exp(-25*Time.deltaTime);
+        for(int g=0;g<4;g++)if(g!=netOwn&&netPlayers[g]!=null&&netPlayers[g].connected)
+        {
+            var actor=ActorController(NetLocal(g));var target=netRemoteTargets[g];
+            actor.transform.position=Vector3.Distance(actor.transform.position,target)>3?target:Vector3.Lerp(actor.transform.position,target,blend);
+            actor.transform.rotation=Quaternion.Slerp(actor.transform.rotation,Quaternion.Euler(0,netRemoteYaws[g],0),blend);
+        }
+    }
+    void SimulateNetMovement(CharacterController actor,DeliveryItemState state,NetPlayer p,NetInput input,float dt,bool authority)
+    {
+        actor.transform.rotation=Quaternion.Euler(0,input.yaw,0);p.pitch=input.pitch;
+        bool locked=state.Stunned(Time.time)||(!authority&&p.controlLocked);
+        bool crouch=!locked&&input.crouch;float height=crouch?1.1f:1.4f;
+        if(actor.height!=height){actor.height=height;actor.center=Vector3.up*height*.5f;}
+        if(input.dash!=p.dashed)
+        {
+            p.dashed=input.dash;
+            if(!locked&&!crouch&&!state.KnockedBack&&p.stamina>=50&&p.dashRemaining<=0)
+            {p.dashRemaining=.35f;p.stamina-=50;p.target=-1;}
+        }
+        bool dashing=!locked&&p.dashRemaining>0;
+        if(!dashing)p.stamina=Mathf.Min(100,p.stamina+dt*20);
+        var move=new Vector3(input.x,0,input.z);if(move.sqrMagnitude>1)move.Normalize();
+        if(dashing&&move.sqrMagnitude<.01f)move=Vector3.forward;
+        var velocity=locked||state.KnockedBack?Vector3.zero:actor.transform.TransformDirection(move)*(dashing?17:crouch?3.6f:6.5f)*state.MoveMultiplier(Time.time);
+        if(!authority||!MovePulledActor(actor,state,ref p.vertical,dt))
+        {
+            bool grounded=HoverGrounded(actor);if(grounded&&p.vertical<0)p.vertical=-2;
+            if(grounded&&input.jump&&!locked&&!state.KnockedBack)p.vertical=7.5f;
+            if(authority&&state.pendingLift>0)p.vertical=Mathf.Max(p.vertical,state.TakeLift());
+            p.vertical-=20*dt;
+            MoveHoverActor(actor,(velocity+(authority?state.TakeForce(dt):Vector3.zero)+Vector3.up*p.vertical)*dt,ref p.vertical);
+        }
+        RecoverActor(actor,state,ref p.vertical);
+        p.dashRemaining=Mathf.Max(0,p.dashRemaining-dt);p.dashUntil=Time.time+p.dashRemaining;
+    }
+    static byte[] PackNetJson(string json)
+    {
+        using var output=new MemoryStream();
+        using(var stream=new DeflateStream(output,System.IO.Compression.CompressionLevel.Fastest,true))
+        {var bytes=Encoding.UTF8.GetBytes(json);stream.Write(bytes,0,bytes.Length);}
+        return output.ToArray();
+    }
+    static string UnpackNetJson(byte[] bytes)
+    {
+        using var input=new MemoryStream(bytes);using var stream=new DeflateStream(input,CompressionMode.Decompress);
+        using var output=new MemoryStream();var buffer=new byte[2048];int n;
+        while((n=stream.Read(buffer,0,buffer.Length))>0)
+        {if(output.Length+n>65536)throw new InvalidDataException("Room payload exceeds limit.");output.Write(buffer,0,n);}
+        return Encoding.UTF8.GetString(output.ToArray());
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "6000.5.10f1",
+  "revision": "3bd4f66ad299",
+  "url": "https://download.unity3d.com/download_unity/3bd4f66ad299/TargetSupportInstaller/UnitySetup-Mac-Mono-Support-for-Editor-6000.5.10f1.exe",
+  "bytes": 522739704,
+  "manifest_md5_base64": "OOMNxTIb7ugdESNG8wBn5Q==",
+  "manifest_md5_match": true,
+  "authenticode_status": "Valid",
+  "authenticode_signer": "Unity Technologies SF",
+  "silent_install_exit": 0
+}

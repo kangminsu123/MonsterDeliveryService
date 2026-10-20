@@ -1,0 +1,11 @@
+{
+  "pageErrors": [],
+  "reportTables": 2,
+  "embeddedDownloadResolved": true,
+  "source": "local HTML",
+  "screenshots": [
+    "minimap-report-matrix-table.png",
+    "minimap-report-peer-table.png",
+    "minimap-library-detail.png"
+  ]
+}

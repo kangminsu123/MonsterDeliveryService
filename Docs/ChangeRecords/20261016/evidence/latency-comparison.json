@@ -1,0 +1,122 @@
+{
+  "before": {
+    "label": "before",
+    "role": "client-1",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 26,
+    "stationaryFrames": 57,
+    "sentBytes": 31210,
+    "frames": 406,
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 217.396728515625,
+    "averageFrameMs": 16.708707809448242,
+    "p95FrameMs": 16.67249870300293
+  },
+  "after": {
+    "label": "after",
+    "role": "client-1",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 83,
+    "stationaryFrames": 0,
+    "sentBytes": 26881,
+    "frames": 407,
+    "pendingCommands": 10,
+    "inputAck": 403,
+    "droppedMessages": 0,
+    "finalPosition": {
+      "x": 5.0,
+      "y": 0.75,
+      "z": 10.200000762939453
+    },
+    "serverPosition": {
+      "x": 5.0,
+      "y": 0.75,
+      "z": 10.200000762939453
+    },
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.1277923583984375,
+    "averageFrameMs": 16.713607788085938,
+    "p95FrameMs": 16.674299240112305,
+    "maximumStep": 0.269340842962265
+  },
+  "after_message_loss": {
+    "label": "after-loss",
+    "role": "client-1",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 83,
+    "stationaryFrames": 0,
+    "sentBytes": 20918,
+    "frames": 406,
+    "pendingCommands": 13,
+    "inputAck": 399,
+    "droppedMessages": 32,
+    "finalPosition": {
+      "x": 5.0,
+      "y": 0.75,
+      "z": 10.091667175292969
+    },
+    "serverPosition": {
+      "x": 5.0,
+      "y": 0.75,
+      "z": 10.091667175292969
+    },
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.2231597900390625,
+    "averageFrameMs": 16.709836959838867,
+    "p95FrameMs": 16.67119598388672,
+    "maximumStep": 0.19322548806667328
+  },
+  "host_before": {
+    "label": "before",
+    "role": "host",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 84,
+    "stationaryFrames": 0,
+    "sentBytes": 750342,
+    "frames": 421,
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.39958953857421875,
+    "averageFrameMs": 16.708162307739258,
+    "p95FrameMs": 16.67030143737793
+  },
+  "host_after": {
+    "label": "after",
+    "role": "host",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 82,
+    "stationaryFrames": 0,
+    "sentBytes": 132314,
+    "frames": 420,
+    "pendingCommands": 0,
+    "inputAck": 0,
+    "droppedMessages": 0,
+    "finalPosition": {
+      "x": -5.0,
+      "y": 0.75,
+      "z": 10.207893371582031
+    },
+    "serverPosition": {
+      "x": -5.0,
+      "y": 0.7499998807907104,
+      "z": 10.207893371582031
+    },
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.1850128173828125,
+    "averageFrameMs": 16.714370727539062,
+    "p95FrameMs": 16.669998168945312,
+    "maximumStep": 0.2739381492137909
+  },
+  "comparison": "Visible native Windows processes, D3D11, same960x540 output and target60fps. Added60ms delay to outgoing input and frame messages in both directions. Message loss drops each5th app message before transport, not actual WAN packet capture.",
+  "first_response_scope": "Time from scripted input assignment to local CharacterController position change inside the application; not hardware input-to-photon or network ping. Same-frame rendering is bounded by the next display frame (~16.7ms at60fps).",
+  "checks": [
+    "PASS client first movement below20ms",
+    "PASS no stationary moving-window frames",
+    "PASS authoritative convergence after stop",
+    "PASS20% app-message omission still converges"
+  ]
+}

@@ -1,0 +1,11 @@
+2026-10-18T01:30:22.7932133+09:00
+Actual two MPPM processes, localhost NGO; scripted loadouts, positions and use inputs. No synthetic network delay.
+PASS host hides airborne held plunger for global player 0
+PASS host restores held plunger after return for global player 0
+PASS host hides airborne held plunger for global player 1
+PASS host restores held plunger after return for global player 1
+PASS host sees actual Plunger projectile
+PASS host sees actual Slime projectile
+PASS host sees actual IceCream projectile
+PASS host sees actual FountainPen projectile
+PASS both authoritative plungers complete outward and returning phases

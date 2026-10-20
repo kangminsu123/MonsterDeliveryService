@@ -1,0 +1,33 @@
+2026-10-19T21:06:05.3165984+09:00
+Actual Play, controlled positions and direct production calls; not separate network peers.
+PASS offline test starts with cannon, broadcaster and packer, one use each
+PASS one park special parcel
+PASS ordinary fifty parcel pool retained
+PASS disabling test loadout restores normal empty start
+PASS AirCannon production hit uses test effect
+PASS AirCannon shared aircap blocks effect
+PASS AirCannon wall blocks hit
+PASS AirCannon normal offline click consumes exactly once
+PASS AirCannon final-use model and slot clear after recoil
+PASS AirCannon held model and HUD icon load
+PASS Broadcaster production hit uses test effect
+PASS Broadcaster shared aircap blocks effect
+PASS Broadcaster wall blocks hit
+PASS Broadcaster shared stun immunity prevents re-lock
+PASS Broadcaster normal offline click consumes exactly once
+PASS Broadcaster final-use model and slot clear after recoil
+PASS Broadcaster held model and HUD icon load
+PASS PackingMachine production hit uses test effect
+PASS packer visual shares authoritative stun deadline
+PASS packer creates imported cardboard effect
+PASS PackingMachine shared aircap blocks effect
+PASS PackingMachine wall blocks hit
+PASS PackingMachine shared stun immunity prevents re-lock
+PASS PackingMachine normal offline click consumes exactly once
+PASS PackingMachine final-use model and slot clear after recoil
+PASS PackingMachine held model and HUD icon load
+PASS full three slots cannot consume park parcel
+PASS E pickup grants one strong item and hides parcel for ten seconds
+PASS second collection cannot duplicate reward
+PASS positive authoritative snapshot hides model and collider
+PASS round reset restores exactly one visible collectible

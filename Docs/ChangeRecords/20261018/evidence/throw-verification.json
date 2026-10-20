@@ -1,0 +1,36 @@
+{
+  "tested_at": "2026-10-18",
+  "unity": "6000.5.10f1",
+  "scene": "SampleScene",
+  "results": {
+    "throw-motion-check.txt": {
+      "pass": 98,
+      "fail": 0,
+      "recorded_at": "2026-10-18T00:50:11.7294675+09:00"
+    },
+    "throw-connected-host.txt": {
+      "pass": 13,
+      "fail": 0,
+      "recorded_at": "2026-10-18T00:52:23.2506902+09:00"
+    },
+    "throw-connected-client.txt": {
+      "pass": 13,
+      "fail": 0,
+      "recorded_at": "2026-10-18T00:52:25.1564053+09:00"
+    },
+    "boxing-regression-after-throw.txt": {
+      "pass": 25,
+      "fail": 0,
+      "recorded_at": "2026-10-18T00:53:24.9906486+09:00"
+    }
+  },
+  "main_console_errors": 0,
+  "network_scope": "two real MPPM Editor processes via localhost 127.0.0.1; scripted equipment and inputs",
+  "not_tested": [
+    "external physical PC",
+    "WAN",
+    "latency and packet loss",
+    "rebuilt standalone apps"
+  ],
+  "pre_existing_git_diff_check": "ProjectSettings/ProjectAuditorSettings.asset:47 trailing whitespace retained"
+}

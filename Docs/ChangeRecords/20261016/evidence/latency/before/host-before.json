@@ -1,0 +1,14 @@
+{
+    "label": "before",
+    "role": "host",
+    "note": "Native Windows processes on one PC. Automated forward input; 60ms artificial delay on each outgoing frame/input message; target60fps. Not a physical WAN measurement.",
+    "players": 2,
+    "movingFrames": 83,
+    "stationaryFrames": 0,
+    "sentBytes": 801130,
+    "frames": 420,
+    "simulatedOneWayMs": 60.0,
+    "firstMovementMs": 0.37384033203125,
+    "averageFrameMs": 16.72736167907715,
+    "p95FrameMs": 16.676204681396486
+}

@@ -26,8 +26,14 @@ public sealed partial class MonsterDeliveryPrototype
     public int NetTeamSize = 2;
     int NetCapacity => NetTeamSize * 2;
     string NetMode => NetTeamSize == 1 ? "1대1" : "2대2";
-    public Color LocalMailboxColor => NetPlaying ? TeamColors[netPlayers[netOwn]?.team ?? 0] : colors[0];
-    public string MapOwnershipLegend => NetPlaying ? "우리 팀  ·  흰색 미점령" : "내 점령  ·  흰색 미점령";
+    public bool IndividualMatch => NetworkScreens && NetTeamSize == 1;
+    public string HudScoreTitle => NetPlaying && !IndividualMatch ? "우리 팀" : "점령";
+    public string HudPortraitName => NetPlaying ? "robot_portrait_"+netPlayers[netOwn].color : "robot_portrait";
+    public static Color NetworkCoatColor(int index) => CoatColors[index];
+    Color NetSideColor(int side) => IndividualMatch && netPlayers[side]!=null ? CoatColors[netPlayers[side].color] : TeamColors[side];
+    string NetSideName(int side) => IndividualMatch ? netPlayers[side]?.name ?? "참가자 "+(side+1) : (side==0?"A 팀":"B 팀");
+    public Color LocalMailboxColor => NetPlaying ? NetSideColor(netPlayers[netOwn]?.team ?? 0) : colors[0];
+    public string MapOwnershipLegend => NetPlaying && !IndividualMatch ? "우리 팀  ·  흰색 미점령" : "내 점령  ·  흰색 미점령";
     float netNextSend, netPhaseUntil, netRoundUntil, netConnectedAt;
     bool netPause, netLeaving;
     string netNotice = "", netName = "배달원", netCode = "", netAddress = "127.0.0.1";
@@ -38,6 +44,8 @@ public sealed partial class MonsterDeliveryPrototype
     static readonly Color[] TeamColors = { new(.25f, .7f, 1), new(1, .48f, .22f) };
     [Serializable] public sealed class NetInput
     {
+        [NonSerialized] public float createdAt;
+        public int sequence;
         public float x, z, yaw, pitch;
         public bool jump, crouch, capture;
         public int slot, use, dash, drop;
@@ -45,24 +53,38 @@ public sealed partial class MonsterDeliveryPrototype
     }
     [Serializable] public sealed class NetPlayer
     {
+        public int inputAck;
+        public bool controlLocked;
         public bool connected;
         public string name;
         public int team, color, selected, target = -1;
         public Vector3 position;
         public float actionAge, dashRemaining;
-        public float yaw, pitch, stamina = 100, vertical, dashUntil, cooldown, captureAt, actionAt = -10;
-        public int used, dashed, dropped;
-        public int[] items = { 2, 5, 7 };
-        public float stun, frozen, shield, shieldBreak = -10, speed, slow, ink, progress;
+        public float yaw, pitch, stamina = 100, vertical;
+        [NonSerialized] public float dashUntil, cooldown, captureAt, actionAt = -10;
+        public int dashed;
+        [NonSerialized] public int used, dropped;
+        public int boxingPunches, actionKind, actionSlot;
+        public bool throwReleased, plungerFlying;
+        public int[] items = new int[SlotCount];
+        public int[] ammo = new int[SlotCount];
+        public float stun, frozen, packed, immune, battery, shield, shieldBreak = -10, speed, slow, ink, progress;
     }
-    [Serializable] sealed class NetShot { public string id; public int kind; public Vector3 position; public Quaternion rotation; }
+    [Serializable] sealed class NetShot { public string id; public int kind; public Vector3 position, velocity, acceleration; public Quaternion rotation; }
     [Serializable] sealed class NetFrame
     {
+        public int sequence;
         public int own, phase, teamSize;
         public float remaining;
+        public float[] specialPickupRemaining;
+        public Vector3 deliveryPosition;
+        public bool deliveryAvailable;
+        public float deliveryNotice;
+        public int deliveryMinute;
         public string notice;
         public NetPlayer[] players;
         public int[] owners;
+        public float[] captureLocks;
         public int[] parcels;
         public NetShot[] shots;
     }
@@ -77,7 +99,7 @@ public sealed partial class MonsterDeliveryPrototype
     bool MailboxOwnedByUs(int house) => owner[house] >= 0 && (NetPlaying
         ? netPlayers[NetGlobal(owner[house])]?.team == netPlayers[netOwn]?.team : owner[house] == 0);
     Color CaptureColor(int local) => NetPlaying || NetworkScreens && RoomState == RoomPhase.Results
-        ? TeamColors[netPlayers[NetGlobal(local)]?.team ?? 0] : colors[local];
+        ? NetSideColor(netPlayers[NetGlobal(local)]?.team ?? 0) : colors[local];
     int TeamScore(int team) => owner.Count(id => id >= 0 && netPlayers[NetGlobal(id)] != null && netPlayers[NetGlobal(id)].team == team);
     int NetCount => netPlayers.Count(p => p != null && p.connected);
     bool NetDevelopment => Application.isEditor || Debug.isDebugBuild;
@@ -100,6 +122,7 @@ public sealed partial class MonsterDeliveryPrototype
         if (Arg("-delivery-name") != "") netName = Arg("-delivery-name");
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (args.Contains("-delivery-proof")) BeginNetworkProof(Arg("-delivery-proof-dir"));
+        if (Arg("-delivery-latency-proof") != "") BeginLatencyProof(Arg("-delivery-latency-proof"),Arg("-delivery-latency-dir"));
 #endif
         if (args.Contains("-delivery-host")) HostRoom();
         else if (Arg("-delivery-join") != "") JoinRoom(Arg("-delivery-join"));
@@ -127,8 +150,10 @@ public sealed partial class MonsterDeliveryPrototype
     void ConfigureRoom(bool host, string address)
     {
         netLeaving = false; netNotice = ""; netOwn = 0; netPlayers = new NetPlayer[4]; netSlots.Clear(); netLocalInput = new NetInput();
+        ResetNetPrediction(true);
+        ResetNetDiagnostics();
         var go = new GameObject("DeliveryRoom"); netTransport = go.AddComponent<UnityTransport>(); netManager = go.AddComponent<NetworkManager>();
-        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 2, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
+        netManager.NetworkConfig = new NetworkConfig { ProtocolVersion = 15, NetworkTransport = netTransport, EnableSceneManagement = false, ConnectionApproval = true, ForceSamePrefabs = false, TickRate = 30 };
         netTransport.SetConnectionData(address, netPort, host ? "0.0.0.0" : null);
         netManager.ConnectionApprovalCallback = (request, response) =>
         {
@@ -181,16 +206,44 @@ public sealed partial class MonsterDeliveryPrototype
             netManager.CustomMessagingManager.RegisterNamedMessageHandler("delivery/"+kind, (sender, reader) =>
             {
                 if (reader.Length > 65536 || (!NetServer && sender != NetworkManager.ServerClientId)) return;
-                try { reader.ReadValueSafe(out string json); ReceiveNet(kind,sender,json); }
-                catch (Exception ex) when (ex is OverflowException || ex is ArgumentException) { Debug.LogWarning("Rejected invalid room message"); }
+                try {
+                    string json;
+                    if(kind=="frame"||kind=="input")
+                    {reader.ReadValueSafe(out int size);if(size<0||size>8192||size>reader.Length-reader.Position)return;var bytes=new byte[size];reader.ReadBytesSafe(ref bytes,size);json=UnpackNetJson(bytes);}
+                    else reader.ReadValueSafe(out json);
+                    netReceivedBytes+=reader.Length;
+                    ReceiveNet(kind,sender,json);
+                }
+                catch (Exception ex) when (ex is OverflowException || ex is ArgumentException || ex is System.IO.InvalidDataException) { Debug.LogWarning("Rejected invalid room message"); }
             });
         }
     }
     void SendNet(string kind, object payload, ulong recipient, NetworkDelivery delivery = NetworkDelivery.ReliableSequenced)
     {
         if (!netManager || !netManager.IsListening) return;
-        string json = JsonUtility.ToJson(payload); using var writer = new FastBufferWriter(json.Length*2+16, Allocator.Temp);
-        writer.WriteValueSafe(json); netManager.CustomMessagingManager.SendNamedMessage("delivery/"+kind,recipient,writer,delivery);
+        string json = JsonUtility.ToJson(payload);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if(latencyProof&&(kind=="frame"||kind=="input")){StartCoroutine(DelayedLatencySend(kind,json,recipient,delivery));return;}
+#endif
+        SendNetJson(kind,json,recipient,delivery);
+    }
+    void SendNetJson(string kind,string json,ulong recipient,NetworkDelivery delivery)
+    {
+        if(!netManager||!netManager.IsListening)return;
+        byte[] packed=kind=="frame"||kind=="input"?PackNetJson(json):null;
+        using var writer = new FastBufferWriter(packed!=null?packed.Length+16:json.Length*2+16, Allocator.Temp);
+        if(packed!=null)
+        {
+            writer.WriteValueSafe(packed.Length);writer.WriteBytesSafe(packed);
+            // Normal movement fits one datagram; rare large projectile sets retain fragmentation.
+            delivery=packed.Length<=1100?NetworkDelivery.UnreliableSequenced:NetworkDelivery.ReliableFragmentedSequenced;
+        }
+        else writer.WriteValueSafe(json);
+        netManager.CustomMessagingManager.SendNamedMessage("delivery/"+kind,recipient,writer,delivery);
+        netSentBytes+=writer.Length;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if(latencyProof)latencySentBytes+=writer.Length;
+#endif
     }
     void ReceiveNet(string kind, ulong sender, string json)
     {
@@ -199,15 +252,12 @@ public sealed partial class MonsterDeliveryPrototype
         if (!NetServer || !netSlots.TryGetValue(sender,out int slot)) return;
         if (kind == "input")
         {
-            var input = JsonUtility.FromJson<NetInput>(json);
-            if (!float.IsFinite(input.x) || !float.IsFinite(input.z) || !float.IsFinite(input.yaw) || !float.IsFinite(input.pitch)) return;
-            input.x = Mathf.Clamp(input.x,-1,1); input.z = Mathf.Clamp(input.z,-1,1); input.slot = Mathf.Clamp(input.slot,0,2);
-            input.pitch = Mathf.Clamp(input.pitch,-80,80); input.yaw = Mathf.Repeat(input.yaw,360); netInputs[slot] = input;
+            if(NetPlaying)QueueNetInputs(slot,JsonUtility.FromJson<NetInputBatch>(json));
         }
         if (kind == "hello") { var n = JsonUtility.FromJson<NetInput>(json).name ?? "배달원"; netPlayers[slot].name = n.Substring(0,Mathf.Min(n.Length,16)).Replace("\n", " ").Replace("\r", " "); NetBroadcast(); }
         if (kind == "start" && slot == 0) StartNetCountdown(true);
         if (kind == "reset" && slot == 0 && NetDevelopment) StartNetRound();
-        if (kind == "item" && NetDevelopment && NetPlaying) { var i = JsonUtility.FromJson<NetInput>(json); if (i.slot >= 1 && i.slot <= 9) netPlayers[slot].items[netPlayers[slot].selected] = i.slot; }
+        if (kind == "item" && NetDevelopment && NetPlaying) { var i = JsonUtility.FromJson<NetInput>(json); if (i.slot >= 1 && i.slot <= 9) GiveNetItem(slot,netPlayers[slot].selected,i.slot); }
     }
 
     void NetMenuWorld()
@@ -222,11 +272,20 @@ public sealed partial class MonsterDeliveryPrototype
     }
     public void LeaveRoom()
     {
-        netLeaving = true; if (netManager) { netManager.Shutdown(); Destroy(netManager.gameObject); }
-        netManager = null; netTransport = null; netSlots.Clear(); netPlayers = new NetPlayer[4]; netCode = "";
-        foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
-        foreach (var view in netShotViews.Values) if (view) Destroy(view); netShotViews.Clear();
+        netLeaving = true; if (netManager) StartCoroutine(CloseNetRoom(netManager));
+        netSlots.Clear(); netPlayers = new NetPlayer[4]; netCode = "";
+        ClearActiveNetShots();
+        ClearNetShotViews();
         ClearNetPlungers(); ClearIceCreamMarks(); ClearSlimePuddles(); RoomState = RoomPhase.Menu; NetMenuWorld();
+    }
+    System.Collections.IEnumerator CloseNetRoom(NetworkManager closing)
+    {
+        closing.Shutdown();
+        // NGO disposes its transport during the network update; keep the object alive until it finishes.
+        yield return null;
+        while (closing && closing.ShutdownInProgress) yield return null;
+        if (closing) Destroy(closing.gameObject);
+        if (netManager == closing) { netManager = null; netTransport = null; }
     }
     void ReturnNetLobby()
     {
@@ -242,22 +301,27 @@ public sealed partial class MonsterDeliveryPrototype
     {
         if (!NetServer || NetCount < 2) return;
         ClearSlimePuddles(); ClearIceCreamMarks(); ClearNetPlungers();
-        foreach (var shot in FindObjectsByType<BrawlShot>()) if (shot.owner == this) Destroy(shot.gameObject);
-        Array.Fill(owner,-1); for(int i=0;i<10;i++) SetMailboxEffectColor(i,Color.white);
+        ClearActiveNetShots();
+        Array.Fill(owner,-1); Array.Clear(mailboxProtectedUntil,0,HouseCount); for(int i=0;i<10;i++) SetMailboxEffectColor(i,Color.white);
         if (parcelPool) parcelPool.ResetRound();
+        ResetSpecialPickups();
+        ChooseRoundSpawns();
         for(int g=0;g<4;g++)
         {
             var p=netPlayers[g]; if(p==null||!p.connected) continue;
             var actor=ActorController(g); actor.gameObject.SetActive(true); actor.enabled=false;
-            actor.transform.position = new Vector3(p.team==0 ? -5 : 5,1,(g/2)*3-1.5f); actor.enabled=true;
-            actor.transform.rotation=Quaternion.Euler(0,p.team==0?90:270,0);
+            actor.transform.SetPositionAndRotation(SpawnPosition(g),SpawnRotation(g)); actor.enabled=true;
             var state=new DeliveryItemState { safePosition=actor.transform.position };
             if(g==0)playerItems=state;else botItems[g-1]=state;
-            p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new[]{2,5,7};p.selected=1;p.actionAt=-10;
-            netInputs[g]=new NetInput {yaw=p.team==0?90:270,slot=1};
-            p.used=p.dashed=p.dropped=0;
+            p.stamina=100;p.vertical=0;p.dashUntil=0;p.cooldown=0;p.target=-1;p.items=new int[SlotCount];p.ammo=new int[SlotCount];p.selected=0;p.actionAt=-10;
+            netInputs[g]=new NetInput {yaw=actor.transform.eulerAngles.y,slot=0};
+            p.used=p.dashed=p.dropped=p.inputAck=0;p.dashRemaining=0;
+            p.boxingPunches=p.actionKind=p.actionSlot=0;
+            p.throwReleased=p.plungerFlying=false;
+            if (SpecialTestLoadout) for(int slot=0;slot<SlotCount;slot++) GiveNetItem(g,slot,(int)WeaponKind.AirCannon+slot);
         }
-        netLocalInput=new NetInput {yaw=netPlayers[0].team==0?90:270,slot=1};
+        ResetNetPrediction();
+        netLocalInput=new NetInput {yaw=ActorController(0).transform.eulerAngles.y,slot=0};
         RoomState=RoomPhase.Playing;started=true;finished=false;netRoundUntil=Time.time+roundSeconds;netPhaseUntil=0; netPause=false;
         SyncHostInventory(); NetBroadcast();
         Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;
@@ -266,6 +330,7 @@ public sealed partial class MonsterDeliveryPrototype
     bool TickNetwork()
     {
         if(!NetworkScreens||mapEditMode)return false;
+        TickNetDiagnostics();
         if(RoomState==RoomPhase.Connecting && Time.unscaledTime-netConnectedAt>10){LeaveRoom();netNotice="접속 시간이 초과되었습니다. 방 코드와 네트워크를 확인하세요.";}
         var kb=Keyboard.current;
         if(NetDevelopment&&kb!=null&&kb.f2Key.wasPressedThisFrame)netTools=!netTools;
@@ -273,16 +338,29 @@ public sealed partial class MonsterDeliveryPrototype
         {
             if(kb!=null&&kb.escapeKey.wasPressedThisFrame){netPause=!netPause;Cursor.lockState=netPause?CursorLockMode.None:CursorLockMode.Locked;Cursor.visible=netPause;}
             ReadNetInput();
-            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetPlungers();UpdateNetMelee();UpdateItemAreas();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LatencyProofInput();
+#endif
+            if(NetServer){netInputs[0]=netLocalInput;StepNetPlayers();UpdateNetHandThrows();UpdateNetPlungers();UpdateNetMelee();CleanupNetItemUses();UpdateItemAreas();UpdateParkDelivery();
                 if(Time.time>=netRoundUntil){RoomState=RoomPhase.Results;finished=true;netNotice="";NetBroadcast();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}}
+            else {PredictNetLocalMovement();InterpolateNetRemotes();UpdateNetShotViews(Time.time,Time.deltaTime);}
             SyncHostInventory(); UpdateCameraForNet(); UpdateInteraction();
         }
+        else UpdateCameraFieldOfView();
         if(NetServer&&RoomState==RoomPhase.Lobby&&NetCount==NetCapacity)StartNetCountdown(false);
         if(NetServer&&RoomState==RoomPhase.Countdown&&Time.time>=netPhaseUntil)StartNetRound();
         if(netManager&&netManager.IsListening&&Time.unscaledTime>=netNextSend)
-        {netNextSend=Time.unscaledTime+.05f;if(NetServer)NetBroadcast();else if(NetPlaying)SendNet("input",netLocalInput,NetworkManager.ServerClientId,NetworkDelivery.UnreliableSequenced);}
+        {
+            netNextSend+=1f/30;if(netNextSend<Time.unscaledTime)netNextSend=Time.unscaledTime+1f/30;
+            if(NetServer)NetBroadcast();else if(NetPlaying&&netPendingInputs.Count>0)
+            {
+                int count=Mathf.Min(32,netPendingInputs.Count);var commands=new NetInput[count];netPendingInputs.CopyTo(netPendingInputs.Count-count,commands,0,count);
+                SendNet("input",new NetInputBatch{commands=commands},NetworkManager.ServerClientId,NetworkDelivery.UnreliableSequenced);
+            }
+        }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         TickNetworkProof();
+        TickLatencyProof();
 #endif
         return true;
     }
@@ -298,72 +376,74 @@ public sealed partial class MonsterDeliveryPrototype
         if(mouse!=null&&Cursor.lockState==CursorLockMode.Locked){var d=mouse.delta.ReadValue();i.yaw+=d.x*.12f;i.pitch=Mathf.Clamp(i.pitch-d.y*.12f,-80,80);if(mouse.leftButton.wasPressedThisFrame)i.use++;}
     }
     void UpdateCameraForNet()
-    {crouching=netLocalInput.crouch;rollUntil=netPlayers[netOwn]?.dashUntil??0;lookPitch=netLocalInput.pitch;player.transform.rotation=Quaternion.Euler(0,netLocalInput.yaw,0);cam.transform.rotation=Quaternion.Euler(lookPitch,netLocalInput.yaw,0);PositionCamera();cam.fieldOfView=Mathf.Lerp(cam.fieldOfView,RunningShoesFieldOfView,Time.deltaTime*12);}
+    {crouching=netLocalInput.crouch;rollUntil=netPlayers[netOwn]?.dashUntil??0;lookPitch=netLocalInput.pitch;player.transform.rotation=Quaternion.Euler(0,netLocalInput.yaw,0);cam.transform.rotation=Quaternion.Euler(lookPitch,netLocalInput.yaw,0);PositionCamera();UpdateCameraFieldOfView();}
 
     void NetBroadcast()
     {
         if(!NetServer||netManager.CustomMessagingManager==null)return;
+        long workAt=System.Diagnostics.Stopwatch.GetTimestamp(),workAlloc=GC.GetAllocatedBytesForCurrentThread();
         for(int g=0;g<4;g++)if(netPlayers[g]!=null&&netPlayers[g].connected)
         {
-            var p=netPlayers[g];var a=ActorController(g);var s=ActorState(g);p.dashRemaining=Mathf.Max(0,p.dashUntil-Time.time);p.position=a.transform.position;p.yaw=a.transform.eulerAngles.y;p.actionAge=Time.time-p.actionAt;
-            p.stun=Mathf.Max(0,s.stunUntil-Time.time);p.frozen=Mathf.Max(0,s.frozenUntil-Time.time);p.shield=Mathf.Max(0,s.shieldUntil-Time.time);
+            var p=netPlayers[g];var a=ActorController(g);var s=ActorState(g);p.controlLocked=s.KnockedBack;p.position=a.transform.position;p.yaw=a.transform.eulerAngles.y;p.pitch=netInputs[g]?.pitch??0;p.actionAge=Time.time-p.actionAt;
+            p.plungerFlying=netPlungers.Any(shot=>shot.source==g&&shot.model);
+            p.immune=Mathf.Max(0,s.immuneUntil-Time.time);p.battery=Mathf.Max(0,s.batteryUntil-Time.time);p.packed=Mathf.Max(0,s.packedUntil-Time.time);p.stun=Mathf.Max(0,s.stunUntil-Time.time);p.frozen=Mathf.Max(0,s.frozenUntil-Time.time);p.shield=Mathf.Max(0,s.shieldUntil-Time.time);
             p.shieldBreak=Time.time-s.shieldBrokenAt;p.speed=Mathf.Max(0,s.speedUntil-Time.time);p.slow=Mathf.Max(0,s.slowUntil-Time.time);p.ink=Mathf.Max(0,s.visionBlockedUntil-Time.time);
             p.progress=p.target<0?0:Mathf.Clamp01((Time.time-p.captureAt)/(p.items[p.selected]==8?1.5f:3));
         }
-        var shots=FindObjectsByType<BrawlShot>().Where(s=>s.owner==this&&s.gameObject.activeSelf).Select(s=>new NetShot{id=s.GetEntityId().ToString(),kind=(int)s.kind,position=s.transform.position,rotation=s.transform.rotation}).ToList();
-        foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation});
+        var shots=netActiveShots.Where(s=>s&&s.gameObject.activeSelf).Select(CaptureNetShot).ToList();
+        foreach(var p in netPlungers)if(p.model)shots.Add(new NetShot{id=p.model.GetEntityId().ToString(),kind=2,position=p.model.transform.position,rotation=p.model.transform.rotation,velocity=p.velocity});
+        var frame=new NetFrame{deliveryPosition=specialParcel ? specialParcel.transform.position : Vector3.zero,deliveryAvailable=specialParcel && specialParcel.Available,deliveryMinute=deliveryMinute,deliveryNotice=Mathf.Max(0,deliveryNoticeUntil-Time.time),specialPickupRemaining=CaptureSpecialPickups(),sequence=++netFrameSequence,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,captureLocks=Enumerable.Range(0,HouseCount).Select(MailboxProtectionRemaining).ToArray(),parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice};
         foreach(var pair in netSlots)if(pair.Key!=NetworkManager.ServerClientId&&netManager.ConnectedClientsIds.Contains(pair.Key))
-            SendNet("frame",new NetFrame{own=pair.Value,teamSize=NetTeamSize,phase=(int)RoomState,remaining=RoomState==RoomPhase.Countdown?Mathf.Max(0,netPhaseUntil-Time.time):Mathf.Max(0,netRoundUntil-Time.time),players=netPlayers,owners=owner,parcels=parcelPool ? parcelPool.CaptureSlots() : Array.Empty<int>(),shots=shots.ToArray(),notice=netNotice},pair.Key,NetworkDelivery.ReliableFragmentedSequenced);
+        {frame.own=pair.Value;SendNet("frame",frame,pair.Key,NetworkDelivery.ReliableFragmentedSequenced);}
+        RecordNetWork(workAt,workAlloc);
     }
     void ApplyNetFrame(NetFrame f)
     {
-        if(f.players==null||f.players.Length!=4||f.owners==null||f.owners.Length!=10||f.own<0||f.own>3)return;
+        if(f.players==null||f.players.Length!=4||f.owners==null||f.owners.Length!=10||f.captureLocks==null||f.captureLocks.Length!=HouseCount||f.own<0||f.own>3)return;
+        if(f.sequence<=netLastFrameSequence)return;netLastFrameSequence=f.sequence;
+        long workAt=System.Diagnostics.Stopwatch.GetTimestamp(),workAlloc=GC.GetAllocatedBytesForCurrentThread();RecordNetFrameReceived();
         bool starting=(RoomPhase)f.phase==RoomPhase.Playing&&RoomState!=RoomPhase.Playing;
         NetTeamSize=f.teamSize==1?1:2;netOwn=f.own;netPlayers=f.players;RoomState=(RoomPhase)f.phase;netNotice=f.notice;netRoundUntil=Time.time+f.remaining;netPhaseUntil=Time.time+f.remaining;
         started=NetPlaying;finished=RoomState==RoomPhase.Results;
-        if(starting){ClearSlimePuddles();ClearIceCreamMarks();netPause=false;netLocalInput=new NetInput{yaw=f.players[netOwn].yaw,slot=1};Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
+        if(starting){netPendingInputs.Clear();netInputSequence=0;netInputAccumulator=0;ClearSlimePuddles();ClearIceCreamMarks();netPause=false;netLocalInput=new NetInput{yaw=f.players[netOwn].yaw,slot=0};Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
         if(finished){Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
         for(int g=0;g<4;g++)
         {
             int l=NetLocal(g);var a=ActorController(l);var p=f.players[g];if(l>0)a.gameObject.SetActive(p!=null&&p.connected&&NetPlaying);
             if(p==null||!p.connected)continue;
-            if(NetPlaying){a.enabled=false;a.transform.SetPositionAndRotation(p.position,Quaternion.Euler(0,p.yaw,0));a.enabled=true;}
+            if(NetPlaying&&g!=netOwn){netRemoteTargets[g]=p.position;netRemoteYaws[g]=p.yaw;if(starting){a.transform.SetPositionAndRotation(p.position,Quaternion.Euler(0,p.yaw,0));}}
             p.actionAt=Time.time-p.actionAge;p.dashUntil=Time.time+p.dashRemaining;
             var state=ActorState(l);bool freshInk=p.ink>0&&state.visionBlockedUntil<=Time.time;
-            state.stunUntil=Time.time+p.stun;state.frozenUntil=Time.time+p.frozen;state.shieldUntil=Time.time+p.shield;state.shieldBrokenAt=p.shieldBreak<1?Time.time-p.shieldBreak:float.NegativeInfinity;
+            if(starting)state.safePosition=p.position;
+            state.immuneUntil=Time.time+p.immune;state.batteryUntil=Time.time+p.battery;state.packedUntil=Time.time+p.packed;state.stunUntil=Time.time+p.stun;state.frozenUntil=Time.time+p.frozen;state.shieldUntil=Time.time+p.shield;state.shieldBrokenAt=p.shieldBreak<1?Time.time-p.shieldBreak:float.NegativeInfinity;
             state.speedUntil=Time.time+p.speed;state.slowUntil=Time.time+p.slow;state.visionBlockedUntil=Time.time+p.ink;
             if(freshInk)ShowFountainInkHit(l,a.bounds.center);
-            SetPlayerColor(l,CoatColors[p.color]);
+            if(NetPlaying&&g==netOwn)ReconcileNetLocal(p);
         }
-        for(int i=0;i<10;i++){int v=f.owners[i]<0?-1:NetLocal(f.owners[i]);owner[i]=v;SetMailboxEffectColor(i,v<0?Color.white:CaptureColor(v));}
+        for(int i=0;i<10;i++){mailboxProtectedUntil[i]=Time.time+Mathf.Clamp(f.captureLocks[i],0,RecaptureProtectionSeconds);int v=f.owners[i]<0?-1:NetLocal(f.owners[i]);if(owner[i]!=v||starting){owner[i]=v;SetMailboxEffectColor(i,v<0?Color.white:CaptureColor(v));}}
         if(parcelPool) parcelPool.ApplySnapshot(f.parcels);
-        SyncHostInventory();SyncNetShotViews(f.shots??Array.Empty<NetShot>());
+        ApplySpecialPickups(f.specialPickupRemaining);
+        ApplyParkDelivery(f.deliveryAvailable, f.deliveryPosition, f.deliveryMinute, f.deliveryNotice);
+        SyncHostInventory();SyncNetShotViews(NetPlaying?f.shots??Array.Empty<NetShot>():Array.Empty<NetShot>());
+        RecordNetWork(workAt,workAlloc);
     }
     void SyncHostInventory()
     {
         var p=netPlayers[netOwn];if(p==null)return;
-        for(int i=0;i<3;i++)inventory[i]=(WeaponKind)p.items[i];selectedSlot=p.selected;stamina=p.stamina;
+        for(int i=0;i<3;i++){inventory[i]=(WeaponKind)p.items[i];weaponAmmo[i]=p.ammo[i];}selectedSlot=p.selected;stamina=p.stamina;
         captureTarget=p.target;captureStarted=Time.time-p.progress*(Selected==WeaponKind.WorkGloves?1.5f:3);
-        for(int g=0;g<4;g++)if(netPlayers[g]!=null)SetPlayerColor(NetLocal(g),CoatColors[netPlayers[g].color]);
-    }
-    void SyncNetShotViews(NetShot[] shots)
-    {
-        var seen=new HashSet<string>();foreach(var shot in shots)
-        {
-            seen.Add(shot.id);if(!netShotViews.TryGetValue(shot.id,out var model))
-            {var prefab=Resources.Load<GameObject>("DeliveryItems/"+(WeaponKind)shot.kind);if(!prefab)continue;model=Instantiate(prefab);model.name="RemoteProjectile";netShotViews[shot.id]=model;}
-            model.transform.SetPositionAndRotation(shot.position,shot.rotation);
-        }
-        foreach(var id in netShotViews.Keys.Where(id=>!seen.Contains(id)).ToArray()){Destroy(netShotViews[id]);netShotViews.Remove(id);}
+        for(int g=0;g<4;g++)if(netPlayers[g]!=null&&colors[NetLocal(g)]!=CoatColors[netPlayers[g].color])SetPlayerColor(NetLocal(g),CoatColors[netPlayers[g].color]);
     }
     public void ReplicateNetImpact(WeaponKind kind,Vector3 point,Vector3 normal,Collider hit)
     {
-        if(!NetPlaying||!NetServer||hit&&hit.GetComponentInParent<CharacterController>())return;
+        if(!NetPlaying||!NetServer||kind!=WeaponKind.AirCannon&&hit&&hit.GetComponentInParent<CharacterController>())return;
         foreach(var client in netManager.ConnectedClientsIds)if(client!=NetworkManager.ServerClientId)SendNet("impact",new NetImpact{kind=(int)kind,point=point,normal=normal},client);
     }
     void NetSurfaceImpact(NetImpact p)
     {
-        if(!NetPlaying)return;Collider surface=null;
+        if(!NetPlaying)return;
+        if(p.kind==(int)WeaponKind.AirCannon){ShowAirCannonImpact(p.point,p.normal);return;}
+        Collider surface=null;
         foreach(var h in Physics.RaycastAll(p.point+p.normal*.2f,-p.normal,.5f,~0,QueryTriggerInteraction.Ignore))if(!h.collider.GetComponentInParent<CharacterController>()){surface=h.collider;break;}
         if(!surface)return;
         if(p.kind==5)IceCreamImpact(surface,p.point,0,p.normal);

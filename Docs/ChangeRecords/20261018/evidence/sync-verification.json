@@ -1,0 +1,48 @@
+{
+  "results": {
+    "sync-audit-after.txt": {
+      "pass": 32,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:09:45.5306480+09:00"
+    },
+    "sync-connected-after-host.txt": {
+      "pass": 14,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:02:43.0862514+09:00"
+    },
+    "sync-connected-after-client.txt": {
+      "pass": 14,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:02:47.4669111+09:00"
+    },
+    "sync-movement-host.txt": {
+      "pass": 9,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:08:25.3538111+09:00"
+    },
+    "sync-movement-client.txt": {
+      "pass": 9,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:08:30.3288023+09:00"
+    },
+    "punch-regression-after-sync.txt": {
+      "pass": 25,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:10:13.2368892+09:00"
+    },
+    "throw-regression-after-sync.txt": {
+      "pass": 98,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:11:20.3185327+09:00"
+    },
+    "projectile-regression-after-sync.txt": {
+      "pass": 26,
+      "fail": 0,
+      "recorded_at": "2026-10-18T02:12:29.7244399+09:00"
+    }
+  },
+  "scope": "same PC two MPPM Editor processes; scripted application60ms+every-fifth omission; no physical WAN",
+  "main_console_game_errors": 0,
+  "allocation_counter": "unsupported, displayed N/A",
+  "deploy": "source only; standalone builds unchanged"
+}

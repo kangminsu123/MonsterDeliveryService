@@ -1,0 +1,10 @@
+2026-10-19T06:51:47.5527100+09:00
+Six Blender FBX exports; static evaluated meshes, metre units, original marks-only parcel. Review rig and animation excluded.
+PASS AirCannon: bounds (1.05, 1.67, 1.42), 4900 triangles, 6 material slots, static mesh, material remaps
+PASS Broadcaster: bounds (1.08, 1.56, 1.24), 3856 triangles, 5 material slots, static mesh, material remaps
+PASS PackingMachine: bounds (1.65, 1.50, 1.24), 5564 triangles, 8 material slots, static mesh, material remaps
+PASS LifeJacket: bounds (1.22, 1.61, 0.56), 2000 triangles, 6 material slots, static mesh, material remaps
+PASS ExpressBattery: bounds (1.24, 1.31, 0.83), 3232 triangles, 8 material slots, static mesh, material remaps
+PASS FragileParcel: bounds (1.30, 1.29, 1.23), 4412 triangles, 7 material slots, static mesh, material remaps
+PASS one saved park test parcel at (0.35, -0.04, 13.25) on limestone paving; ten-second respawn; test loadout enabled
+PASS five fixed items in a straight park row, two-second respawn, selected-slot replacement and automatic equip

@@ -1,0 +1,9 @@
+2026-10-18T00:35:55.6438028+09:00
+Two actual MPPM Editor processes, localhost NGO transport, scripted input commands.
+CAPTURE host_local_1 accepted=1 right=True age=0.1555
+CAPTURE host_opponent_1 accepted=1 right=True age=0.1576
+CAPTURE host_local_2 accepted=2 right=False age=0.1606
+CAPTURE host_opponent_2 accepted=2 right=False age=0.1626
+PASS host receives two accepted punches from both peers: 2,2
+PASS host visible local right/left forward maximum=0.5456,0.5500m
+PASS host captures both remote alternating punches

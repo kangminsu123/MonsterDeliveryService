@@ -154,7 +154,14 @@ static void Crosshair()
         }
         texture.SetPixels(pixels); texture.Apply(); Save("crosshair", texture);
     }
-    static void Icon(string name, string path, bool portrait)
+    [MenuItem("Tools/Gameplay/InGame UI/Build Network Portraits")]
+    public static void BuildNetworkPortraits()
+    {
+        if(EditorApplication.isPlaying)throw new Exception("Build portraits in Edit Mode.");
+        for(int i=0;i<6;i++)Icon("robot_portrait_"+i,"Assets/Resources/Characters/DeliveryRobotPlayer.prefab",true,MonsterDeliveryPrototype.NetworkCoatColor(i));
+        AssetDatabase.Refresh();
+    }
+    static void Icon(string name, string path, bool portrait, Color? coatColor=null)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         if (!prefab) throw new Exception("Icon model missing: " + path);
@@ -169,6 +176,7 @@ static void Crosshair()
         var ambient = RenderSettings.ambientLight; bool fog = RenderSettings.fog;
         try
         {
+            if(coatColor.HasValue)clone.GetComponent<DeliveryRobotVisual>().SetColor(coatColor.Value);
             foreach (var component in clone.GetComponentsInChildren<MonoBehaviour>()) component.enabled = false;
             foreach (var animator in clone.GetComponentsInChildren<Animator>()) animator.enabled = false;
             foreach (var node in clone.GetComponentsInChildren<Transform>()) node.gameObject.layer = 31;

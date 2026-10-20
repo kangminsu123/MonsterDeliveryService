@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-18",
+  "results": {
+    "item-usage-balance-check.txt": {
+      "pass": 154,
+      "fail": 0
+    },
+    "parcel-layout-check.txt": {
+      "pass": 101,
+      "fail": 0
+    },
+    "parcel-respawn-check.txt": {
+      "pass": 22,
+      "fail": 0
+    },
+    "corner-layout-check.txt": {
+      "pass": 4,
+      "fail": 0
+    },
+    "corner-spawn-play-check.txt": {
+      "pass": 28,
+      "fail": 0
+    }
+  },
+  "network_scope": "one actual Editor host initialization and controlled player records; serialized participant frame; no separate peer/WAN rerun",
+  "main_console_errors": 0,
+  "build": "source and saved scene only"
+}

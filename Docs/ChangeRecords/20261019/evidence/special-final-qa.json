@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-19",
+  "pages": 7,
+  "visually_reviewed_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "review": "All final pages opened. Korean text, table widths, captions, five-item row and actual remote life-jacket view readable; no clipping, overflow, orphan caption or blank page.",
+  "source": "Unity6000.5.10f1 SampleScene,6 static Blender FBX,5 pickup row and1 special parcel",
+  "counts": {
+    "row_offline": 45,
+    "import": 8,
+    "host": 13,
+    "client": 13,
+    "host_exit": 2,
+    "client_exit": 2
+  },
+  "render": "Packaged render_docx.py could not use LibreOffice/temp profile; hidden readonly Word COM PDF export plus bundled Poppler succeeded. See renderer-row.log.",
+  "docx_output_byte_identical": true,
+  "relative_readme_links_valid": true,
+  "limitations": [
+    "WAN not run",
+    "four-player match not run",
+    "release build not rebuilt"
+  ],
+  "editor_handoff": "Main Editor left in Play at park row with three starting items; only the task-owned readonly hidden verification clone was closed after tests."
+}

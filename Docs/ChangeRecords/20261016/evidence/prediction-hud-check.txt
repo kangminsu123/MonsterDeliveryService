@@ -1,0 +1,18 @@
+PASS protocol3 separates the new input and frame format
+PASS round reset preserves monotonic snapshot sequence
+PASS starting another round does not reuse old snapshot numbers
+PASS individual score and minimap omit team wording
+PASS individual scoreboard uses player names
+PASS local portrait selects the assigned coat colour
+PASS all six native robot portrait assets exist
+PASS individual ownership uses the player's colour
+PASS 2v2 retains team score wording and ownership colours
+PASS resent input commands are queued exactly once
+PASS invalid and implausibly future inputs are rejected
+PASS unacknowledged forward input moves locally before a server reply
+PASS server acknowledgement removes only the confirmed input prefix
+PASS replaying remaining inputs retains the predicted movement
+PASS stale snapshot cannot overwrite current state
+PASS compressed UTF8 room payload preserves Korean text
+PASS decompression rejects payloads over64KiB
+PASS unchanged parcel snapshots preserve thirty unique live models

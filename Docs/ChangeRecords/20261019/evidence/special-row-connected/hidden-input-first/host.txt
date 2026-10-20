@@ -1,0 +1,15 @@
+2026-10-19T07:13:03.4283198+09:00
+Actual main Unity Editor and MPPM virtual Editor over localhost; artificial60ms one-way delay, every fifth frame/input deliberately dropped. Controlled positions and input. Not physical WAN.
+PASS both peers receive the three one-use special items at round start
+PASS client cannon launches authoritative host upward; peak=159.0444
+PASS client cannon final-use slot and held model clear
+PASS host broadcaster stun reaches client; max=2.97496
+PASS client packer stun and packing deadline reach host and participant; max=3.980904
+PASS remote imported held model exists
+PASS simultaneous park E input yields one reward and one hidden parcel on both peers
+PASS one park parcel returns after ten seconds with no duplicate reward
+FAIL actual client E equips life jacket and both peers see pickup disappear and return after two seconds
+FAIL five-second life jacket ignores broadcast and cannon; effects resume after expiration; max=0
+FAIL opponent wears imported life-jacket model while protection is active
+FAIL actual client battery use gives eight seconds and five free dashes, then normal stamina cost resumes; max=0
+PASS no runtime errors during connected scenario

@@ -1,0 +1,14 @@
+2026-10-19T19:07:55.5818815+09:00
+Actual two Editor processes over localhost. Artificial60ms one-way delay and20% frame/input omissions. Controlled positions; not WAN.
+PASS no pre-impact launch force
+PASS server ball and physics-free participant projectile are visible
+PASS both flight and reliable impact effect received and captured
+PASS host shot lands then launches client; peak=158.95
+PASS client shot lands then launches host; peak=159.0634
+PASS each peer spends one use and clears last-use slot
+PASS authoritative life jacket blocks landed blast without client push
+PASS host foot shot launches host and replicates to participant; peak=158.8724
+PASS client foot shot launches client and replicates to host; peak=158.95
+PASS actual own foot-shot jump image captured
+PASS wall impact particles, three shockwaves and surface normal are replicated and captured
+PASS no runtime errors during two-peer scenario

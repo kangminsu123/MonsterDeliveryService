@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-16",
+  "job_id": "build-de6f1d4d9e",
+  "result": "succeeded",
+  "duration_seconds": 13.5706201,
+  "total_size_mb": 263.39,
+  "diagnostics": {
+    "existing_unity_pipeline_dll_error": 1,
+    "existing_minimap_obsolete_warnings": 2
+  },
+  "native_executable_proofs": "network-ui-fix"
+}

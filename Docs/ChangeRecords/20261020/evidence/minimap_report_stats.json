@@ -1,0 +1,32 @@
+{
+  "host": {
+    "pass_count": 10,
+    "samples": 3005,
+    "first_elapsed_s": 2.288818e-05,
+    "last_elapsed_s": 15.99884,
+    "stationary_x_min": 77.14652,
+    "stationary_x_max": 77.14652,
+    "stationary_z_min": 49.44968,
+    "stationary_z_max": 49.44968,
+    "walk_phase_xz_displacement_m": 11.817020841421918,
+    "max_marker_matrix_error_px": 0.0002729575,
+    "yaw_min": 0.0,
+    "yaw_max": 359.9849,
+    "own": 0
+  },
+  "guest": {
+    "pass_count": 10,
+    "samples": 3423,
+    "first_elapsed_s": 0.0004177094,
+    "last_elapsed_s": 15.99918,
+    "stationary_x_min": -70.69059,
+    "stationary_x_max": -70.69059,
+    "stationary_z_min": 64.44969,
+    "stationary_z_max": 64.44969,
+    "walk_phase_xz_displacement_m": 6.486025440630031,
+    "max_marker_matrix_error_px": 0.0002729575,
+    "yaw_min": 0.0,
+    "yaw_max": 359.8953,
+    "own": 1
+  }
+}

@@ -1,0 +1,2 @@
+2026-10-19T07:02:21.5383483+09:00
+Actual main Unity Editor and MPPM virtual Editor over localhost; artificial60ms one-way delay, every fifth frame/input deliberately dropped. Controlled positions and input. Not physical WAN.
